@@ -2,3 +2,4 @@
 .DS_Store
 .history
 storage/minifile/FLOCK
+*.iml

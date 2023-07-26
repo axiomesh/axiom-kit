@@ -16,10 +16,14 @@ type Storage interface {
 	// Has returns whether the `key` is mapped to a `value`.
 	Has(key []byte) bool
 
-	// Iterator iterates over a DB's key/value pairs in key order.
+	// Iterator iterates over a DB's key/value pairs in key order that
+	// range from the given start (including) and end (excluding).
+	// NOTICE: The returned Iterator is not positioned.
 	Iterator(start, end []byte) Iterator
 
-	// QueryByPrefix iterates over a DB's key/value pairs in key order including prefix.
+	// Prefix iterates over a DB's key/value pairs in key order that
+	// begins from the given prefix (including).
+	// NOTICE: The returned Iterator is not positioned.
 	Prefix(prefix []byte) Iterator
 
 	NewBatch() Batch
@@ -38,6 +42,7 @@ type Write interface {
 
 type Iterator interface {
 	// Next moves the iterator to the next key/value pair.
+	// It returns true if the next position is valid.
 	// It returns false if the iterator is exhausted.
 	Next() bool
 

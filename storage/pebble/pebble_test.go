@@ -1,4 +1,4 @@
-package leveldb
+package pebble
 
 import (
 	"fmt"
@@ -17,10 +17,10 @@ func TestIter_Next(t *testing.T) {
 	_, err = New(dir)
 	require.Nil(t, err)
 	_, err = New(dir)
-	require.EqualValues(t, "resource temporarily unavailable", err.Error())
+	require.EqualValues(t, "lock held by current process", err.Error())
 }
 
-func TestLdb_Put(t *testing.T) {
+func TestPdb_Put(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPut")
 	require.Nil(t, err)
 
@@ -32,7 +32,7 @@ func TestLdb_Put(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestLdb_Delete(t *testing.T) {
+func TestPdb_Delete(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestDelete")
 	require.Nil(t, err)
 
@@ -43,7 +43,7 @@ func TestLdb_Delete(t *testing.T) {
 	s.Delete([]byte("key"))
 }
 
-func TestLdb_Get(t *testing.T) {
+func TestPdb_Get(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestGet")
 	require.Nil(t, err)
 
@@ -58,7 +58,7 @@ func TestLdb_Get(t *testing.T) {
 	assert.True(t, v2 == nil)
 }
 
-func TestLdb_GetPanic(t *testing.T) {
+func TestPdb_GetPanic(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
 			assert.NotNil(t, err)
@@ -78,7 +78,7 @@ func TestLdb_GetPanic(t *testing.T) {
 	assert.True(t, false)
 }
 
-func TestLdb_PutPanic(t *testing.T) {
+func TestPdb_PutPanic(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
 			assert.NotNil(t, err)
@@ -98,7 +98,7 @@ func TestLdb_PutPanic(t *testing.T) {
 	assert.True(t, false)
 }
 
-func TestLdb_DeletePanic(t *testing.T) {
+func TestPdb_DeletePanic(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
 			assert.NotNil(t, err)
@@ -118,7 +118,7 @@ func TestLdb_DeletePanic(t *testing.T) {
 	assert.True(t, false)
 }
 
-func TestLdb_Has(t *testing.T) {
+func TestPdb_Has(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestHas")
 	require.Nil(t, err)
 
@@ -136,7 +136,7 @@ func TestLdb_Has(t *testing.T) {
 	assert.True(t, !r3)
 }
 
-func TestLdb_NewBatch(t *testing.T) {
+func TestPdb_NewBatch(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestNewBatch")
 	require.Nil(t, err)
 
@@ -148,17 +148,22 @@ func TestLdb_NewBatch(t *testing.T) {
 		key := fmt.Sprintf("key%d", i)
 		batch.Put([]byte(key), []byte(key))
 	}
-	batch.Delete([]byte("key10"))
+	deleteKey := "key5"
+	batch.Delete([]byte(deleteKey))
 	batch.Commit()
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 11; i++ {
 		key := fmt.Sprintf("key%d", i)
 		value := s.Get([]byte(key))
-		assert.EqualValues(t, key, value)
+		if key == deleteKey {
+			assert.Nil(t, value)
+		} else {
+			assert.EqualValues(t, key, value)
+		}
 	}
 }
 
-func TestLdb_CommitPanic(t *testing.T) {
+func TestPdb_CommitPanic(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
 			assert.NotNil(t, err)
@@ -183,7 +188,7 @@ func TestLdb_CommitPanic(t *testing.T) {
 	assert.True(t, false)
 }
 
-func TestLdb_Iterator(t *testing.T) {
+func TestPdb_Iterator(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestIterator")
 	require.Nil(t, err)
 
@@ -195,19 +200,27 @@ func TestLdb_Iterator(t *testing.T) {
 		key := fmt.Sprintf("key%d", i)
 		batch.Put([]byte(key), []byte(key))
 	}
+	delKey := "key5"
+	batch.Delete([]byte(delKey))
 	batch.Commit()
 
 	iter := s.Iterator([]byte("key0"), []byte("key9"))
-	i := 0
+
+	i, cnt := 0, 0
 	for iter.Next() {
+		if i == 5 {
+			i++
+		}
 		assert.EqualValues(t, []byte(fmt.Sprintf("key%d", i)), iter.Value())
 		assert.EqualValues(t, []byte(fmt.Sprintf("key%d", i)), iter.Key())
 		i++
+		cnt++
 	}
 	assert.EqualValues(t, i, 9)
+	assert.EqualValues(t, cnt, 8)
 }
 
-func TestLdb_Prefix(t *testing.T) {
+func TestPdb_Prefix(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPrefix")
 	require.Nil(t, err)
 
@@ -235,7 +248,7 @@ func TestLdb_Prefix(t *testing.T) {
 	assert.EqualValues(t, i, len(expected))
 }
 
-func TestLdb_Seek(t *testing.T) {
+func TestPdb_Seek(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestSeek")
 	require.Nil(t, err)
 
@@ -264,7 +277,7 @@ func TestLdb_Seek(t *testing.T) {
 	assert.EqualValues(t, i, len(expected))
 }
 
-func TestLdb_Prev(t *testing.T) {
+func TestPdb_Prev(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPrev")
 	require.Nil(t, err)
 
@@ -292,11 +305,11 @@ func TestLdb_Prev(t *testing.T) {
 	assert.EqualValues(t, i, len(expected))
 }
 
-func BenchmarkLdb_Get(b *testing.B) {
+func BenchmarkPdb_Get(b *testing.B) {
 	path, err := os.MkdirTemp("", "*")
 	assert.Nil(b, err)
 
-	ldb, err := New(path)
+	pdb, err := New(path)
 	assert.Nil(b, err)
 
 	val := make([]byte, 1024*1024*1)
@@ -309,18 +322,18 @@ func BenchmarkLdb_Get(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for j := 0; j < 10; j++ {
 			key := fmt.Sprintf("abc.%d.%d", i, j)
-			ldb.Put([]byte(key), val)
+			pdb.Put([]byte(key), val)
 
-			v := ldb.Get([]byte(key))
+			v := pdb.Get([]byte(key))
 			assert.Equal(b, val, v)
 		}
 
-		iterator := ldb.Prefix([]byte("abc"))
+		iterator := pdb.Prefix([]byte("abc"))
 		for iterator.Next() {
-			ldb.Delete(iterator.Key())
+			pdb.Delete(iterator.Key())
 		}
 	}
 
-	ldb.Close()
+	pdb.Close()
 
 }
