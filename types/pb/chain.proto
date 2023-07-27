@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "../pb";
+
+message ChainMeta {
+    uint64 height = 1;
+    bytes block_hash = 2;
+}
+
+message VpInfo {
+  uint64 id = 1;
+  string pid = 2;
+  string account = 3;
+  repeated string hosts = 4;
+}
+
+message TransactionMeta {
+    bytes block_hash = 1;
+    uint64 block_height = 2;
+    uint64 index = 3;
+}
