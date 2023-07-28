@@ -27,7 +27,7 @@ func TestBlockFileBasics(t *testing.T) {
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
 	assert.Nil(t, err)
-	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.Nil(t, err)
 	num, err := f.Blocks()
 	assert.Nil(t, err)
@@ -67,10 +67,10 @@ func TestAppendBlocKCase1(t *testing.T) {
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
 	assert.Nil(t, err)
-	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.Nil(t, err)
 	f.tables[BlockFileHashTable].items = 3
-	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.NotNil(t, err)
 }
 
@@ -80,23 +80,10 @@ func TestAppendBlocKCase2(t *testing.T) {
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
 	assert.Nil(t, err)
-	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.Nil(t, err)
 	f.tables[BlockFileBodiesTable].items = 3
-	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
-	assert.NotNil(t, err)
-}
-
-func TestAppendBlocKCase3(t *testing.T) {
-	f, err := NewBlockFile(os.TempDir(), log.NewWithModule("blockfile_test"))
-	assert.Nil(t, err)
-	defer f.Close()
-	err = f.TruncateBlocks(uint64(0))
-	assert.Nil(t, err)
-	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
-	assert.Nil(t, err)
-	f.tables[BlockFileInterchainTable].items = 3
-	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.NotNil(t, err)
 }
 
@@ -106,10 +93,10 @@ func TestAppendBlocKCase4(t *testing.T) {
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
 	assert.Nil(t, err)
-	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.Nil(t, err)
 	f.tables[BlockFileReceiptTable].items = 3
-	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"))
 	assert.NotNil(t, err)
 }
 

@@ -80,7 +80,7 @@ func (bf *BlockFile) Get(kind string, number uint64) ([]byte, error) {
 	return nil, fmt.Errorf("unknown table")
 }
 
-func (bf *BlockFile) AppendBlock(number uint64, hash, body, receipts, transactions, interchainMetas []byte) (err error) {
+func (bf *BlockFile) AppendBlock(number uint64, hash, body, receipts, transactions []byte) (err error) {
 	if atomic.LoadUint64(&bf.blocks) != number {
 		return fmt.Errorf("the append operation is out-order")
 	}
@@ -126,14 +126,6 @@ func (bf *BlockFile) AppendBlock(number uint64, hash, body, receipts, transactio
 			"hash":   hash,
 			"err":    err,
 		}).Error("Failed to append block receipt")
-		return err
-	}
-	if err := bf.tables[BlockFileInterchainTable].Append(bf.blocks, interchainMetas); err != nil {
-		bf.logger.WithFields(logrus.Fields{
-			"number": bf.blocks,
-			"hash":   hash,
-			"err":    err,
-		}).Error("Failed to append block interchain metas")
 		return err
 	}
 	atomic.AddUint64(&bf.blocks, 1) // Only modify atomically

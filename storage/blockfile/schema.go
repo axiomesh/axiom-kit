@@ -12,15 +12,11 @@ const (
 
 	// freezerReceiptTable indicates the name of the freezer receipts table.
 	BlockFileReceiptTable = "receipts"
-
-	// freezerReceiptTable indicates the name of the freezer receipts table.
-	BlockFileInterchainTable = "interchain"
 )
 
 var BlockFileSchema = map[string]bool{
-	BlockFileHashTable:       true,
-	BlockFileBodiesTable:     true,
-	BlockFileTXsTable:        true,
-	BlockFileReceiptTable:    true,
-	BlockFileInterchainTable: true,
+	BlockFileHashTable:    true,
+	BlockFileBodiesTable:  true,
+	BlockFileTXsTable:     true,
+	BlockFileReceiptTable: true,
 }

@@ -2,7 +2,6 @@ package ecdsa
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"testing"
 
 	"github.com/meshplus/bitxhub-kit/crypto"
@@ -20,7 +19,6 @@ func TestSignR1(t *testing.T) {
 	require.NotEqual(t, nil, sign)
 	pub := priv.PublicKey()
 	b, err := pub.Verify(h[:], sign)
-	fmt.Println(err)
 	require.Nil(t, err)
 	require.True(t, b)
 }
