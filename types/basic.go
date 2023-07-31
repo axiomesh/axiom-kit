@@ -11,6 +11,7 @@ import (
 
 	mt "github.com/cbergoon/merkletree"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/meshplus/bitxhub-kit/types/pb"
 	"golang.org/x/crypto/sha3"
 )
@@ -271,6 +272,14 @@ func (b *Bloom) SetBytes(d []byte) {
 		panic(fmt.Sprintf("bloom bytes too big %d %d", len(b), len(d)))
 	}
 	copy(b[BloomByteLength-len(d):], d)
+}
+
+func (b *Bloom) ETHBloom() types.Bloom {
+	if b == nil {
+		emptyBytes := [BloomByteLength]byte{}
+		return types.BytesToBloom(emptyBytes[:])
+	}
+	return types.BytesToBloom(b[:])
 }
 
 type CodecObject interface {
