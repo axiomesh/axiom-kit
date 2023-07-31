@@ -1,6 +1,6 @@
 package ecdh
 
-import "github.com/meshplus/bitxhub-kit/crypto"
+import "github.com/axiomesh/axiom-kit/crypto"
 
 type KeyExchange interface {
 	// Check returns a non-nil error if the peers public key cannot used for the

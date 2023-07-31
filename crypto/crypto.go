@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/meshplus/bitxhub-kit/types"
+	"github.com/axiomesh/axiom-kit/types"
 )
 
 type KeyType int

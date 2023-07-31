@@ -1,4 +1,4 @@
-module github.com/meshplus/bitxhub-kit
+module github.com/axiomesh/axiom-kit
 
 go 1.20
 

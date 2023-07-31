@@ -3,7 +3,7 @@ package types
 import (
 	"crypto/sha256"
 
-	"github.com/meshplus/bitxhub-kit/types/pb"
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 type BlockHeader struct {

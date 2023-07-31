@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/meshplus/bitxhub-kit/hexutil"
 )
 
 // deriveBufferPool holds temporary encoder buffers for DeriveSha and TX encoding.

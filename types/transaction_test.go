@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/meshplus/bitxhub-kit/hexutil"
+	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/stretchr/testify/assert"
 )
 

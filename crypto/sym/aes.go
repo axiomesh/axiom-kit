@@ -5,7 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 
-	"github.com/meshplus/bitxhub-kit/crypto"
+	"github.com/axiomesh/axiom-kit/crypto"
 )
 
 // AES a AES instance is a tool to encrypt and decrypt
