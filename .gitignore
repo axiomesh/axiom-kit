@@ -2,3 +2,6 @@
 .DS_Store
 .history
 storage/minifile/FLOCK
+
+cover.out
+coverage.txt
