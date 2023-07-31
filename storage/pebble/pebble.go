@@ -113,6 +113,9 @@ func (it *iter) Seek(key []byte) bool {
 }
 
 func (it *iter) Next() bool {
+	if !it.iter.Valid() {
+		return false
+	}
 	if !it.positioned {
 		it.positioned = true
 		return true

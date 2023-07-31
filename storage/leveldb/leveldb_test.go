@@ -207,6 +207,30 @@ func TestLdb_Iterator(t *testing.T) {
 	assert.EqualValues(t, i, 9)
 }
 
+func TestLdb_Iterator_Empty(t *testing.T) {
+	dir, err := os.MkdirTemp("", "TestIterator")
+	require.Nil(t, err)
+
+	s, err := New(dir)
+	require.Nil(t, err)
+
+	batch := s.NewBatch()
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("key%d", i)
+		batch.Put([]byte(key), []byte(key))
+	}
+	batch.Commit()
+
+	iter := s.Iterator([]byte("none"), []byte("no"))
+	i := 0
+	for iter.Next() {
+		assert.EqualValues(t, []byte(fmt.Sprintf("key%d", i)), iter.Value())
+		assert.EqualValues(t, []byte(fmt.Sprintf("key%d", i)), iter.Key())
+		i++
+	}
+	assert.EqualValues(t, i, 0)
+}
+
 func TestLdb_Prefix(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPrefix")
 	require.Nil(t, err)
