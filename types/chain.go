@@ -1,6 +1,6 @@
 package types
 
-import "github.com/meshplus/bitxhub-kit/types/pb"
+import "github.com/axiomesh/axiom-kit/types/pb"
 
 type ChainMeta struct {
 	Height    uint64

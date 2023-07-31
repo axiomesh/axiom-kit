@@ -13,10 +13,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/meshplus/bitxhub-kit/crypto"
-	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
-	"github.com/meshplus/bitxhub-kit/crypto/sym"
-	"github.com/meshplus/bitxhub-kit/types"
+	"github.com/axiomesh/axiom-kit/crypto"
+	"github.com/axiomesh/axiom-kit/crypto/asym/ecdsa"
+	"github.com/axiomesh/axiom-kit/crypto/sym"
+	"github.com/axiomesh/axiom-kit/types"
 )
 
 var CryptoM = make(map[crypto.KeyType]*Crypto)
@@ -105,7 +105,7 @@ func GenerateKeyPair(opt crypto.KeyType) (crypto.PrivateKey, error) {
 	}
 }
 
-//SupportedKeyType: check if configuration algorithm supported in bitxhub
+// SupportedKeyType: check if configuration algorithm supported in axiom
 func SupportedKeyType(typ crypto.KeyType) bool {
 	if typ == crypto.ECDSA_P256 ||
 		typ == crypto.ECDSA_P384 ||

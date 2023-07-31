@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/meshplus/bitxhub-kit/crypto"
-	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
+	"github.com/axiomesh/axiom-kit/crypto"
+	"github.com/axiomesh/axiom-kit/crypto/asym/ecdsa"
 	"github.com/stretchr/testify/require"
 )
 

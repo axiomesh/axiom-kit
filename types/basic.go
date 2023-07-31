@@ -9,10 +9,10 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/axiomesh/axiom-kit/types/pb"
 	mt "github.com/cbergoon/merkletree"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/meshplus/bitxhub-kit/types/pb"
 	"golang.org/x/crypto/sha3"
 )
 

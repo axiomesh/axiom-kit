@@ -7,9 +7,9 @@ import (
 	"encoding/asn1"
 	"fmt"
 
+	"github.com/axiomesh/axiom-kit/crypto"
+	"github.com/axiomesh/axiom-kit/types"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/meshplus/bitxhub-kit/crypto"
-	"github.com/meshplus/bitxhub-kit/types"
 )
 
 // PublicKey ECDSA public key.

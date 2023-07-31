@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	"github.com/meshplus/bitxhub-kit/crypto"
+	"github.com/axiomesh/axiom-kit/crypto"
 	"github.com/stretchr/testify/require"
 )
 

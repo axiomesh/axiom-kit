@@ -30,7 +30,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa/secp256k1"
+	"github.com/axiomesh/axiom-kit/crypto/asym/ecdsa/secp256k1"
 	"golang.org/x/crypto/sha3"
 )
 

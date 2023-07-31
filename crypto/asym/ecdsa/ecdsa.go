@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/meshplus/bitxhub-kit/crypto"
+	"github.com/axiomesh/axiom-kit/crypto"
 )
 
 var _ crypto.PrivateKey = (*PrivateKey)(nil)

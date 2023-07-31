@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/meshplus/bitxhub-kit/hexutil"
-	"github.com/meshplus/bitxhub-kit/types/pb"
+	"github.com/axiomesh/axiom-kit/hexutil"
+	"github.com/axiomesh/axiom-kit/types/pb"
 	"github.com/samber/lo"
 )
 
