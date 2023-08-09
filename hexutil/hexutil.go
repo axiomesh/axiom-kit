@@ -2,9 +2,13 @@ package hexutil
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const uintBits = 32 << (uint64(^uint(0)) >> 63)
@@ -36,16 +40,32 @@ func Encode(b []byte) string {
 	return "0x" + hx
 }
 
+// decodeHash parses a hex-encoded 32-byte hash. The input may optionally
+// be prefixed by 0x and can have a byte length up to 32.
+func DecodeHash(s string) (common.Hash, error) {
+	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
+		s = s[2:]
+	}
+	if (len(s) & 1) > 0 {
+		s = "0" + s
+	}
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return common.Hash{}, errors.New("hex string invalid")
+	}
+	if len(b) > 32 {
+		return common.Hash{}, errors.New("hex string too long, want at most 32 bytes")
+	}
+	return common.BytesToHash(b), nil
+}
+
 func Decode(s string) []byte {
 	if len(s) > 1 {
-		if s[0:2] == "0x" {
+		if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
 			s = s[2:]
 		}
-		if len(s)%2 == 1 {
+		if (len(s) & 1) > 0 {
 			s = "0" + s
-		}
-		if len(s) >= 2 && s[0:2] == "0x" {
-			s = s[2:]
 		}
 		h, _ := hex.DecodeString(s)
 
