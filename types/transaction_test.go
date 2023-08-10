@@ -25,6 +25,21 @@ func TestEthTransaction_GetSignHash(t *testing.T) {
 	assert.Equal(t, addr, sender.String())
 }
 
+func TestEthTransaction_GetDynamicFeeSignHash(t *testing.T) {
+	rawTx := "0x02f86d827a691e843b9aca08843b9aca088378d99c94450c8a57bae0aa50fa5122c84419d2b2924f205d0180c080a0b8fb5999b8ff73fd82b0b099dc3df62dbf3b9005115ee6122ff97acc01c9d39fa03e63ec1a91ae72246fd746a7e3a191d6c679f34c3358c6a01875a793f70d77bb"
+	tx := &Transaction{}
+	tx.Unmarshal(hexutil.Decode(rawTx))
+
+	addr := "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+	InitEIP155Signer(big.NewInt(31337))
+	err := tx.VerifySignature()
+	assert.Nil(t, err)
+
+	sender, err := tx.sender()
+	assert.Nil(t, err)
+	assert.Equal(t, addr, sender.String())
+}
+
 func TestEthTransaction_Generate(t *testing.T) {
 	InitEIP155Signer(big.NewInt(1))
 
