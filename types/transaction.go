@@ -151,7 +151,7 @@ func (e *Transaction) sender() (*Address, error) {
 		}
 		V = new(big.Int).Sub(V, signer.chainIdMul)
 		V.Sub(V, big.NewInt(8))
-	case AccessListTxType:
+	case AccessListTxType, DynamicFeeTxType:
 		// ACL txs are defined to use 0 and 1 as their recovery id, add
 		// 27 to become equivalent to unprotected Homestead signatures.
 		V = new(big.Int).Add(V, big.NewInt(27))
@@ -281,6 +281,21 @@ func (e *Transaction) GetSignHash() *Hash {
 				e.Inner.GetAccessList(),
 			})
 
+		return NewHash(hash.Bytes())
+	case DynamicFeeTxType:
+		hash := PrefixedRlpHash(
+			e.GetType(),
+			[]interface{}{
+				signer.chainId,
+				e.GetNonce(),
+				e.GetGasTipCap(),
+				e.GetGasFeeCap(),
+				e.GetGas(),
+				e.Inner.GetTo(),
+				e.GetValue(),
+				e.Inner.GetData(),
+				e.Inner.GetAccessList(),
+			})
 		return NewHash(hash.Bytes())
 	default:
 		// This _should_ not happen, but in case someone sends in a bad
