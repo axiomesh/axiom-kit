@@ -25,6 +25,36 @@ func TestEthTransaction_GetSignHash(t *testing.T) {
 	assert.Equal(t, addr, sender.String())
 }
 
+func TestMultiSinger(t *testing.T) {
+	InitEIP155Signer(big.NewInt(1))
+
+	tx, err := GenerateDynamicFeeTxAndSinger()
+	assert.Nil(t, err)
+	err = tx.VerifySignature()
+	assert.Nil(t, err)
+
+	tx, err = GenerateAccessListTxAndSigner()
+	assert.Nil(t, err)
+	err = tx.VerifySignature()
+	assert.Nil(t, err)
+}
+
+func TestWrongSinger(t *testing.T) {
+	InitEIP155Signer(big.NewInt(1))
+	tx, s, err := GenerateWrongSignTransactionAndSigner(true)
+	assert.Nil(t, err)
+
+	addr := s.Addr
+	err = tx.VerifySignature()
+	assert.Contains(t, err.Error(), "verify signature failed")
+
+	tx, s, err = GenerateWrongSignTransactionAndSigner(false)
+	assert.Nil(t, err)
+	sender, err := tx.sender()
+	assert.Nil(t, err)
+	assert.NotEqual(t, addr.String(), sender.String())
+}
+
 func TestEthTransaction_GetDynamicFeeSignHash(t *testing.T) {
 	rawTx := "0x02f86d827a691e843b9aca08843b9aca088378d99c94450c8a57bae0aa50fa5122c84419d2b2924f205d0180c080a0b8fb5999b8ff73fd82b0b099dc3df62dbf3b9005115ee6122ff97acc01c9d39fa03e63ec1a91ae72246fd746a7e3a191d6c679f34c3358c6a01875a793f70d77bb"
 	tx := &Transaction{}

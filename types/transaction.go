@@ -13,6 +13,7 @@ import (
 
 	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -60,6 +61,50 @@ func (s EIP155Signer) signatureValues(sig []byte) (R, S, V *big.Int, err error) 
 		V = big.NewInt(int64(sig[64] + 35))
 		V.Add(V, s.chainIdMul)
 	}
+	return R, S, V, nil
+}
+
+type Eip2930Signer struct{ EIP155Signer }
+
+// NewEIP2930Signer returns a signer that accepts EIP-2930 access list transactions,
+// EIP-155 replay protected transactions, and legacy Homestead transactions.
+func NewEIP2930Signer(chainId *big.Int) Eip2930Signer {
+	return Eip2930Signer{EIP155Signer{chainId: chainId, chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2))}}
+}
+
+func (s Eip2930Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big.Int, err error) {
+	txdata, ok := tx.Inner.(*AccessListTx)
+	if !ok {
+		return s.EIP155Signer.signatureValues(sig)
+	}
+	// Check that chain ID of tx matches the signer. We also accept ID zero here,
+	// because it indicates that the chain ID was not specified in the tx.
+	if txdata.ChainID.Sign() != 0 && txdata.ChainID.Cmp(s.chainId) != 0 {
+		return nil, nil, nil, fmt.Errorf("%w: have %d want %d", types.ErrInvalidChainId, txdata.ChainID, s.chainId)
+	}
+	R, S, _ = decodeSignature(sig)
+	V = big.NewInt(int64(sig[64]))
+	return R, S, V, nil
+}
+
+type LondonSigner struct{ EIP155Signer }
+
+func NewLondonSigner(chainId *big.Int) LondonSigner {
+	return LondonSigner{EIP155Signer{chainId: chainId, chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2))}}
+}
+
+func (s LondonSigner) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big.Int, err error) {
+	txdata, ok := tx.Inner.(*DynamicFeeTx)
+	if !ok {
+		return s.EIP155Signer.signatureValues(sig)
+	}
+	// Check that chain ID of tx matches the signer. We also accept ID zero here,
+	// because it indicates that the chain ID was not specified in the tx.
+	if txdata.ChainID.Sign() != 0 && txdata.ChainID.Cmp(s.chainId) != 0 {
+		return nil, nil, nil, fmt.Errorf("%w: have %d want %d", types.ErrInvalidChainId, txdata.ChainID, s.chainId)
+	}
+	R, S, _ = decodeSignature(sig)
+	V = big.NewInt(int64(sig[64]))
 	return R, S, V, nil
 }
 
@@ -542,6 +587,65 @@ func (tx *Transaction) Marshal() ([]byte, error) {
 	return tx.MarshalBinary()
 }
 
+func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {
+	switch tx.GetType() {
+	case LegacyTxType:
+		return tx.Sign(prv)
+	case AccessListTxType:
+		acSigner := NewEIP2930Signer(signer.chainId)
+
+		h := PrefixedRlpHash(
+			tx.GetType(),
+			[]interface{}{
+				signer.chainId,
+				tx.GetNonce(),
+				tx.Inner.GetGasPrice(),
+				tx.Inner.GetGas(),
+				tx.Inner.GetTo(),
+				tx.Inner.GetValue(),
+				tx.Inner.GetData(),
+				tx.Inner.GetAccessList(),
+			})
+		sig, err := crypto.Sign(h.Bytes(), prv)
+		if err != nil {
+			return err
+		}
+		r, s, v, err := acSigner.SignatureValues(tx, sig)
+		if err != nil {
+			return err
+		}
+		tx.Inner.setSignatureValues(signer.chainId, v, r, s)
+		return nil
+
+	case DynamicFeeTxType:
+		dynamicSigner := NewLondonSigner(signer.chainId)
+		h := PrefixedRlpHash(
+			tx.GetType(),
+			[]interface{}{
+				signer.chainId,
+				tx.GetNonce(),
+				tx.Inner.GetGasTipCap(),
+				tx.Inner.GetGasFeeCap(),
+				tx.Inner.GetGas(),
+				tx.Inner.GetTo(),
+				tx.Inner.GetValue(),
+				tx.Inner.GetData(),
+				tx.Inner.GetAccessList(),
+			})
+		sig, err := crypto.Sign(h.Bytes(), prv)
+		if err != nil {
+			return err
+		}
+
+		r, s, v, err := dynamicSigner.SignatureValues(tx, sig)
+		if err != nil {
+			return err
+		}
+		tx.Inner.setSignatureValues(signer.chainId, v, r, s)
+	}
+	return nil
+}
+
 func (tx *Transaction) Sign(prv *ecdsa.PrivateKey) error {
 	h := RlpHash([]interface{}{
 		tx.GetInner().GetNonce(),
@@ -633,5 +737,82 @@ func GenerateEmptyTransactionAndSigner() (*Transaction, error) {
 		return nil, err
 	}
 
+	return tx, nil
+}
+
+// NOTICE!! this function just supoort for unit test case
+func GenerateWrongSignTransactionAndSigner(illegalSign bool) (*Transaction, *Signer, error) {
+	s, err := GenerateSigner()
+	if err != nil {
+		return nil, nil, err
+	}
+	tx, err := GenerateTransactionWithSigner(0, NewAddressByStr("0xdAC17F958D2ee523a2206206994597C13D831ec7"), big.NewInt(0), []byte("hello"), s)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if illegalSign {
+		tx.Inner.(*LegacyTx).S = big.NewInt(0)
+	} else {
+		tx.Inner.(*LegacyTx).Data = []byte("world")
+	}
+	return tx, s, nil
+}
+
+func GenerateAccessListTxAndSigner() (*Transaction, error) {
+	s, err := GenerateSigner()
+	if err != nil {
+		return nil, err
+	}
+	to := common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7")
+	inner := &AccessListTx{
+		ChainID:  big.NewInt(1),
+		Nonce:    1,
+		GasPrice: big.NewInt(500),
+		Gas:      0x5f5e100,
+		To:       &to,
+		Value:    big.NewInt(0),
+		AccessList: types.AccessList{
+			types.AccessTuple{
+				Address:     common.HexToAddress("0x01"),
+				StorageKeys: []common.Hash{common.HexToHash("0x01")},
+			},
+		},
+	}
+	tx := &Transaction{
+		Inner: inner,
+		Time:  time.Now(),
+	}
+
+	if err := tx.SignByTxType(s.Sk); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func GenerateDynamicFeeTxAndSinger() (*Transaction, error) {
+	s, err := GenerateSigner()
+	if err != nil {
+		return nil, err
+	}
+	to := common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7")
+	inner := &DynamicFeeTx{
+		ChainID:   big.NewInt(1),
+		Nonce:     0,
+		GasTipCap: big.NewInt(8000000000000),
+		GasFeeCap: big.NewInt(8000000000000),
+		Gas:       0x5f5e100,
+		To:        &to,
+		Data:      []byte{},
+		Value:     big.NewInt(0),
+	}
+	tx := &Transaction{
+		Inner: inner,
+		Time:  time.Now(),
+	}
+
+	if err := tx.SignByTxType(s.Sk); err != nil {
+		return nil, err
+	}
 	return tx, nil
 }
