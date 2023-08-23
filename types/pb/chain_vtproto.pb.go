@@ -47,6 +47,13 @@ func (m *ChainMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.GasPrice) > 0 {
+		i -= len(m.GasPrice)
+		copy(dAtA[i:], m.GasPrice)
+		i = encodeVarint(dAtA, i, uint64(len(m.GasPrice)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.BlockHash) > 0 {
 		i -= len(m.BlockHash)
 		copy(dAtA[i:], m.BlockHash)
@@ -203,6 +210,13 @@ func (m *ChainMeta) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.GasPrice) > 0 {
+		i -= len(m.GasPrice)
+		copy(dAtA[i:], m.GasPrice)
+		i = encodeVarint(dAtA, i, uint64(len(m.GasPrice)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.BlockHash) > 0 {
 		i -= len(m.BlockHash)
 		copy(dAtA[i:], m.BlockHash)
@@ -342,6 +356,10 @@ func (m *ChainMeta) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
+	l = len(m.GasPrice)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -473,6 +491,40 @@ func (m *ChainMeta) UnmarshalVT(dAtA []byte) error {
 			m.BlockHash = append(m.BlockHash[:0], dAtA[iNdEx:postIndex]...)
 			if m.BlockHash == nil {
 				m.BlockHash = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GasPrice", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GasPrice = append(m.GasPrice[:0], dAtA[iNdEx:postIndex]...)
+			if m.GasPrice == nil {
+				m.GasPrice = []byte{}
 			}
 			iNdEx = postIndex
 		default:

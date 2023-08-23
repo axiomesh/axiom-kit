@@ -7,6 +7,7 @@ option go_package = "../pb";
 message ChainMeta {
     uint64 height = 1;
     bytes block_hash = 2;
+    bytes gas_price = 3;
 }
 
 message VpInfo {
