@@ -1,9 +1,17 @@
 package types
 
-import "github.com/axiomesh/axiom-kit/types/pb"
+import (
+	"math/big"
+
+	"github.com/axiomesh/axiom-kit/types/pb"
+)
 
 type ChainMeta struct {
-	Height    uint64
+	Height uint64
+	// GasPrice is the next block's price
+	// is different from gas price in the block header
+	// which means the next block's gas price
+	GasPrice  *big.Int
 	BlockHash *Hash
 }
 
@@ -13,6 +21,7 @@ func (m *ChainMeta) toPB() (*pb.ChainMeta, error) {
 	}
 	return &pb.ChainMeta{
 		Height:    m.Height,
+		GasPrice:  m.GasPrice.Bytes(),
 		BlockHash: m.BlockHash.Bytes(),
 	}, nil
 }
@@ -24,6 +33,7 @@ func (m *ChainMeta) fromPB(p *pb.ChainMeta) error {
 		return err
 	}
 	m.Height = p.Height
+	m.GasPrice = new(big.Int).SetBytes(p.GasPrice)
 	return nil
 }
 
