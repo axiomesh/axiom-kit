@@ -21,9 +21,6 @@ var (
 	hasherPool = sync.Pool{
 		New: func() interface{} { return sha3.NewLegacyKeccak256() },
 	}
-	ErrSyntax        = fmt.Errorf("invalid hex string")
-	ErrMissingPrefix = fmt.Errorf("hex string without 0x prefix")
-	ErrOddLength     = fmt.Errorf("hex string of odd length")
 )
 
 type KeccakState interface {
@@ -142,7 +139,7 @@ func decodeAddress(data []byte) (*Address, error) {
 	}, nil
 }
 
-// BytesToAddress returns Address with value b.
+// NewAddress BytesToAddress returns Address with value b.
 // If b is larger than len(h), b will be cropped address the left.
 func NewAddress(b []byte) *Address {
 	return &Address{
@@ -175,8 +172,8 @@ func (a *Address) SetBytes(b []byte) {
 	a.addressStr = ""
 }
 
-func (h *Address) ETHAddress() common.Address {
-	return h.rawAddress
+func (a *Address) ETHAddress() common.Address {
+	return a.rawAddress
 }
 
 func (a *Address) Bytes() []byte {
@@ -308,7 +305,8 @@ func MarshalObjects[T any, Constraint CodecObjectConstraint[T]](objs []*T) ([]by
 }
 
 func UnmarshalObjects[T any, Constraint CodecObjectConstraint[T]](data []byte) ([]*T, error) {
-	helper := &pb.BytesSlice{}
+	helper := pb.BytesSliceFromVTPool()
+	defer helper.ReturnToVTPool()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return nil, err
@@ -325,7 +323,7 @@ func UnmarshalObjects[T any, Constraint CodecObjectConstraint[T]](data []byte) (
 }
 
 func MarshalTransactions(objs []*Transaction) ([]byte, error) {
-	return MarshalObjects(objs)
+	return MarshalObjects[Transaction, *Transaction](objs)
 }
 
 func UnmarshalTransactions(data []byte) ([]*Transaction, error) {
@@ -333,7 +331,7 @@ func UnmarshalTransactions(data []byte) ([]*Transaction, error) {
 }
 
 func MarshalReceipts(objs []*Receipt) ([]byte, error) {
-	return MarshalObjects(objs)
+	return MarshalObjects[Receipt, *Receipt](objs)
 }
 
 func UnmarshalReceipts(data []byte) ([]*Receipt, error) {
