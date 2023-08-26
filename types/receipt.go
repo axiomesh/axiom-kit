@@ -117,7 +117,8 @@ func (e *Event) Marshal() ([]byte, error) {
 }
 
 func (e *Event) Unmarshal(data []byte) error {
-	helper := &pb.Event{}
+	helper := pb.EventFromVTPool()
+	defer helper.ReturnToVTPool()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -196,7 +197,8 @@ func (l *EvmLog) Marshal() ([]byte, error) {
 }
 
 func (l *EvmLog) Unmarshal(data []byte) error {
-	helper := &pb.EvmLog{}
+	helper := pb.EvmLogFromVTPool()
+	defer helper.ReturnToVTPool()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -240,7 +242,6 @@ func (l *EvmLog) MarshalJSON() ([]byte, error) {
 }
 
 type Receipt struct {
-	Version         []byte
 	TxHash          *Hash
 	Ret             []byte
 	Status          ReceiptStatus
@@ -273,7 +274,6 @@ func (r *Receipt) toPB() (*pb.Receipt, error) {
 		evmLogs[i] = log
 	}
 	return &pb.Receipt{
-		Version:         r.Version,
 		TxHash:          r.TxHash.Bytes(),
 		Ret:             r.Ret,
 		Status:          r.Status.toPB(),
@@ -287,7 +287,6 @@ func (r *Receipt) toPB() (*pb.Receipt, error) {
 
 func (r *Receipt) fromPB(p *pb.Receipt) error {
 	var err error
-	r.Version = p.Version
 	r.TxHash, err = decodeHash(p.TxHash)
 	if err != nil {
 		return err
@@ -329,7 +328,8 @@ func (r *Receipt) Marshal() ([]byte, error) {
 }
 
 func (r *Receipt) Unmarshal(data []byte) error {
-	helper := &pb.Receipt{}
+	helper := pb.ReceiptFromVTPool()
+	defer helper.ReturnToVTPool()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -339,11 +339,10 @@ func (r *Receipt) Unmarshal(data []byte) error {
 
 func (r *Receipt) Hash() *Hash {
 	receipt := &Receipt{
-		Version: r.Version,
-		TxHash:  r.TxHash,
-		Ret:     r.Ret,
-		Status:  r.Status,
-		Events:  r.Events,
+		TxHash: r.TxHash,
+		Ret:    r.Ret,
+		Status: r.Status,
+		Events: r.Events,
 	}
 	body, err := receipt.Marshal()
 	if err != nil {

@@ -10,13 +10,6 @@ message ChainMeta {
     bytes gas_price = 3;
 }
 
-message VpInfo {
-  uint64 id = 1;
-  string pid = 2;
-  string account = 3;
-  repeated string hosts = 4;
-}
-
 message TransactionMeta {
     bytes block_hash = 1;
     uint64 block_height = 2;

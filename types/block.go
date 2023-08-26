@@ -7,15 +7,16 @@ import (
 )
 
 type BlockHeader struct {
-	Number      uint64
-	StateRoot   *Hash
-	TxRoot      *Hash
-	ReceiptRoot *Hash
-	ParentHash  *Hash
-	Timestamp   int64
-	Version     []byte
-	Bloom       *Bloom
-	GasPrice    int64
+	Number          uint64
+	StateRoot       *Hash
+	TxRoot          *Hash
+	ReceiptRoot     *Hash
+	ParentHash      *Hash
+	Timestamp       int64
+	Epoch           uint64
+	Bloom           *Bloom
+	GasPrice        int64
+	ProposerAccount string
 }
 
 func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
@@ -23,15 +24,16 @@ func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
 		return &pb.BlockHeader{}, nil
 	}
 	return &pb.BlockHeader{
-		Number:      h.Number,
-		StateRoot:   h.StateRoot.Bytes(),
-		TxRoot:      h.TxRoot.Bytes(),
-		ReceiptRoot: h.ReceiptRoot.Bytes(),
-		ParentHash:  h.ParentHash.Bytes(),
-		Timestamp:   h.Timestamp,
-		Version:     h.Version,
-		Bloom:       h.Bloom.Bytes(),
-		GasPrice:    h.GasPrice,
+		Number:          h.Number,
+		StateRoot:       h.StateRoot.Bytes(),
+		TxRoot:          h.TxRoot.Bytes(),
+		ReceiptRoot:     h.ReceiptRoot.Bytes(),
+		ParentHash:      h.ParentHash.Bytes(),
+		Timestamp:       h.Timestamp,
+		Epoch:           h.Epoch,
+		Bloom:           h.Bloom.Bytes(),
+		GasPrice:        h.GasPrice,
+		ProposerAccount: h.ProposerAccount,
 	}, nil
 }
 
@@ -55,7 +57,8 @@ func (h *BlockHeader) fromPB(m *pb.BlockHeader) error {
 		return err
 	}
 	h.Timestamp = m.Timestamp
-	h.Version = m.Version
+	h.Epoch = m.Epoch
+	h.ProposerAccount = m.ProposerAccount
 	h.Bloom, err = decodeBloom(m.Bloom)
 	if err != nil {
 		return err
@@ -73,7 +76,8 @@ func (h *BlockHeader) Marshal() ([]byte, error) {
 }
 
 func (h *BlockHeader) Unmarshal(data []byte) error {
-	helper := &pb.BlockHeader{}
+	helper := pb.BlockHeaderFromVTPool()
+	defer helper.ReturnToVTPool()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -84,13 +88,14 @@ func (h *BlockHeader) Unmarshal(data []byte) error {
 
 func (h *BlockHeader) Hash() *Hash {
 	blockheader := &BlockHeader{
-		Number:      h.Number,
-		ParentHash:  h.ParentHash,
-		StateRoot:   h.StateRoot,
-		TxRoot:      h.TxRoot,
-		ReceiptRoot: h.ReceiptRoot,
-		Version:     h.Version,
-		GasPrice:    h.GasPrice,
+		Number:          h.Number,
+		ParentHash:      h.ParentHash,
+		StateRoot:       h.StateRoot,
+		TxRoot:          h.TxRoot,
+		ReceiptRoot:     h.ReceiptRoot,
+		Epoch:           h.Epoch,
+		GasPrice:        h.GasPrice,
+		ProposerAccount: h.ProposerAccount,
 	}
 	body, err := blockheader.Marshal()
 	if err != nil {
@@ -167,7 +172,8 @@ func (b *Block) Marshal() ([]byte, error) {
 }
 
 func (b *Block) Unmarshal(data []byte) error {
-	helper := &pb.Block{}
+	helper := pb.BlockFromVTPool()
+	defer helper.ReturnToVTPool()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -194,9 +200,4 @@ func (b *Block) Size() int {
 		return 0
 	}
 	return helper.SizeVT()
-}
-
-type CommitEvent struct {
-	Block     *Block
-	LocalList []bool
 }

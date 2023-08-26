@@ -9,15 +9,14 @@ message Receipt {
         SUCCESS = 0;
         FAILED = 1;
     }
-    bytes version = 1;
-    bytes tx_hash = 2;
-    bytes ret = 3;
-    Status status = 4;
-    repeated Event events = 5;
-    uint64 gas_used = 6;
-    repeated EvmLog evm_logs = 7;
-    bytes bloom = 8;
-    bytes contract_address = 9;
+    bytes tx_hash = 1;
+    bytes ret = 2;
+    Status status = 3;
+    repeated Event events = 4;
+    uint64 gas_used = 5;
+    repeated EvmLog evm_logs = 6;
+    bytes bloom = 7;
+    bytes contract_address = 8;
 }
 
 message Receipts {
