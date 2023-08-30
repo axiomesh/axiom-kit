@@ -3,6 +3,7 @@ package log
 import "time"
 
 type config struct {
+	enableColor  bool
 	reportCaller bool
 	persist      bool
 	filePath     string
@@ -56,8 +57,15 @@ func WithRotationTime(rotationTime time.Duration) Option {
 	}
 }
 
+func WithEnableColor(enableColor bool) Option {
+	return func(c *config) {
+		c.enableColor = enableColor
+	}
+}
+
 func defaultConfig() *config {
 	return &config{
+		enableColor:  true,
 		reportCaller: false,
 		persist:      false,
 		filePath:     "./",

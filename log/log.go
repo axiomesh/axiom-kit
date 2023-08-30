@@ -2,11 +2,8 @@ package log
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-
 	"github.com/sirupsen/logrus"
+	"os"
 )
 
 type loggerContext struct {
@@ -79,12 +76,9 @@ func Initialize(opts ...Option) error {
 }
 
 func getTextFormatter() logrus.Formatter {
-	return &logrus.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02T15:04:05.000",
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			_, filename := filepath.Split(f.File)
-			return "", fmt.Sprintf("%12s:%-4d", filename, f.Line)
-		},
+	return &Formatter{
+		EnableColor:     loggerCtx.config.enableColor,
+		DisableCaller:   !loggerCtx.config.reportCaller,
+		TimestampFormat: "2006/01/02 15:04:05.000",
 	}
 }
