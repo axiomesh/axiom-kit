@@ -90,7 +90,7 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 		module = "app"
 	}
 	if f.EnableColor {
-		b.WriteString(fmt.Sprintf("\x1b[1;%dm", colorGreen))
+		b.WriteString(fmt.Sprintf("\x1b[%dm", colorGreen))
 	}
 	_, _ = fmt.Fprintf(b, " [%v]", module)
 	if f.EnableColor {
