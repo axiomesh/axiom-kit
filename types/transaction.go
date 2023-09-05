@@ -564,7 +564,7 @@ func (tx *Transaction) RbftGetFrom() string {
 }
 
 func (tx *Transaction) RbftGetTimeStamp() int64 {
-	return tx.GetTimeStamp()
+	return tx.Time.UnixNano()
 }
 
 func (tx *Transaction) RbftGetNonce() uint64 {
