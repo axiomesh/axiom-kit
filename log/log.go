@@ -3,7 +3,9 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
+	"path/filepath"
 )
 
 type loggerContext struct {
@@ -67,7 +69,13 @@ func Initialize(opts ...Option) error {
 	}
 
 	if config.persist {
-		rotation := newRotateHook(config.filePath, config.fileName, config.maxAge, config.rotationTime)
+		rotation := newRotateHook(config.ctx, &lumberjack.Logger{
+			Filename:  filepath.Join(config.filePath, config.fileName) + ".log",
+			MaxSize:   config.maxSize,
+			MaxAge:    config.maxAge,
+			LocalTime: true,
+			Compress:  config.enableCompress,
+		}, config.rotationTime)
 
 		loggerCtx.hooks = append(loggerCtx.hooks, rotation)
 	}

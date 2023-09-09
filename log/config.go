@@ -1,19 +1,36 @@
 package log
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type config struct {
-	enableColor  bool
-	reportCaller bool
-	persist      bool
-	filePath     string
-	fileName     string
-	maxSize      int64
-	maxAge       time.Duration
-	rotationTime time.Duration
+	ctx            context.Context
+	enableColor    bool
+	reportCaller   bool
+	enableCompress bool
+	persist        bool
+	filePath       string
+	fileName       string
+	maxSize        int
+	maxAge         int
+	rotationTime   time.Duration
 }
 
 type Option func(*config)
+
+func WithCtx(ctx context.Context) Option {
+	return func(c *config) {
+		c.ctx = ctx
+	}
+}
+
+func WithEnableCompress(enableCompress bool) Option {
+	return func(c *config) {
+		c.enableCompress = enableCompress
+	}
+}
 
 func WithReportCaller(reportCaller bool) Option {
 	return func(c *config) {
@@ -39,13 +56,13 @@ func WithFileName(fileName string) Option {
 	}
 }
 
-func WithMaxSize(maxSize int64) Option {
+func WithMaxSize(maxSize int) Option {
 	return func(c *config) {
 		c.maxSize = maxSize
 	}
 }
 
-func WithMaxAge(maxAge time.Duration) Option {
+func WithMaxAge(maxAge int) Option {
 	return func(c *config) {
 		c.maxAge = maxAge
 	}
@@ -65,13 +82,14 @@ func WithEnableColor(enableColor bool) Option {
 
 func defaultConfig() *config {
 	return &config{
+		ctx:          context.Background(),
 		enableColor:  true,
 		reportCaller: false,
 		persist:      false,
 		filePath:     "./",
 		fileName:     "log",
-		maxSize:      2 * 1024 * 1024,
-		maxAge:       2 * time.Hour,
+		maxSize:      128,
+		maxAge:       30,
 		rotationTime: 24 * time.Hour,
 	}
 }
