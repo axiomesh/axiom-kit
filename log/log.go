@@ -2,13 +2,16 @@ package log
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"path/filepath"
+	"sync"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type loggerContext struct {
+	lock    sync.Mutex
 	loggers map[string]logrus.FieldLogger
 	config  *config
 	hooks   []logrus.Hook
@@ -44,6 +47,8 @@ func NewWithModule(name string) *logrus.Entry {
 
 	l := logger.WithField("module", name)
 
+	loggerCtx.lock.Lock()
+	defer loggerCtx.lock.Unlock()
 	loggerCtx.loggers[name] = l
 
 	return l
