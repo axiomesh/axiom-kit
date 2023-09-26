@@ -8,10 +8,12 @@ import (
 
 type ChainMeta struct {
 	Height uint64
+
 	// GasPrice is the next block's price
 	// is different from gas price in the block header
 	// which means the next block's gas price
-	GasPrice  *big.Int
+	GasPrice *big.Int
+
 	BlockHash *Hash
 }
 

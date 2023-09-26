@@ -1,6 +1,7 @@
 package blockfile
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -10,10 +11,6 @@ import (
 
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	storageRoot = "/storage/blockfile"
 )
 
 type BlockFile struct {
@@ -26,19 +23,18 @@ type BlockFile struct {
 	closeOnce sync.Once
 }
 
-func NewBlockFile(repoRoot string, logger logrus.FieldLogger) (*BlockFile, error) {
-	if info, err := os.Lstat(repoRoot); !os.IsNotExist(err) {
+func NewBlockFile(p string, logger logrus.FieldLogger) (*BlockFile, error) {
+	if info, err := os.Lstat(p); !os.IsNotExist(err) {
 		if info.Mode()&os.ModeSymlink != 0 {
-			logger.WithField("path", repoRoot).Error("Symbolic link is not supported")
-			return nil, fmt.Errorf("symbolic link datadir is not supported")
+			logger.WithField("path", p).Error("Symbolic link is not supported")
+			return nil, errors.New("symbolic link datadir is not supported")
 		}
 	}
-	blockFileRoot := repoRoot + storageRoot
-	err := os.MkdirAll(blockFileRoot, 0755)
+	err := os.MkdirAll(p, 0755)
 	if err != nil {
 		return nil, err
 	}
-	lock, _, err := fileutil.Flock(filepath.Join(blockFileRoot, "FLOCK"))
+	lock, _, err := fileutil.Flock(filepath.Join(p, "FLOCK"))
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +44,10 @@ func NewBlockFile(repoRoot string, logger logrus.FieldLogger) (*BlockFile, error
 		logger:       logger,
 	}
 	for name := range BlockFileSchema {
-		table, err := newTable(blockFileRoot, name, 2*1000*1000*1000, logger)
+		table, err := newTable(p, name, 2*1000*1000*1000, logger)
 		if err != nil {
 			for _, table := range blockfile.tables {
-				table.Close()
+				_ = table.Close()
 			}
 			_ = lock.Release()
 			return nil, err
@@ -60,7 +56,7 @@ func NewBlockFile(repoRoot string, logger logrus.FieldLogger) (*BlockFile, error
 	}
 	if err := blockfile.repair(); err != nil {
 		for _, table := range blockfile.tables {
-			table.Close()
+			_ = table.Close()
 		}
 		_ = lock.Release()
 		return nil, err
@@ -77,12 +73,12 @@ func (bf *BlockFile) Get(kind string, number uint64) ([]byte, error) {
 	if table := bf.tables[kind]; table != nil {
 		return table.Retrieve(number - 1)
 	}
-	return nil, fmt.Errorf("unknown table")
+	return nil, errors.New("unknown table")
 }
 
 func (bf *BlockFile) AppendBlock(number uint64, hash, body, receipts, transactions []byte) (err error) {
 	if atomic.LoadUint64(&bf.blocks) != number {
-		return fmt.Errorf("the append operation is out-order")
+		return errors.New("the append operation is out-order")
 	}
 	defer func() {
 		if err != nil {

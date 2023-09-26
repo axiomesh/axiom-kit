@@ -1,9 +1,10 @@
 package pebble
 
 import (
-	"github.com/axiomesh/axiom-kit/storage"
 	"github.com/cockroachdb/pebble"
 	"github.com/syndtr/goleveldb/leveldb/util"
+
+	"github.com/axiomesh/axiom-kit/storage"
 )
 
 type pdb struct {
@@ -12,8 +13,8 @@ type pdb struct {
 
 // todo (zqr): use logger to record panic
 
-func New(path string) (storage.Storage, error) {
-	db, err := pebble.Open(path, nil)
+func New(path string, opts *pebble.Options) (storage.Storage, error) {
+	db, err := pebble.Open(path, opts)
 	if err != nil {
 		return nil, err
 	}

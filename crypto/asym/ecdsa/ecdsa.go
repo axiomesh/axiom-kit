@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/asn1"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -61,7 +62,7 @@ func New(opt crypto.KeyType) (crypto.PrivateKey, error) {
 
 		return &PrivateKey{K: pri, curve: crypto.ECDSA_P521}, nil
 	}
-	return nil, fmt.Errorf("wrong curve option")
+	return nil, errors.New("wrong curve option")
 }
 
 func NewWithCryptoKey(priv *ecdsa.PrivateKey) (crypto.PrivateKey, error) {
@@ -84,7 +85,7 @@ func NewWithCryptoKey(priv *ecdsa.PrivateKey) (crypto.PrivateKey, error) {
 // Bytes returns a serialized, storable representation of this key
 func (priv *PrivateKey) Bytes() ([]byte, error) {
 	if priv.K == nil {
-		return nil, fmt.Errorf("ECDSAPrivateKey.K is nil, please invoke FromBytes()")
+		return nil, errors.New("ECDSAPrivateKey.K is nil, please invoke FromBytes()")
 	}
 
 	if priv.Type() == crypto.Secp256k1 {
@@ -121,7 +122,7 @@ func (priv *PrivateKey) Type() crypto.KeyType {
 
 func UnmarshalPrivateKey(data []byte, opt crypto.KeyType) (*PrivateKey, error) {
 	if len(data) == 0 {
-		return nil, fmt.Errorf("empty private key data")
+		return nil, errors.New("empty private key data")
 	}
 
 	var (
@@ -146,7 +147,7 @@ func UnmarshalPrivateKey(data []byte, opt crypto.KeyType) (*PrivateKey, error) {
 	case crypto.ECDSA_P256, crypto.ECDSA_P384, crypto.ECDSA_P521, crypto.Secp256k1:
 		pri.K.Curve = priv.Curve
 	default:
-		return nil, fmt.Errorf("not supported curve")
+		return nil, errors.New("not supported curve")
 	}
 
 	return pri, nil

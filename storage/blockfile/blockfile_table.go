@@ -2,6 +2,7 @@ package blockfile
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -265,15 +266,15 @@ func (b *BlockTable) Retrieve(item uint64) ([]byte, error) {
 
 	if b.index == nil || b.head == nil {
 		b.lock.RUnlock()
-		return nil, fmt.Errorf("closed")
+		return nil, errors.New("closed")
 	}
 	if atomic.LoadUint64(&b.items) <= item {
 		b.lock.RUnlock()
-		return nil, fmt.Errorf("out of bounds")
+		return nil, errors.New("out of bounds")
 	}
 	if uint64(b.itemOffset) > item {
 		b.lock.RUnlock()
-		return nil, fmt.Errorf("out of bounds")
+		return nil, errors.New("out of bounds")
 	}
 	startOffset, endOffset, filenum, err := b.getBounds(item - uint64(b.itemOffset))
 	if err != nil {
@@ -299,7 +300,7 @@ func (b *BlockTable) Append(item uint64, blob []byte) error {
 	b.lock.RLock()
 	if b.index == nil || b.head == nil {
 		b.lock.RUnlock()
-		return fmt.Errorf("closed")
+		return errors.New("closed")
 	}
 	if atomic.LoadUint64(&b.items) != item {
 		b.lock.RUnlock()

@@ -22,6 +22,7 @@ package ecdsa
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -72,7 +73,7 @@ func VerifySignature(pubkey, digestHash, signature []byte) bool {
 func DecompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
 	x, y := secp256k1.DecompressPubkey(pubkey)
 	if x == nil {
-		return nil, fmt.Errorf("invalid public key")
+		return nil, errors.New("invalid public key")
 	}
 	return &ecdsa.PublicKey{X: x, Y: y, Curve: S256()}, nil
 }
@@ -89,11 +90,11 @@ func S256() elliptic.Curve {
 
 func RecoverPlain(hash []byte, R, S, Vb *big.Int, homestead bool) ([]byte, error) {
 	if Vb.BitLen() > 8 {
-		return nil, fmt.Errorf("invalid signature")
+		return nil, errors.New("invalid signature")
 	}
 	V := byte(Vb.Uint64() - 27)
 	if !ValidateSignatureValues(V, R, S, homestead) {
-		return nil, fmt.Errorf("invalid signature")
+		return nil, errors.New("invalid signature")
 	}
 	// encode the signature in uncompressed format
 	r, s := R.Bytes(), S.Bytes()
@@ -107,7 +108,7 @@ func RecoverPlain(hash []byte, R, S, Vb *big.Int, homestead bool) ([]byte, error
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
-		return nil, fmt.Errorf("invalid public key")
+		return nil, errors.New("invalid public key")
 	}
 
 	return Keccak256(pub[1:])[12:], nil

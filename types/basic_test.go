@@ -70,5 +70,4 @@ func TestBloom(t *testing.T) {
 	bin.OrBloom(&bin1)
 	ok = bin.Test([]byte(formalHash))
 	require.True(t, ok)
-
 }

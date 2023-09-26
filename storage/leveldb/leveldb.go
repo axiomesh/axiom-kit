@@ -1,18 +1,20 @@
 package leveldb
 
 import (
-	"github.com/axiomesh/axiom-kit/storage"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
+
+	"github.com/axiomesh/axiom-kit/storage"
 )
 
 type ldb struct {
 	db *leveldb.DB
 }
 
-func New(path string) (storage.Storage, error) {
-	db, err := leveldb.OpenFile(path, nil)
+func New(path string, o *opt.Options) (storage.Storage, error) {
+	db, err := leveldb.OpenFile(path, o)
 	if err != nil {
 		return nil, err
 	}

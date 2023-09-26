@@ -1,9 +1,11 @@
 package storage
 
-import "fmt"
+import (
+	"errors"
+)
 
 var (
-	ErrorNotFound = fmt.Errorf("not found in DB")
+	ErrorNotFound = errors.New("not found in DB")
 )
 
 type Storage interface {

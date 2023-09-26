@@ -3,8 +3,8 @@ package minifile
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,11 +46,11 @@ func New(path string) (*MiniFile, error) {
 
 func (mf *MiniFile) Put(key string, value []byte) error {
 	if mf.isClosed() {
-		return fmt.Errorf("the miniFile storage is closed")
+		return errors.New("the miniFile storage is closed")
 	}
 
 	if key == "" {
-		return fmt.Errorf("store file with empty key")
+		return errors.New("store file with empty key")
 	}
 
 	crc := make([]byte, 4)
@@ -62,7 +62,7 @@ func (mf *MiniFile) Put(key string, value []byte) error {
 
 	name := filepath.Join(mf.path, key)
 
-	if err := ioutil.WriteFile(name, value, 0644); err != nil {
+	if err := os.WriteFile(name, value, 0644); err != nil {
 		return fmt.Errorf("fail to write file %s: %w", name, err)
 	}
 
@@ -71,7 +71,7 @@ func (mf *MiniFile) Put(key string, value []byte) error {
 
 func (mf *MiniFile) Delete(key string) error {
 	if mf.isClosed() {
-		return fmt.Errorf("the miniFile storage is closed")
+		return errors.New("the miniFile storage is closed")
 	}
 
 	mf.lock.Lock()
@@ -87,7 +87,7 @@ func (mf *MiniFile) Delete(key string) error {
 
 func (mf *MiniFile) Get(key string) ([]byte, error) {
 	if mf.isClosed() {
-		return nil, fmt.Errorf("the miniFile storage is closed")
+		return nil, errors.New("the miniFile storage is closed")
 	}
 
 	mf.lock.Lock()
@@ -104,7 +104,7 @@ func (mf *MiniFile) Get(key string) ([]byte, error) {
 
 func (mf *MiniFile) get(key string) ([]byte, error) {
 	name := filepath.Join(mf.path, key)
-	val, err := ioutil.ReadFile(name)
+	val, err := os.ReadFile(name)
 	if err != nil {
 		if isNoFileError(err) {
 			return nil, nil
@@ -144,7 +144,7 @@ func (mf *MiniFile) Close() error {
 
 func (mf *MiniFile) GetAll() (map[string][]byte, error) {
 	if mf.isClosed() {
-		return nil, fmt.Errorf("the miniFile storage is closed")
+		return nil, errors.New("the miniFile storage is closed")
 	}
 
 	mf.lock.Lock()
@@ -172,7 +172,7 @@ func (mf *MiniFile) GetAll() (map[string][]byte, error) {
 
 func (mf *MiniFile) DeleteAll() error {
 	if mf.isClosed() {
-		return fmt.Errorf("the miniFile storage is closed")
+		return errors.New("the miniFile storage is closed")
 	}
 
 	mf.lock.Lock()
@@ -195,7 +195,7 @@ func (mf *MiniFile) DeleteAll() error {
 
 func (mf *MiniFile) prefix(prefix string) ([]string, error) {
 	if mf.isClosed() {
-		return nil, fmt.Errorf("the miniFile storage is closed")
+		return nil, errors.New("the miniFile storage is closed")
 	}
 
 	var files []string

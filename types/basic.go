@@ -9,17 +9,18 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/axiomesh/axiom-kit/types/pb"
 	mt "github.com/cbergoon/merkletree"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"golang.org/x/crypto/sha3"
+
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 // hasherPool holds LegacyKeccak256 hashers for rlpHash.
 var (
 	hasherPool = sync.Pool{
-		New: func() interface{} { return sha3.NewLegacyKeccak256() },
+		New: func() any { return sha3.NewLegacyKeccak256() },
 	}
 )
 
@@ -65,7 +66,6 @@ func NewHashByStr(s string) *Hash {
 }
 
 func (h *Hash) MarshalJSON() ([]byte, error) {
-
 	return []byte("\"" + h.String() + "\""), nil
 }
 

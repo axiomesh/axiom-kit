@@ -9,8 +9,8 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/axiomesh/axiom-kit/crypto"
@@ -23,8 +23,11 @@ var CryptoM = make(map[crypto.KeyType]*Crypto)
 var supportCryptoTypeToName = make(map[crypto.KeyType]string)
 
 type CryptoConstructor func(opt crypto.KeyType) (crypto.PrivateKey, error)
+
 type CryptoVerify func(opt crypto.KeyType, sig, digest []byte, from types.Address) (bool, error)
+
 type CryptoUnmarshalPrivateKey func(data []byte, opt crypto.KeyType) (crypto.PrivateKey, error)
+
 type Crypto struct {
 	Constructor         CryptoConstructor
 	Verify              CryptoVerify
@@ -40,7 +43,7 @@ func RegisterCrypto(typ crypto.KeyType, f CryptoConstructor, g CryptoVerify, k C
 func GetCrypto(typ crypto.KeyType) (*Crypto, error) {
 	con, ok := CryptoM[typ]
 	if !ok {
-		return nil, fmt.Errorf("the algorithm is unsupported")
+		return nil, errors.New("the algorithm is unsupported")
 	}
 	return con, nil
 }
@@ -89,11 +92,11 @@ func ConfiguredKeyType(algorithms []string) error {
 func GenerateKeyPair(opt crypto.KeyType) (crypto.PrivateKey, error) {
 	switch opt {
 	case crypto.RSA:
-		return nil, fmt.Errorf("don`t support rsa algorithm currently")
+		return nil, errors.New("don`t support rsa algorithm currently")
 	case crypto.ECDSA_P256, crypto.ECDSA_P384, crypto.ECDSA_P521, crypto.Secp256k1:
 		return ecdsa.New(opt)
 	case crypto.Ed25519:
-		return nil, fmt.Errorf("don`t support ed25519 algorithm currently")
+		return nil, errors.New("don`t support ed25519 algorithm currently")
 	case crypto.SM2:
 		cryptoCon, err := GetCrypto(opt)
 		if err != nil {
@@ -101,7 +104,7 @@ func GenerateKeyPair(opt crypto.KeyType) (crypto.PrivateKey, error) {
 		}
 		return cryptoCon.Constructor(opt)
 	default:
-		return nil, fmt.Errorf("wrong algorithm type")
+		return nil, errors.New("wrong algorithm type")
 	}
 }
 
@@ -128,7 +131,7 @@ func SignWithType(privKey crypto.PrivateKey, digest []byte) ([]byte, error) {
 	supportCryptoTypeToName := SupportKeyType()
 
 	if privKey == nil {
-		return nil, fmt.Errorf("private key is empty")
+		return nil, errors.New("private key is empty")
 	}
 
 	typ := privKey.Type()
@@ -162,7 +165,7 @@ func VerifyWithType(sig, digest []byte, from types.Address) (bool, error) {
 func Verify(opt crypto.KeyType, sig, digest []byte, from types.Address) (bool, error) {
 	switch opt {
 	case crypto.RSA:
-		return false, fmt.Errorf("don`t support rsa algorithm currently")
+		return false, errors.New("don`t support rsa algorithm currently")
 	case crypto.Secp256k1:
 		pubKeyBytes, err := ecdsa.Ecrecover(digest, sig)
 		if err != nil {
@@ -179,7 +182,7 @@ func Verify(opt crypto.KeyType, sig, digest []byte, from types.Address) (bool, e
 		}
 
 		if !bytes.Equal(expected.Bytes(), from.Bytes()) {
-			return false, fmt.Errorf("wrong singer for this signature")
+			return false, errors.New("wrong singer for this signature")
 		}
 
 		return true, nil
@@ -201,11 +204,11 @@ func Verify(opt crypto.KeyType, sig, digest []byte, from types.Address) (bool, e
 		}
 
 		if expected.String() != from.String() {
-			return false, fmt.Errorf("wrong singer for this signature")
+			return false, errors.New("wrong singer for this signature")
 		}
 		return pubkey.Verify(digest, sig)
 	case crypto.Ed25519:
-		return false, fmt.Errorf("don`t support ed25519 algorithm currently")
+		return false, errors.New("don`t support ed25519 algorithm currently")
 	case crypto.SM2:
 		cryptoCon, err := GetCrypto(opt)
 		if err != nil {
@@ -213,7 +216,7 @@ func Verify(opt crypto.KeyType, sig, digest []byte, from types.Address) (bool, e
 		}
 		return cryptoCon.Verify(opt, sig, digest, from)
 	default:
-		return false, fmt.Errorf("wrong algorithm type")
+		return false, errors.New("wrong algorithm type")
 	}
 }
 
@@ -223,9 +226,9 @@ func PrivateKeyFromStdKey(priv crypto2.PrivateKey) (crypto.PrivateKey, error) {
 	case *ecdsa2.PrivateKey:
 		return ecdsa.NewWithCryptoKey(key)
 	case *ed25519.PrivateKey:
-		return nil, fmt.Errorf("don't support this algorithm")
+		return nil, errors.New("don't support this algorithm")
 	default:
-		return nil, fmt.Errorf("don't support this algorithm")
+		return nil, errors.New("don't support this algorithm")
 	}
 }
 
@@ -234,9 +237,9 @@ func PubKeyFromStdKey(pub crypto2.PublicKey) (crypto.PublicKey, error) {
 	case *ecdsa2.PublicKey:
 		return ecdsa.NewPublicKey(*key)
 	case *ed25519.PublicKey:
-		return nil, fmt.Errorf("don't support this algorithm")
+		return nil, errors.New("don't support this algorithm")
 	default:
-		return nil, fmt.Errorf("don't support this algorithm")
+		return nil, errors.New("don't support this algorithm")
 	}
 }
 
@@ -246,7 +249,7 @@ func PrivKeyToStdKey(priv crypto.PrivateKey) (ecdsa2.PrivateKey, error) {
 	case *ecdsa.PrivateKey:
 		return *p.K, nil
 	default:
-		return ecdsa2.PrivateKey{}, fmt.Errorf("don't support this algorithm")
+		return ecdsa2.PrivateKey{}, errors.New("don't support this algorithm")
 	}
 }
 
@@ -255,7 +258,7 @@ func PubKeyToStdKey(pub crypto.PublicKey) (crypto2.PublicKey, error) {
 	case *ecdsa.PublicKey:
 		return key.K, nil
 	default:
-		return ecdsa2.PublicKey{}, fmt.Errorf("don't support this algorithm")
+		return ecdsa2.PublicKey{}, errors.New("don't support this algorithm")
 	}
 }
 
@@ -317,7 +320,7 @@ func GenKeyStore(priv crypto.PrivateKey, password string) (*crypto.KeyStore, err
 }
 
 func RestorePrivateKey(keyFilePath, password string) (crypto.PrivateKey, error) {
-	data, err := ioutil.ReadFile(keyFilePath)
+	data, err := os.ReadFile(keyFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +351,7 @@ func RestorePrivateKey(keyFilePath, password string) (crypto.PrivateKey, error) 
 	case crypto.ECDSA_P256, crypto.ECDSA_P384, crypto.ECDSA_P521, crypto.Secp256k1:
 		return ecdsa.UnmarshalPrivateKey(rawBytes, keyStore.Type)
 	case crypto.Ed25519, crypto.RSA:
-		return nil, fmt.Errorf("don't support this private key")
+		return nil, errors.New("don't support this private key")
 	case crypto.SM2:
 		cryptoCon, err := GetCrypto(keyStore.Type)
 		if err != nil {
@@ -356,6 +359,6 @@ func RestorePrivateKey(keyFilePath, password string) (crypto.PrivateKey, error) 
 		}
 		return cryptoCon.UnmarshalPrivateKey(rawBytes, keyStore.Type)
 	default:
-		return nil, fmt.Errorf("don't support this private key")
+		return nil, errors.New("don't support this private key")
 	}
 }

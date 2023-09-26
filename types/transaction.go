@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -11,16 +12,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+
+	"github.com/axiomesh/axiom-kit/hexutil"
 )
 
 // deriveBufferPool holds temporary encoder buffers for DeriveSha and TX encoding.
 var encodeBufferPool = sync.Pool{
-	New: func() interface{} { return new(bytes.Buffer) },
+	New: func() any { return new(bytes.Buffer) },
 }
 
 var signer EIP155Signer = EIP155Signer{
@@ -69,7 +71,7 @@ type Eip2930Signer struct{ EIP155Signer }
 // NewEIP2930Signer returns a signer that accepts EIP-2930 access list transactions,
 // EIP-155 replay protected transactions, and legacy Homestead transactions.
 func NewEIP2930Signer(chainId *big.Int) Eip2930Signer {
-	return Eip2930Signer{EIP155Signer{chainId: chainId, chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2))}}
+	return Eip2930Signer{EIP155Signer: EIP155Signer{chainId: chainId, chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2))}}
 }
 
 func (s Eip2930Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big.Int, err error) {
@@ -90,7 +92,7 @@ func (s Eip2930Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *bi
 type LondonSigner struct{ EIP155Signer }
 
 func NewLondonSigner(chainId *big.Int) LondonSigner {
-	return LondonSigner{EIP155Signer{chainId: chainId, chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2))}}
+	return LondonSigner{EIP155Signer: EIP155Signer{chainId: chainId, chainIdMul: new(big.Int).Mul(chainId, big.NewInt(2))}}
 }
 
 func (s LondonSigner) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big.Int, err error) {
@@ -115,6 +117,7 @@ type Transaction struct {
 
 	// caches
 	hash atomic.Value
+
 	size atomic.Value
 	from atomic.Value
 }
@@ -180,7 +183,7 @@ func (e *Transaction) sender() (*Address, error) {
 	switch e.GetType() {
 	case LegacyTxType:
 		if !e.Protected() {
-			hash := RlpHash([]interface{}{
+			hash := RlpHash([]any{
 				e.GetNonce(),
 				e.GetGasPrice(),
 				e.GetGas(),
@@ -190,7 +193,7 @@ func (e *Transaction) sender() (*Address, error) {
 			})
 			addr, err := recoverPlain(NewHash(hash.Bytes()), R, S, V, true)
 			if err != nil {
-				return nil, fmt.Errorf("invalid signature")
+				return nil, errors.New("invalid signature")
 			}
 			return addr, nil
 		}
@@ -201,7 +204,7 @@ func (e *Transaction) sender() (*Address, error) {
 		// 27 to become equivalent to unprotected Homestead signatures.
 		V = new(big.Int).Add(V, big.NewInt(27))
 	default:
-		return nil, fmt.Errorf("unknown tx type")
+		return nil, errors.New("unknown tx type")
 	}
 	if e.GetChainID().Cmp(signer.chainId) != 0 {
 		return nil, fmt.Errorf("invalid chain id: have %d want %d", e.GetChainID(), signer.chainId)
@@ -301,7 +304,7 @@ func (e *Transaction) GetSignature() []byte {
 func (e *Transaction) GetSignHash() *Hash {
 	switch e.GetType() {
 	case LegacyTxType:
-		hash := RlpHash([]interface{}{
+		hash := RlpHash([]any{
 			e.GetNonce(),
 			e.GetGasPrice(),
 			e.GetGas(),
@@ -315,7 +318,7 @@ func (e *Transaction) GetSignHash() *Hash {
 	case AccessListTxType:
 		hash := PrefixedRlpHash(
 			e.GetType(),
-			[]interface{}{
+			[]any{
 				signer.chainId,
 				e.GetNonce(),
 				e.GetGasPrice(),
@@ -330,7 +333,7 @@ func (e *Transaction) GetSignHash() *Hash {
 	case DynamicFeeTxType:
 		hash := PrefixedRlpHash(
 			e.GetType(),
-			[]interface{}{
+			[]any{
 				signer.chainId,
 				e.GetNonce(),
 				e.GetGasTipCap(),
@@ -346,7 +349,7 @@ func (e *Transaction) GetSignHash() *Hash {
 		// This _should_ not happen, but in case someone sends in a bad
 		// json struct via RPC, it's probably more prudent to return an
 		// empty hash instead of killing the node with a panic
-		//panic("Unsupported transaction type: %d", tx.typ)
+		// panic("Unsupported transaction type: %d", tx.typ)
 		return nil
 	}
 }
@@ -359,16 +362,16 @@ func (e *Transaction) GetRawSignature() (v, r, s *big.Int) {
 
 func (e *Transaction) VerifySignature() error {
 	if e.GetFrom() == nil {
-		return fmt.Errorf("verify signature failed")
+		return errors.New("verify signature failed")
 	}
 
 	return nil
 }
 
-//// AccessList returns the access list of the transaction.
-//func (e *EthTransaction) AccessList() types2.AccessList {
+// // AccessList returns the access list of the transaction.
+// func (e *EthTransaction) AccessList() types2.AccessList {
 //	return e.Inner.GetAccessList()
-//}
+// }
 
 // EncodeRLP implements rlp.Encoder
 func (tx *Transaction) EncodeRLP(w io.Writer) error {
@@ -458,7 +461,7 @@ func (tx *Transaction) UnmarshalBinary(b []byte) error {
 // decodeTyped decodes a typed transaction from the canonical format.
 func (tx *Transaction) decodeTyped(b []byte) (TxData, error) {
 	if len(b) == 0 {
-		return nil, fmt.Errorf("empty tx type")
+		return nil, errors.New("empty tx type")
 	}
 	switch b[0] {
 	case AccessListTxType:
@@ -470,7 +473,7 @@ func (tx *Transaction) decodeTyped(b []byte) (TxData, error) {
 		err := rlp.DecodeBytes(b[1:], &inner)
 		return &inner, err
 	default:
-		return nil, fmt.Errorf("unsupported tx type")
+		return nil, errors.New("unsupported tx type")
 	}
 }
 
@@ -519,12 +522,11 @@ func (e *Transaction) FromCallArgs(callArgs CallArgs) {
 }
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
-	jsonM := make(map[string]interface{})
+	jsonM := make(map[string]any)
 
 	jsonM["from"] = tx.GetFrom().String()
 	if tx.GetTo() != nil {
 		jsonM["to"] = tx.GetTo().String()
-
 	}
 	jsonM["type"] = tx.GetType()
 	jsonM["Gas"] = tx.GetGas()
@@ -596,7 +598,7 @@ func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {
 
 		h := PrefixedRlpHash(
 			tx.GetType(),
-			[]interface{}{
+			[]any{
 				signer.chainId,
 				tx.GetNonce(),
 				tx.Inner.GetGasPrice(),
@@ -621,7 +623,7 @@ func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {
 		dynamicSigner := NewLondonSigner(signer.chainId)
 		h := PrefixedRlpHash(
 			tx.GetType(),
-			[]interface{}{
+			[]any{
 				signer.chainId,
 				tx.GetNonce(),
 				tx.Inner.GetGasTipCap(),
@@ -647,7 +649,7 @@ func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {
 }
 
 func (tx *Transaction) Sign(prv *ecdsa.PrivateKey) error {
-	h := RlpHash([]interface{}{
+	h := RlpHash([]any{
 		tx.GetInner().GetNonce(),
 		tx.GetInner().GetGasPrice(),
 		tx.GetInner().GetGas(),

@@ -2,15 +2,18 @@ package blockfile
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/axiomesh/axiom-kit/log"
 	"github.com/axiomesh/axiom-kit/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func getChunk(size int, b int) []byte {
@@ -21,8 +24,12 @@ func getChunk(size int, b int) []byte {
 	return data
 }
 
+func getStoragePath(t *testing.T) string {
+	return path.Join(t.TempDir(), "blockfile")
+}
+
 func TestBlockFileBasics(t *testing.T) {
-	f, err := NewBlockFile(os.TempDir(), log.NewWithModule("blockfile_test"))
+	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
@@ -58,11 +65,11 @@ func TestBlockTableBasics(t *testing.T) {
 	}
 	// Check that we cannot read too far
 	_, err = f.Retrieve(uint64(255))
-	assert.Equal(t, fmt.Errorf("out of bounds"), err)
+	assert.Equal(t, errors.New("out of bounds"), err)
 }
 
 func TestAppendBlocKCase1(t *testing.T) {
-	f, err := NewBlockFile(os.TempDir(), log.NewWithModule("blockfile_test"))
+	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
@@ -75,7 +82,7 @@ func TestAppendBlocKCase1(t *testing.T) {
 }
 
 func TestAppendBlocKCase2(t *testing.T) {
-	f, err := NewBlockFile(os.TempDir(), log.NewWithModule("blockfile_test"))
+	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
@@ -88,7 +95,7 @@ func TestAppendBlocKCase2(t *testing.T) {
 }
 
 func TestAppendBlocKCase4(t *testing.T) {
-	f, err := NewBlockFile(os.TempDir(), log.NewWithModule("blockfile_test"))
+	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
@@ -165,7 +172,6 @@ func TestFreezerTruncate(t *testing.T) {
 		if f.headBytes != 15 {
 			t.Fatalf("expected %d bytes, got %d", 15, f.headBytes)
 		}
-
 	}
 }
 

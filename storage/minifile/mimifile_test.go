@@ -2,15 +2,15 @@ package minifile
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBatchFile(t *testing.T) {
-	path, err := ioutil.TempDir("", "*")
+	path, err := os.MkdirTemp("", "*")
 	assert.Nil(t, err)
 
 	b, err := New(path)
@@ -35,7 +35,7 @@ func TestNewBatchFile(t *testing.T) {
 }
 
 func TestBatchFile_Put(t *testing.T) {
-	path, err := ioutil.TempDir("", "*")
+	path, err := os.MkdirTemp("", "*")
 	assert.Nil(t, err)
 
 	b, err := New(path)
@@ -67,11 +67,10 @@ func TestBatchFile_Put(t *testing.T) {
 	v, e = b.Get(key)
 	assert.Nil(t, e)
 	assert.Equal(t, val, v)
-
 }
 
 func TestBatchFile_Prefix(t *testing.T) {
-	path, err := ioutil.TempDir("", "*")
+	path, err := os.MkdirTemp("", "*")
 	assert.Nil(t, err)
 
 	b, err := New(path)
@@ -108,7 +107,7 @@ func TestBatchFile_Prefix(t *testing.T) {
 }
 
 func BenchmarkMiniFile_Get(b *testing.B) {
-	path, err := ioutil.TempDir("", "*")
+	path, err := os.MkdirTemp("", "*")
 	assert.Nil(b, err)
 
 	f, err := New(path)
@@ -137,5 +136,4 @@ func BenchmarkMiniFile_Get(b *testing.B) {
 	}
 
 	f.Close()
-
 }
