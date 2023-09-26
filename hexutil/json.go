@@ -191,7 +191,7 @@ func (b *Big) String() string {
 func (b Big) ImplementsGraphQLType(name string) bool { return name == "BigInt" }
 
 // UnmarshalGraphQL unmarshals the provided GraphQL query data.
-func (b *Big) UnmarshalGraphQL(input interface{}) error {
+func (b *Big) UnmarshalGraphQL(input any) error {
 	var err error
 	switch input := input.(type) {
 	case string:
@@ -257,7 +257,7 @@ func (b Uint64) String() string {
 func (b Uint64) ImplementsGraphQLType(name string) bool { return name == "Long" }
 
 // UnmarshalGraphQL unmarshals the provided GraphQL query data.
-func (b *Uint64) UnmarshalGraphQL(input interface{}) error {
+func (b *Uint64) UnmarshalGraphQL(input any) error {
 	var err error
 	switch input := input.(type) {
 	case string:

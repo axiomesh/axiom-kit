@@ -5,11 +5,12 @@ import (
 	"crypto/elliptic"
 	"crypto/x509"
 	"encoding/asn1"
-	"fmt"
+	"errors"
+
+	"github.com/btcsuite/btcd/btcec/v2"
 
 	"github.com/axiomesh/axiom-kit/crypto"
 	"github.com/axiomesh/axiom-kit/types"
-	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 // PublicKey ECDSA public key.
@@ -23,14 +24,14 @@ func NewPublicKey(k ecdsa.PublicKey) (*PublicKey, error) {
 	case elliptic.P256(), elliptic.P384(), elliptic.P521(), S256(), btcec.S256():
 		break
 	default:
-		return nil, fmt.Errorf("unsupported ecdsa curve option")
+		return nil, errors.New("unsupported ecdsa curve option")
 	}
 	return &PublicKey{K: &k}, nil
 }
 
 func UnmarshalPublicKey(data []byte, opt crypto.KeyType) (crypto.PublicKey, error) {
 	if len(data) == 0 {
-		return nil, fmt.Errorf("empty public key data")
+		return nil, errors.New("empty public key data")
 	}
 	var (
 		pub *ecdsa.PublicKey
@@ -51,7 +52,7 @@ func UnmarshalPublicKey(data []byte, opt crypto.KeyType) (crypto.PublicKey, erro
 
 		pub, ok = pubInfo.(*ecdsa.PublicKey)
 		if !ok {
-			return nil, fmt.Errorf("not ecdsa public key")
+			return nil, errors.New("not ecdsa public key")
 		}
 	}
 
@@ -60,7 +61,7 @@ func UnmarshalPublicKey(data []byte, opt crypto.KeyType) (crypto.PublicKey, erro
 	case crypto.ECDSA_P256, crypto.ECDSA_P384, crypto.ECDSA_P521, crypto.Secp256k1:
 		key.K.Curve = pub.Curve
 	default:
-		return nil, fmt.Errorf("not supported curve")
+		return nil, errors.New("not supported curve")
 	}
 	return key, nil
 }
@@ -76,7 +77,7 @@ func Unmarshal(data []byte) (crypto.PrivateKey, error) {
 
 func (pub *PublicKey) Bytes() ([]byte, error) {
 	if pub.K == nil {
-		return nil, fmt.Errorf("ECDSAPublicKey.K is nil, please invoke FromBytes()")
+		return nil, errors.New("ECDSAPublicKey.K is nil, please invoke FromBytes()")
 	}
 
 	if pub.Type() == crypto.Secp256k1 {
@@ -97,7 +98,7 @@ func (pub *PublicKey) Address() (*types.Address, error) {
 
 func (pub *PublicKey) Verify(digest []byte, sig []byte) (bool, error) {
 	if sig == nil {
-		return false, fmt.Errorf("nil signature")
+		return false, errors.New("nil signature")
 	}
 
 	sigStruct := &Sig{}
@@ -106,7 +107,7 @@ func (pub *PublicKey) Verify(digest []byte, sig []byte) (bool, error) {
 	}
 
 	if !ecdsa.Verify(pub.K, digest, sigStruct.R, sigStruct.S) {
-		return false, fmt.Errorf("invalid signature")
+		return false, errors.New("invalid signature")
 	}
 
 	return true, nil

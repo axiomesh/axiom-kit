@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -77,6 +77,7 @@ type DynamicFeeTx struct {
 
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"`
+
 	R *big.Int `json:"r" gencodec:"required"`
 	S *big.Int `json:"s" gencodec:"required"`
 }
@@ -121,18 +122,29 @@ func (tx *AccessListTx) copy() TxData {
 
 // accessors for innerTx.
 
-func (tx *AccessListTx) TxType() byte                    { return AccessListTxType }
-func (tx *AccessListTx) GetChainID() *big.Int            { return tx.ChainID }
-func (tx *AccessListTx) protected() bool                 { return true }
+func (tx *AccessListTx) TxType() byte { return AccessListTxType }
+
+func (tx *AccessListTx) GetChainID() *big.Int { return tx.ChainID }
+
+func (tx *AccessListTx) protected() bool { return true }
+
 func (tx *AccessListTx) GetAccessList() types.AccessList { return tx.AccessList }
-func (tx *AccessListTx) GetData() []byte                 { return tx.Data }
-func (tx *AccessListTx) GetGas() uint64                  { return tx.Gas }
-func (tx *AccessListTx) GetGasPrice() *big.Int           { return tx.GasPrice }
-func (tx *AccessListTx) GetGasTipCap() *big.Int          { return tx.GasPrice }
-func (tx *AccessListTx) GetGasFeeCap() *big.Int          { return tx.GasPrice }
-func (tx *AccessListTx) GetValue() *big.Int              { return tx.Value }
-func (tx *AccessListTx) GetNonce() uint64                { return tx.Nonce }
-func (tx *AccessListTx) GetTo() *common.Address          { return tx.To }
+
+func (tx *AccessListTx) GetData() []byte { return tx.Data }
+
+func (tx *AccessListTx) GetGas() uint64 { return tx.Gas }
+
+func (tx *AccessListTx) GetGasPrice() *big.Int { return tx.GasPrice }
+
+func (tx *AccessListTx) GetGasTipCap() *big.Int { return tx.GasPrice }
+
+func (tx *AccessListTx) GetGasFeeCap() *big.Int { return tx.GasPrice }
+
+func (tx *AccessListTx) GetValue() *big.Int { return tx.Value }
+
+func (tx *AccessListTx) GetNonce() uint64 { return tx.Nonce }
+
+func (tx *AccessListTx) GetTo() *common.Address { return tx.To }
 
 func (tx *AccessListTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
@@ -176,17 +188,27 @@ func (tx *LegacyTx) copy() TxData {
 
 // accessors for innerTx.
 
-func (tx *LegacyTx) TxType() byte                    { return LegacyTxType }
-func (tx *LegacyTx) GetChainID() *big.Int            { return deriveChainId(tx.V) }
+func (tx *LegacyTx) TxType() byte { return LegacyTxType }
+
+func (tx *LegacyTx) GetChainID() *big.Int { return deriveChainId(tx.V) }
+
 func (tx *LegacyTx) GetAccessList() types.AccessList { return nil }
-func (tx *LegacyTx) GetData() []byte                 { return tx.Data }
-func (tx *LegacyTx) GetGas() uint64                  { return tx.Gas }
-func (tx *LegacyTx) GetGasPrice() *big.Int           { return tx.GasPrice }
-func (tx *LegacyTx) GetGasTipCap() *big.Int          { return tx.GasPrice }
-func (tx *LegacyTx) GetGasFeeCap() *big.Int          { return tx.GasPrice }
-func (tx *LegacyTx) GetValue() *big.Int              { return tx.Value }
-func (tx *LegacyTx) GetNonce() uint64                { return tx.Nonce }
-func (tx *LegacyTx) GetTo() *common.Address          { return tx.To }
+
+func (tx *LegacyTx) GetData() []byte { return tx.Data }
+
+func (tx *LegacyTx) GetGas() uint64 { return tx.Gas }
+
+func (tx *LegacyTx) GetGasPrice() *big.Int { return tx.GasPrice }
+
+func (tx *LegacyTx) GetGasTipCap() *big.Int { return tx.GasPrice }
+
+func (tx *LegacyTx) GetGasFeeCap() *big.Int { return tx.GasPrice }
+
+func (tx *LegacyTx) GetValue() *big.Int { return tx.Value }
+
+func (tx *LegacyTx) GetNonce() uint64 { return tx.Nonce }
+
+func (tx *LegacyTx) GetTo() *common.Address { return tx.To }
 
 func (tx *LegacyTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
@@ -239,18 +261,29 @@ func (tx *DynamicFeeTx) copy() TxData {
 }
 
 // accessors for innerTx.
-func (tx *DynamicFeeTx) TxType() byte                    { return DynamicFeeTxType }
-func (tx *DynamicFeeTx) GetChainID() *big.Int            { return tx.ChainID }
-func (tx *DynamicFeeTx) protected() bool                 { return true }
+func (tx *DynamicFeeTx) TxType() byte { return DynamicFeeTxType }
+
+func (tx *DynamicFeeTx) GetChainID() *big.Int { return tx.ChainID }
+
+func (tx *DynamicFeeTx) protected() bool { return true }
+
 func (tx *DynamicFeeTx) GetAccessList() types.AccessList { return tx.AccessList }
-func (tx *DynamicFeeTx) GetData() []byte                 { return tx.Data }
-func (tx *DynamicFeeTx) GetGas() uint64                  { return tx.Gas }
-func (tx *DynamicFeeTx) GetGasFeeCap() *big.Int          { return tx.GasFeeCap }
-func (tx *DynamicFeeTx) GetGasTipCap() *big.Int          { return tx.GasTipCap }
-func (tx *DynamicFeeTx) GetGasPrice() *big.Int           { return tx.GasFeeCap }
-func (tx *DynamicFeeTx) GetValue() *big.Int              { return tx.Value }
-func (tx *DynamicFeeTx) GetNonce() uint64                { return tx.Nonce }
-func (tx *DynamicFeeTx) GetTo() *common.Address          { return tx.To }
+
+func (tx *DynamicFeeTx) GetData() []byte { return tx.Data }
+
+func (tx *DynamicFeeTx) GetGas() uint64 { return tx.Gas }
+
+func (tx *DynamicFeeTx) GetGasFeeCap() *big.Int { return tx.GasFeeCap }
+
+func (tx *DynamicFeeTx) GetGasTipCap() *big.Int { return tx.GasTipCap }
+
+func (tx *DynamicFeeTx) GetGasPrice() *big.Int { return tx.GasFeeCap }
+
+func (tx *DynamicFeeTx) GetValue() *big.Int { return tx.Value }
+
+func (tx *DynamicFeeTx) GetNonce() uint64 { return tx.Nonce }
+
+func (tx *DynamicFeeTx) GetTo() *common.Address { return tx.To }
 
 func (tx *DynamicFeeTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
@@ -275,11 +308,11 @@ func deriveChainId(v *big.Int) *big.Int {
 
 func RecoverPlain(hash []byte, R, S, Vb *big.Int, homestead bool) ([]byte, error) {
 	if Vb.BitLen() > 8 {
-		return nil, fmt.Errorf("invalid signature")
+		return nil, errors.New("invalid signature")
 	}
 	V := byte(Vb.Uint64() - 27)
 	if !crypto.ValidateSignatureValues(V, R, S, homestead) {
-		return nil, fmt.Errorf("invalid signature")
+		return nil, errors.New("invalid signature")
 	}
 	// encode the signature in uncompressed format
 	r, s := R.Bytes(), S.Bytes()
@@ -293,14 +326,14 @@ func RecoverPlain(hash []byte, R, S, Vb *big.Int, homestead bool) ([]byte, error
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
-		return nil, fmt.Errorf("invalid public key")
+		return nil, errors.New("invalid public key")
 	}
 
 	return crypto.Keccak256(pub[1:])[12:], nil
 }
 
 // RlpHash encodes x and hashes the encoded bytes.
-func RlpHash(x interface{}) *common.Hash {
+func RlpHash(x any) *common.Hash {
 	var h common.Hash
 	sha := hasherPool.Get().(crypto.KeccakState)
 	defer hasherPool.Put(sha)
@@ -312,7 +345,7 @@ func RlpHash(x interface{}) *common.Hash {
 
 // PrefixedRlpHash writes the prefix into the hasher before rlp-encoding x.
 // It's used for typed transactions.
-func PrefixedRlpHash(prefix byte, x interface{}) *common.Hash {
+func PrefixedRlpHash(prefix byte, x any) *common.Hash {
 	var h common.Hash
 	sha := hasherPool.Get().(crypto.KeccakState)
 	defer hasherPool.Put(sha)

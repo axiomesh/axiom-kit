@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/axiomesh/axiom-kit/crypto"
 	"github.com/axiomesh/axiom-kit/crypto/asym/ecdsa"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSignAndVerifyPass(t *testing.T) {

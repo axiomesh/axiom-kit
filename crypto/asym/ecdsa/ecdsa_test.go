@@ -4,8 +4,9 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	"github.com/axiomesh/axiom-kit/crypto"
 	"github.com/stretchr/testify/require"
+
+	"github.com/axiomesh/axiom-kit/crypto"
 )
 
 var msg = make([]byte, 961)

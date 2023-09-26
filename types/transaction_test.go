@@ -4,8 +4,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/axiomesh/axiom-kit/hexutil"
 )
 
 func TestEthTransaction_GetSignHash(t *testing.T) {

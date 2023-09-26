@@ -2,7 +2,6 @@ package sym
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/axiomesh/axiom-kit/crypto"
 )
@@ -22,6 +21,6 @@ func GenerateSymKey(opt crypto.KeyType, key []byte) (crypto.SymmetricKey, error)
 	case crypto.ThirdDES:
 		return &ThirdDESKey{key: key}, nil
 	default:
-		return nil, fmt.Errorf("wrong symmetric algorithm")
+		return nil, errors.New("wrong symmetric algorithm")
 	}
 }

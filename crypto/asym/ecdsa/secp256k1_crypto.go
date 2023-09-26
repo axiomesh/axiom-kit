@@ -26,16 +26,16 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"os"
 
-	"github.com/axiomesh/axiom-kit/crypto/asym/ecdsa/secp256k1"
 	"golang.org/x/crypto/sha3"
+
+	"github.com/axiomesh/axiom-kit/crypto/asym/ecdsa/secp256k1"
 )
 
 const (
-	//SignatureLength indicates the byte length required to carry a signature with recovery id.
+	// SignatureLength indicates the byte length required to carry a signature with recovery id.
 	SignatureLength = 64 + 1 // 64 bytes ECDSA signature + 1 byte recovery id
 
 	// RecoveryIDOffset points to the byte offset within the signature that contains the recovery id.
@@ -46,6 +46,7 @@ const (
 
 	// number of bits in a big.Word
 	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
+
 	// number of bytes in a big.Word
 	wordBytes = wordBits / 8
 )
@@ -103,11 +104,11 @@ func toECDSA(d []byte, strict bool) (*ecdsa.PrivateKey, error) {
 
 	// The priv.D must < N
 	if priv.D.Cmp(secp256k1N) >= 0 {
-		return nil, fmt.Errorf("invalid private key, >=N")
+		return nil, errors.New("invalid private key, >=N")
 	}
 	// The priv.D must not be zero or negative.
 	if priv.D.Sign() <= 0 {
-		return nil, fmt.Errorf("invalid private key, zero or negative")
+		return nil, errors.New("invalid private key, zero or negative")
 	}
 
 	priv.PublicKey.X, priv.PublicKey.Y = priv.PublicKey.Curve.ScalarBaseMult(d)
@@ -190,7 +191,7 @@ func LoadECDSA(file string) (*ecdsa.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	} else if n != len(buf) {
-		return nil, fmt.Errorf("key file too short, want 64 hex characters")
+		return nil, errors.New("key file too short, want 64 hex characters")
 	}
 	if err := checkKeyFileEnd(r); err != nil {
 		return nil, err
@@ -235,7 +236,7 @@ func checkKeyFileEnd(r *bufio.Reader) error {
 // restrictive permissions. The key data is saved hex-encoded.
 func SaveECDSA(file string, key *ecdsa.PrivateKey) error {
 	k := hex.EncodeToString(FromECDSA(key))
-	return ioutil.WriteFile(file, []byte(k), 0600)
+	return os.WriteFile(file, []byte(k), 0600)
 }
 
 // GenerateKey generates a new private key.

@@ -2,7 +2,7 @@ package ecdh
 
 import (
 	"crypto/elliptic"
-	"fmt"
+	"errors"
 	"math/big"
 
 	"github.com/axiomesh/axiom-kit/crypto"
@@ -15,7 +15,7 @@ type ellipticECDH struct {
 
 func NewEllipticECDH(c elliptic.Curve) (KeyExchange, error) {
 	if c == nil {
-		return nil, fmt.Errorf("invalid curve")
+		return nil, errors.New("invalid curve")
 	}
 
 	return ellipticECDH{curve: c}, nil
@@ -23,14 +23,14 @@ func NewEllipticECDH(c elliptic.Curve) (KeyExchange, error) {
 
 func (e ellipticECDH) Check(peerPubkey []byte) error {
 	if len(peerPubkey) == 0 {
-		return fmt.Errorf("empty public key byte")
+		return errors.New("empty public key byte")
 	}
 	x, y, err := getXYFromPub(peerPubkey)
 	if err != nil {
 		return err
 	}
 	if !e.curve.IsOnCurve(x, y) {
-		return fmt.Errorf("peer's public key is not on curve")
+		return errors.New("peer's public key is not on curve")
 	}
 
 	return nil
