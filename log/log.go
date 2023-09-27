@@ -90,8 +90,9 @@ func Initialize(opts ...Option) error {
 
 func getTextFormatter() logrus.Formatter {
 	return &Formatter{
-		EnableColor:     loggerCtx.config.enableColor,
-		DisableCaller:   !loggerCtx.config.reportCaller,
-		TimestampFormat: "2006/01/02 15:04:05.000",
+		TimestampFormat:  "2006/01/02 15:04:05.000",
+		EnableColor:      loggerCtx.config.enableColor,
+		DisableCaller:    !loggerCtx.config.reportCaller,
+		DisableTimestamp: loggerCtx.config.disableTimestamp,
 	}
 }

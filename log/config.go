@@ -6,16 +6,17 @@ import (
 )
 
 type config struct {
-	ctx            context.Context
-	enableColor    bool
-	reportCaller   bool
-	enableCompress bool
-	persist        bool
-	filePath       string
-	fileName       string
-	maxSize        int
-	maxAge         int
-	rotationTime   time.Duration
+	ctx              context.Context
+	enableColor      bool
+	reportCaller     bool
+	enableCompress   bool
+	persist          bool
+	filePath         string
+	fileName         string
+	maxSize          int
+	maxAge           int
+	rotationTime     time.Duration
+	disableTimestamp bool
 }
 
 type Option func(*config)
@@ -80,17 +81,24 @@ func WithEnableColor(enableColor bool) Option {
 	}
 }
 
+func WithDisableTimestamp(disableTimestamp bool) Option {
+	return func(c *config) {
+		c.disableTimestamp = disableTimestamp
+	}
+}
+
 func defaultConfig() *config {
 	return &config{
-		ctx:          context.Background(),
-		enableColor:  true,
-		reportCaller: false,
-		persist:      false,
-		filePath:     "./",
-		fileName:     "log",
-		maxSize:      128,
-		maxAge:       30,
-		rotationTime: 24 * time.Hour,
+		ctx:              context.Background(),
+		enableColor:      true,
+		reportCaller:     false,
+		disableTimestamp: false,
+		persist:          false,
+		filePath:         "./",
+		fileName:         "log",
+		maxSize:          128,
+		maxAge:           30,
+		rotationTime:     24 * time.Hour,
 	}
 }
 
