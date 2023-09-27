@@ -30,6 +30,7 @@ type Formatter struct {
 	TimestampFormat  string
 	EnableColor      bool
 	DisableCaller    bool
+	DisableTimestamp bool
 }
 
 // Format an log entry
@@ -67,14 +68,16 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	// write time
-	if f.EnableColor {
-		b.WriteString(fmt.Sprintf("\x1b[%dm", colorGreen))
-	}
-	b.WriteString("[")
-	b.WriteString(entry.Time.Format(timestampFormat))
-	b.WriteString("] ")
-	if f.EnableColor {
-		b.WriteString("\x1b[0m")
+	if !f.DisableTimestamp {
+		if f.EnableColor {
+			b.WriteString(fmt.Sprintf("\x1b[%dm", colorGreen))
+		}
+		b.WriteString("[")
+		b.WriteString(entry.Time.Format(timestampFormat))
+		b.WriteString("] ")
+		if f.EnableColor {
+			b.WriteString("\x1b[0m")
+		}
 	}
 
 	// write msg
