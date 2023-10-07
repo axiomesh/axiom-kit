@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -83,6 +84,10 @@ func Initialize(opts ...Option) error {
 		}, config.rotationTime)
 
 		loggerCtx.hooks = append(loggerCtx.hooks, rotation)
+
+		if err := redirectPanic(filepath.Join(config.filePath, "error.log")); err != nil {
+			return errors.Wrap(err, "failed to redirect panic")
+		}
 	}
 
 	return nil
