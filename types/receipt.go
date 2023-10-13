@@ -340,10 +340,14 @@ func (r *Receipt) Unmarshal(data []byte) error {
 
 func (r *Receipt) Hash() *Hash {
 	receipt := &Receipt{
-		TxHash: r.TxHash,
-		Ret:    r.Ret,
-		Status: r.Status,
-		Events: r.Events,
+		TxHash:          r.TxHash,
+		Ret:             r.Ret,
+		Status:          r.Status,
+		Events:          r.Events,
+		EvmLogs:         r.EvmLogs,
+		Bloom:           r.Bloom,
+		GasUsed:         r.GasUsed,
+		ContractAddress: r.ContractAddress,
 	}
 	body, err := receipt.Marshal()
 	if err != nil {
