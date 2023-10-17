@@ -290,13 +290,13 @@ type CodecObjectConstraint[T any] interface {
 }
 
 func MarshalObjects[T any, Constraint CodecObjectConstraint[T]](objs []*T) ([]byte, error) {
-	var objsRaw [][]byte
-	for _, obj := range objs {
+	objsRaw := make([][]byte, len(objs))
+	for i, obj := range objs {
 		objRaw, err := Constraint(obj).Marshal()
 		if err != nil {
 			return nil, err
 		}
-		objsRaw = append(objsRaw, objRaw)
+		objsRaw[i] = objRaw
 	}
 	helper := pb.BytesSlice{
 		Slice: objsRaw,
@@ -311,15 +311,29 @@ func UnmarshalObjects[T any, Constraint CodecObjectConstraint[T]](data []byte) (
 	if err != nil {
 		return nil, err
 	}
-	var objs []*T
-	for _, objRaw := range helper.Slice {
+	objs := make([]*T, len(helper.Slice))
+	for i, objRaw := range helper.Slice {
 		obj := new(T)
 		if err := Constraint(obj).Unmarshal(objRaw); err != nil {
 			return nil, err
 		}
-		objs = append(objs, obj)
+		objs[i] = obj
 	}
 	return objs, nil
+}
+
+func UnmarshalObjectsWithIndex[T any, Constraint CodecObjectConstraint[T]](data []byte, index uint64) (*T, error) {
+	helper := pb.BytesSliceFromVTPool()
+	defer helper.ReturnToVTPool()
+	err := helper.UnmarshalVT(data)
+	if err != nil {
+		return nil, err
+	}
+	obj := new(T)
+	if err := Constraint(obj).Unmarshal(helper.Slice[index]); err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 func MarshalTransactions(objs []*Transaction) ([]byte, error) {
@@ -330,10 +344,18 @@ func UnmarshalTransactions(data []byte) ([]*Transaction, error) {
 	return UnmarshalObjects[Transaction, *Transaction](data)
 }
 
+func UnmarshalTransactionWithIndex(data []byte, index uint64) (*Transaction, error) {
+	return UnmarshalObjectsWithIndex[Transaction, *Transaction](data, index)
+}
+
 func MarshalReceipts(objs []*Receipt) ([]byte, error) {
 	return MarshalObjects[Receipt, *Receipt](objs)
 }
 
 func UnmarshalReceipts(data []byte) ([]*Receipt, error) {
 	return UnmarshalObjects[Receipt, *Receipt](data)
+}
+
+func UnmarshalReceiptWithIndex(data []byte, index uint64) (*Receipt, error) {
+	return UnmarshalObjectsWithIndex[Receipt, *Receipt](data, index)
 }
