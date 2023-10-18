@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "../pb";
+
+message SyncMessage {
+  enum Type {
+    SYNC_STATE_REQUEST = 0;
+    SYNC_STATE_RESPONSE = 1;
+    SYNC_BLOCK_REQUEST = 2;
+    SYNC_BLOCK_RESPONSE = 3;
+  }
+  string from = 1;
+  Type type = 2;
+  bytes data = 3;
+  uint64 version = 4;
+}
+
+message SyncStateRequest {
+  uint64 height = 1;
+  string block_hash = 2;
+  uint64 version = 3;
+}
+
+message SyncStateResponse {
+  uint64 quorum = 1;
+  CheckpointState checkpoint_state = 2;
+  uint64 version = 3;
+}
+
+message SyncBlockRequest {
+  uint64 height = 1;
+  uint64 version = 2;
+}
+
+message CheckpointState {
+  uint64 height = 1;
+  string digest = 2;
+}
