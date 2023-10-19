@@ -4,7 +4,7 @@ package pb;
 
 option go_package = "../pb";
 
-message SyncMessage {
+message Message {
   enum Type {
     SYNC_STATE_REQUEST = 0;
     SYNC_STATE_RESPONSE = 1;
@@ -19,14 +19,12 @@ message SyncMessage {
 
 message SyncStateRequest {
   uint64 height = 1;
-  string block_hash = 2;
-  uint64 version = 3;
+  uint64 version = 2;
 }
 
 message SyncStateResponse {
-  uint64 quorum = 1;
-  CheckpointState checkpoint_state = 2;
-  uint64 version = 3;
+  CheckpointState checkpoint_state = 1;
+  uint64 version = 2;
 }
 
 message SyncBlockRequest {
