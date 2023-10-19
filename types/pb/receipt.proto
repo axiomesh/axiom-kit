@@ -17,6 +17,8 @@ message Receipt {
     repeated EvmLog evm_logs = 6;
     bytes bloom = 7;
     bytes contract_address = 8;
+    uint64 CumulativeGasUsed = 9;
+    uint64 EffectiveGasPrice = 10;
 }
 
 message Receipts {

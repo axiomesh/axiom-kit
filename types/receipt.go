@@ -243,14 +243,16 @@ func (l *EvmLog) MarshalJSON() ([]byte, error) {
 }
 
 type Receipt struct {
-	TxHash          *Hash
-	Ret             []byte
-	Status          ReceiptStatus
-	Events          []*Event
-	GasUsed         uint64
-	EvmLogs         []*EvmLog
-	Bloom           *Bloom
-	ContractAddress *Address
+	TxHash            *Hash
+	Ret               []byte
+	Status            ReceiptStatus
+	Events            []*Event
+	GasUsed           uint64
+	CumulativeGasUsed uint64
+	EffectiveGasPrice uint64
+	EvmLogs           []*EvmLog
+	Bloom             *Bloom
+	ContractAddress   *Address
 }
 
 func (r *Receipt) toPB() (*pb.Receipt, error) {
@@ -275,14 +277,16 @@ func (r *Receipt) toPB() (*pb.Receipt, error) {
 		evmLogs[i] = log
 	}
 	return &pb.Receipt{
-		TxHash:          r.TxHash.Bytes(),
-		Ret:             r.Ret,
-		Status:          r.Status.toPB(),
-		Events:          events,
-		GasUsed:         r.GasUsed,
-		EvmLogs:         evmLogs,
-		Bloom:           r.Bloom.Bytes(),
-		ContractAddress: r.ContractAddress.Bytes(),
+		TxHash:            r.TxHash.Bytes(),
+		Ret:               r.Ret,
+		Status:            r.Status.toPB(),
+		Events:            events,
+		GasUsed:           r.GasUsed,
+		CumulativeGasUsed: r.CumulativeGasUsed,
+		EffectiveGasPrice: r.EffectiveGasPrice,
+		EvmLogs:           evmLogs,
+		Bloom:             r.Bloom.Bytes(),
+		ContractAddress:   r.ContractAddress.Bytes(),
 	}, nil
 }
 
@@ -317,6 +321,8 @@ func (r *Receipt) fromPB(p *pb.Receipt) error {
 	if err != nil {
 		return err
 	}
+	r.CumulativeGasUsed = p.CumulativeGasUsed
+	r.EffectiveGasPrice = p.EffectiveGasPrice
 	return nil
 }
 
@@ -340,14 +346,16 @@ func (r *Receipt) Unmarshal(data []byte) error {
 
 func (r *Receipt) Hash() *Hash {
 	receipt := &Receipt{
-		TxHash:          r.TxHash,
-		Ret:             r.Ret,
-		Status:          r.Status,
-		Events:          r.Events,
-		EvmLogs:         r.EvmLogs,
-		Bloom:           r.Bloom,
-		GasUsed:         r.GasUsed,
-		ContractAddress: r.ContractAddress,
+		TxHash:            r.TxHash,
+		Ret:               r.Ret,
+		Status:            r.Status,
+		Events:            r.Events,
+		EvmLogs:           r.EvmLogs,
+		Bloom:             r.Bloom,
+		GasUsed:           r.GasUsed,
+		CumulativeGasUsed: r.CumulativeGasUsed,
+		EffectiveGasPrice: r.EffectiveGasPrice,
+		ContractAddress:   r.ContractAddress,
 	}
 	body, err := receipt.Marshal()
 	if err != nil {
