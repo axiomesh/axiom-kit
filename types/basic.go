@@ -132,7 +132,7 @@ func decodeAddress(data []byte) (*Address, error) {
 	}
 
 	if len(data) == 0 {
-		return &Address{}, nil
+		return nil, nil
 	}
 	return &Address{
 		rawAddress: common.BytesToAddress(data),
@@ -173,6 +173,9 @@ func (a *Address) SetBytes(b []byte) {
 }
 
 func (a *Address) ETHAddress() common.Address {
+	if a == nil {
+		return common.Address{}
+	}
 	return a.rawAddress
 }
 
@@ -185,6 +188,9 @@ func (a *Address) Bytes() []byte {
 
 // String returns an EIP55-compliant hex string representation of the address.
 func (a *Address) String() string {
+	if a == nil {
+		return ""
+	}
 	if a.addressStr == "" {
 		// if address field is empty, initialize it for only once
 		a.addressStr = a.rawAddress.String()
