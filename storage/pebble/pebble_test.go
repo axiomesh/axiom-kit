@@ -2,12 +2,16 @@ package pebble
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
+	"runtime"
 	"testing"
 
+	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/bloom"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/axiomesh/axiom-kit/storage"
 )
 
 func TestIter_Next(t *testing.T) {
@@ -329,34 +333,55 @@ func TestPdb_Prev(t *testing.T) {
 	assert.EqualValues(t, i, len(expected))
 }
 
-func BenchmarkPdb_Get(b *testing.B) {
+func BenchmarkPebbleSuite(b *testing.B) {
+	// Two memory tables is configured which is identical to leveldb,
+	// including a frozen memory table and another live one.
+	memTableLimit := 2
+	cache := 256
+	memTableSize := cache * 1024 * 1024 / 2 / memTableLimit
+
+	opts := &pebble.Options{
+		// Pebble has a single combined cache area and the write
+		// buffers are taken from this too. Assign all available
+		// memory allowance for cache.
+		Cache: pebble.NewCache(int64(cache * 1024 * 1024)),
+
+		//MaxOpenFiles: 1000,
+
+		// The size of memory table(as well as the write buffer).
+		// Note, there may have more than two memory tables in the system.
+		MemTableSize: memTableSize,
+
+		// MemTableStopWritesThreshold places a hard limit on the size
+		// of the existent MemTables(including the frozen one).
+		// Note, this must be the number of tables not the size of all memtables.
+		MemTableStopWritesThreshold: memTableLimit,
+
+		// The default compaction concurrency(1 thread),
+		// Here use all available CPUs for faster compaction.
+		MaxConcurrentCompactions: func() int { return runtime.NumCPU() },
+
+		// Per-level options. Options for at least one level must be specified. The
+		// options for the last level are used for all subsequent levels.
+		Levels: []pebble.LevelOptions{
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+			{TargetFileSize: 2 * 1024 * 1024, FilterPolicy: bloom.FilterPolicy(10)},
+		},
+	}
+
 	path, err := os.MkdirTemp("", "*")
 	assert.Nil(b, err)
 
-	pdb, err := New(path, nil)
-	assert.Nil(b, err)
-
-	val := make([]byte, 1024*1024*1)
-	for k := 0; k < len(val); k++ {
-		val[k] = byte(rand.Int63n(128))
-	}
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		for j := 0; j < 10; j++ {
-			key := fmt.Sprintf("abc.%d.%d", i, j)
-			pdb.Put([]byte(key), val)
-
-			v := pdb.Get([]byte(key))
-			assert.Equal(b, val, v)
+	storage.BenchKvSuite(b, func() storage.Storage {
+		db, err := New(path, opts)
+		if err != nil {
+			b.Fatal(err)
 		}
-
-		iterator := pdb.Prefix([]byte("abc"))
-		for iterator.Next() {
-			pdb.Delete(iterator.Key())
-		}
-	}
-
-	_ = pdb.Close()
+		return db
+	})
 }

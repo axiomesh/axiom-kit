@@ -12,6 +12,7 @@ type pdb struct {
 }
 
 // todo (zqr): use logger to record panic
+// todo (zqr): add metrics for kv
 
 func New(path string, opts *pebble.Options) (storage.Storage, error) {
 	db, err := pebble.Open(path, opts)
@@ -25,13 +26,13 @@ func New(path string, opts *pebble.Options) (storage.Storage, error) {
 }
 
 func (p *pdb) Put(key, value []byte) {
-	if err := p.db.Set(key, value, nil); err != nil {
+	if err := p.db.Set(key, value, pebble.NoSync); err != nil {
 		panic(err)
 	}
 }
 
 func (p *pdb) Delete(key []byte) {
-	if err := p.db.Delete(key, nil); err != nil {
+	if err := p.db.Delete(key, pebble.NoSync); err != nil {
 		panic(err)
 	}
 }
@@ -152,7 +153,7 @@ func (p *pdbBatch) Delete(key []byte) {
 }
 
 func (p *pdbBatch) Commit() {
-	if err := p.batch.Commit(nil); err != nil {
+	if err := p.batch.Commit(pebble.NoSync); err != nil {
 		panic(err)
 	}
 }
