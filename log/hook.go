@@ -47,12 +47,12 @@ func newRotateHook(ctx context.Context, logger *lumberjack.Logger, rotationTime 
 }
 
 func (hook *RotateHook) Fire(entry *logrus.Entry) error {
-	line, err := entry.String()
+	line, err := entry.Bytes()
 	if err != nil {
 		return err
 	}
 
-	_, err = hook.logger.Write([]byte(line))
+	_, err = hook.logger.Write(line)
 	if err != nil {
 		return err
 	}
