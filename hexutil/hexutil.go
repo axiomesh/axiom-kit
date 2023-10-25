@@ -74,6 +74,57 @@ func Decode(s string) []byte {
 	return nil
 }
 
+func EncodeToNibbles(s string) []byte {
+	isOdd := (len(s) & 1) > 0
+	if len(s) > 1 {
+		if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
+			s = s[2:]
+		}
+		if isOdd {
+			s = "0" + s
+		}
+	}
+	h, err := hex.DecodeString(s)
+	if err != nil {
+		return nil
+	}
+	i := 0
+	dst := make([]byte, len(s))
+	for _, b := range h {
+		dst[i+1] = b & 15
+		dst[i] = b >> 4
+		i += 2
+	}
+	if isOdd {
+		dst = dst[1:]
+	}
+	return dst
+}
+
+func DecodeFromNibbles(src []byte) string {
+	var s []byte
+	for _, b := range src {
+		c := b & 15
+		if c > 9 {
+			s = append(s, 'a'+c-10)
+		} else {
+			s = append(s, '0'+c)
+		}
+	}
+	return string(s)
+}
+
+func BytesToHex(h []byte) []byte {
+	i := 0
+	dst := make([]byte, 2*len(h))
+	for _, b := range h {
+		dst[i+1] = b & 15
+		dst[i] = b >> 4
+		i += 2
+	}
+	return dst
+}
+
 // EncodeUint64 encodes i as a hex string with 0x prefix.
 func EncodeUint64(i uint64) string {
 	enc := make([]byte, 2, 10)
