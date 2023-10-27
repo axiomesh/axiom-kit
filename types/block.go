@@ -16,6 +16,7 @@ type BlockHeader struct {
 	Epoch           uint64
 	Bloom           *Bloom
 	GasPrice        int64
+	GasUsed         uint64
 	ProposerAccount string
 }
 
@@ -33,6 +34,7 @@ func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
 		Epoch:           h.Epoch,
 		Bloom:           h.Bloom.Bytes(),
 		GasPrice:        h.GasPrice,
+		GasUsed:         h.GasUsed,
 		ProposerAccount: h.ProposerAccount,
 	}, nil
 }
@@ -64,6 +66,7 @@ func (h *BlockHeader) fromPB(m *pb.BlockHeader) error {
 		return err
 	}
 	h.GasPrice = m.GasPrice
+	h.GasUsed = m.GasUsed
 	return nil
 }
 
@@ -95,6 +98,7 @@ func (h *BlockHeader) Hash() *Hash {
 		ReceiptRoot:     h.ReceiptRoot,
 		Epoch:           h.Epoch,
 		GasPrice:        h.GasPrice,
+		GasUsed:         h.GasUsed,
 		ProposerAccount: h.ProposerAccount,
 	}
 	body, err := blockheader.Marshal()
