@@ -89,10 +89,10 @@ func (this *BlockHeader) EqualVT(that *BlockHeader) bool {
 	if this.GasPrice != that.GasPrice {
 		return false
 	}
-	if this.GasUsed != that.GasUsed {
+	if this.ProposerAccount != that.ProposerAccount {
 		return false
 	}
-	if this.ProposerAccount != that.ProposerAccount {
+	if this.GasUsed != that.GasUsed {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -208,17 +208,17 @@ func (m *BlockHeader) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.GasUsed != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
+		i--
+		dAtA[i] = 0x60
+	}
 	if len(m.ProposerAccount) > 0 {
 		i -= len(m.ProposerAccount)
 		copy(dAtA[i:], m.ProposerAccount)
 		i = encodeVarint(dAtA, i, uint64(len(m.ProposerAccount)))
 		i--
-		dAtA[i] = 0x62
-	}
-	if m.GasUsed != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
-		i--
-		dAtA[i] = 0x58
+		dAtA[i] = 0x5a
 	}
 	if m.GasPrice != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasPrice))
@@ -381,17 +381,17 @@ func (m *BlockHeader) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.GasUsed != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
+		i--
+		dAtA[i] = 0x60
+	}
 	if len(m.ProposerAccount) > 0 {
 		i -= len(m.ProposerAccount)
 		copy(dAtA[i:], m.ProposerAccount)
 		i = encodeVarint(dAtA, i, uint64(len(m.ProposerAccount)))
 		i--
-		dAtA[i] = 0x62
-	}
-	if m.GasUsed != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
-		i--
-		dAtA[i] = 0x58
+		dAtA[i] = 0x5a
 	}
 	if m.GasPrice != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasPrice))
@@ -581,12 +581,12 @@ func (m *BlockHeader) SizeVT() (n int) {
 	if m.GasPrice != 0 {
 		n += 1 + sov(uint64(m.GasPrice))
 	}
-	if m.GasUsed != 0 {
-		n += 1 + sov(uint64(m.GasUsed))
-	}
 	l = len(m.ProposerAccount)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
+	}
+	if m.GasUsed != 0 {
+		n += 1 + sov(uint64(m.GasUsed))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1089,25 +1089,6 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 		case 11:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GasUsed", wireType)
-			}
-			m.GasUsed = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.GasUsed |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProposerAccount", wireType)
 			}
@@ -1139,6 +1120,25 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ProposerAccount = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GasUsed", wireType)
+			}
+			m.GasUsed = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.GasUsed |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
