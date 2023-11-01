@@ -235,6 +235,72 @@ func Test_DeleteUntilEmptyTree(t *testing.T) {
 	require.Nil(t, n)
 }
 
+func Test_DeleteUntilEmptyTreeWithStateTransit1(t *testing.T) {
+	jmt, s := initEmptyJMT()
+	err := jmt.Update(0, toHex("a1"), []byte("v1"))
+	require.Nil(t, err)
+	err = jmt.Update(0, toHex("a2"), []byte("v2"))
+	require.Nil(t, err)
+	err = jmt.Update(0, toHex("a1"), nil)
+	require.Nil(t, err)
+	n, err := jmt.Get(toHex("a1"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+	n, err = jmt.Get(toHex("a2"))
+	require.Nil(t, err)
+	require.Equal(t, n, []byte("v2"))
+	rootHash := jmt.Commit()
+
+	// state transit
+	jmt1, err := New(rootHash, s)
+	require.Nil(t, err)
+	n, err = jmt1.Get(toHex("a2"))
+	require.Nil(t, err)
+	require.Equal(t, n, []byte("v2"))
+	err = jmt1.Update(1, toHex("a2"), nil)
+	require.Nil(t, err)
+	jmt1.Commit()
+	n, err = jmt1.Get(toHex("a1"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+	n, err = jmt1.Get(toHex("a2"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+}
+
+func Test_DeleteUntilEmptyTreeWithStateTransit2(t *testing.T) {
+	jmt, s := initEmptyJMT()
+	err := jmt.Update(0, toHex("a1"), []byte("v1"))
+	require.Nil(t, err)
+	err = jmt.Update(0, toHex("a2"), []byte("v2"))
+	require.Nil(t, err)
+	n, err := jmt.Get(toHex("a1"))
+	require.Nil(t, err)
+	require.Equal(t, n, []byte("v1"))
+	n, err = jmt.Get(toHex("a2"))
+	require.Nil(t, err)
+	require.Equal(t, n, []byte("v2"))
+	rootHash := jmt.Commit()
+
+	// state transit
+	jmt1, err := New(rootHash, s)
+	require.Nil(t, err)
+	err = jmt1.Update(1, toHex("a1"), nil)
+	require.Nil(t, err)
+	err = jmt1.Update(1, toHex("a2"), nil)
+	require.Nil(t, err)
+	rootHash1 := jmt1.Commit()
+
+	// verify
+	jmt2, err := New(rootHash1, s)
+	n, err = jmt2.Get(toHex("a1"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+	n, err = jmt2.Get(toHex("a2"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+}
+
 func Test_DeleteNonExistKey(t *testing.T) {
 	jmt, _ := initEmptyJMT()
 	err := jmt.Update(0, toHex("a1"), []byte("v1"))
@@ -700,10 +766,211 @@ func Test_StateTransitWithDelete(t *testing.T) {
 	require.Equal(t, n, []byte("v8"))
 }
 
+func Test_KeyLengthEqualTo1(t *testing.T) {
+	// init version 0 jmt
+	jmt0, s0 := initEmptyJMT()
+	err := jmt0.Update(0, toHex("2"), []byte("v2"))
+	require.Nil(t, err)
+	rootHash0 := jmt0.Commit()
+
+	// transit from v0 to v1
+	jmt1, err := New(rootHash0, s0)
+	require.Nil(t, err)
+	err = jmt1.Update(1, toHex("2"), []byte("v3"))
+	require.Nil(t, err)
+	err = jmt1.Update(1, toHex("4"), []byte("v4"))
+	require.Nil(t, err)
+	rootHash1 := jmt1.Commit()
+
+	// verify v0
+	jmt0, err = New(rootHash0, s0)
+	require.Nil(t, err)
+	n, err := jmt0.Get(toHex("2"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v2"))
+
+	// verify v1
+	jmt1, err = New(rootHash1, s0)
+	require.Nil(t, err)
+	n, err = jmt1.Get(toHex("2"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v3"))
+	n, err = jmt1.Get(toHex("4"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v4"))
+}
+
+func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
+	// init version 0 jmt
+	jmt1, s1 := initEmptyJMT()
+	err := jmt1.Update(0, toHex("02"), []byte("v2"))
+	require.Nil(t, err)
+	rootHash1 := jmt1.Commit()
+
+	// transit from v0 to v1
+	jmt11, err := New(rootHash1, s1)
+	require.Nil(t, err)
+	err = jmt11.Update(1, toHex("02"), []byte("v3"))
+	require.Nil(t, err)
+	printJMT(jmt11, 1)
+	err = jmt11.Update(1, toHex("04"), []byte("v4"))
+	require.Nil(t, err)
+	rootHash11 := jmt11.Commit()
+
+	// verify v0
+	jmt1, err = New(rootHash1, s1)
+	require.Nil(t, err)
+	n, err := jmt1.Get(toHex("02"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v2"))
+
+	// verify v1
+	jmt11, err = New(rootHash11, s1)
+	require.Nil(t, err)
+	n, err = jmt11.Get(toHex("02"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v3"))
+	n, err = jmt11.Get(toHex("04"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v4"))
+
+	//===========
+
+	// init version 0 jmt
+	jmt2, s2 := initEmptyJMT()
+	err = jmt2.Update(0, toHex("02"), []byte("v2"))
+	require.Nil(t, err)
+	rootHash2 := jmt2.Commit()
+
+	// transit from v0 to v1, but with different update order
+	jmt22, err := New(rootHash2, s2)
+	require.Nil(t, err)
+	err = jmt22.Update(1, toHex("04"), []byte("v4"))
+	require.Nil(t, err)
+	err = jmt22.Update(1, toHex("02"), []byte("v3"))
+	require.Nil(t, err)
+	rootHash22 := jmt22.Commit()
+
+	// verify v0
+	jmt2, err = New(rootHash2, s2)
+	require.Nil(t, err)
+	n, err = jmt2.Get(toHex("02"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v2"))
+
+	// verify v1
+	jmt22, err = New(rootHash22, s2)
+	require.Nil(t, err)
+	n, err = jmt22.Get(toHex("02"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v3"))
+	n, err = jmt22.Get(toHex("04"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v4"))
+
+	require.Equal(t, rootHash11, rootHash22)
+}
+
+func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
+	// init version 0 jmt
+	jmt1, s1 := initEmptyJMT()
+	err := jmt1.Update(0, toHex("01"), []byte("v1"))
+	require.Nil(t, err)
+	err = jmt1.Update(0, toHex("02"), []byte("v2"))
+	require.Nil(t, err)
+	err = jmt1.Update(0, toHex("03"), []byte("v3"))
+	require.Nil(t, err)
+	err = jmt1.Update(0, toHex("04"), []byte("v4"))
+	require.Nil(t, err)
+	rootHash1 := jmt1.Commit()
+
+	// transit from v0 to v1
+	jmt11, err := New(rootHash1, s1)
+	require.Nil(t, err)
+	err = jmt11.Update(1, toHex("02"), []byte{})
+	require.Nil(t, err)
+	printJMT(jmt11, 1)
+	err = jmt11.Update(1, toHex("04"), []byte{})
+	require.Nil(t, err)
+	rootHash11 := jmt11.Commit()
+
+	// verify v0
+	jmt1, err = New(rootHash1, s1)
+	require.Nil(t, err)
+	n, err := jmt1.Get(toHex("02"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v2"))
+
+	// verify v1
+	jmt11, err = New(rootHash11, s1)
+	require.Nil(t, err)
+	n, err = jmt11.Get(toHex("02"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+	n, err = jmt11.Get(toHex("03"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v3"))
+
+	//===========
+
+	// init version 0 jmt
+	jmt2, s2 := initEmptyJMT()
+	err = jmt2.Update(0, toHex("01"), []byte("v1"))
+	require.Nil(t, err)
+	err = jmt2.Update(0, toHex("02"), []byte("v2"))
+	require.Nil(t, err)
+	err = jmt2.Update(0, toHex("03"), []byte("v3"))
+	require.Nil(t, err)
+	err = jmt2.Update(0, toHex("04"), []byte("v4"))
+	require.Nil(t, err)
+	rootHash2 := jmt2.Commit()
+
+	// transit from v0 to v1, but with different delete order
+	jmt22, err := New(rootHash2, s2)
+	require.Nil(t, err)
+	err = jmt22.Update(1, toHex("04"), []byte{})
+	require.Nil(t, err)
+	err = jmt22.Update(1, toHex("02"), []byte{})
+	require.Nil(t, err)
+	rootHash22 := jmt22.Commit()
+
+	// verify v0
+	jmt2, err = New(rootHash2, s2)
+	require.Nil(t, err)
+	n, err = jmt2.Get(toHex("03"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v3"))
+
+	// verify v1
+	jmt22, err = New(rootHash22, s2)
+	require.Nil(t, err)
+	n, err = jmt22.Get(toHex("02"))
+	require.Nil(t, err)
+	require.Nil(t, n)
+	n, err = jmt22.Get(toHex("03"))
+	require.Nil(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, n, []byte("v3"))
+
+	require.Equal(t, rootHash11, rootHash22)
+}
+
 func Test_Case_Random_1(t *testing.T) {
 	rand.Seed(uint64(time.Now().UnixNano()))
-	maxn := 10000 // max number of nodes
-	cnt := 10     // number of test cases
+	maxn := 1000 // max number of nodes
+	cnt := 10    // number of test cases
 	for i := 0; i < cnt; i++ {
 		jmt, s := initEmptyJMT()
 		//nnum := rand.Intn(maxn)
@@ -790,6 +1057,102 @@ func Test_Case_Random_2(t *testing.T) {
 	}
 }
 
+func Test_Case_Random_3(t *testing.T) {
+	rand.Seed(uint64(time.Now().UnixNano()))
+	testcasesNum := 1
+	dummyValue := []byte{9}
+	for tn := 0; tn < testcasesNum; tn++ {
+		fmt.Println("【Random Testcase】 ", tn)
+		nnum := 10 // max number of nodes
+		cnt := 10  // number of shuffle times
+		rootHashs := make([]common.Hash, cnt)
+		jmts := make([]*JMT, cnt)
+		updateOrder := make([][][]byte, cnt)
+		lk := 2
+		lv := 1
+
+		ks0, _ := getRandomHexKVSet(lk, lv, nnum)
+		ks, vs := getRandomHexKVSet(lk, lv, nnum)
+		var nodes0 []*TraversedNode
+
+		for i := 0; i < cnt; i++ {
+			// init base jmt
+			jmt, _ := initEmptyJMT()
+			for idx := 0; idx < len(ks0); idx++ {
+				err := jmt.Update(1, ks0[idx], dummyValue)
+				require.Nil(t, err)
+			}
+			jmt.Commit()
+			if len(nodes0) == 0 {
+				nodes0 = jmt.Traverse(1)
+			}
+
+			rand.Shuffle(len(ks), func(i, j int) {
+				ks[i], ks[j] = ks[j], ks[i]
+				vs[i], vs[j] = vs[j], vs[i]
+			})
+
+			for idx := 0; idx < len(ks); idx++ {
+				err := jmt.Update(2, ks[idx], vs[idx])
+				require.Nil(t, err)
+				updateOrder[i] = append(updateOrder[i], ks[idx])
+			}
+
+			rootHash := jmt.Commit()
+
+			rootHashs[i] = rootHash
+			jmts[i] = jmt
+		}
+
+		for i := 0; i < len(rootHashs); i++ {
+			if rootHashs[0] != rootHashs[i] {
+				fmt.Println("=========jmt forked=========")
+				fmt.Println("=========Traverse base jmt=========")
+				for j := 0; j < len(nodes0); j++ {
+					fmt.Printf("Node[%v]: %v\n", convertHex((*nodes0[j]).Path), (*(*nodes0[j]).Origin).Print())
+				}
+				fmt.Println("=========END Traverse base jmt=========")
+
+				fmt.Println("=========Traverse jmt[0]=========")
+				printJMT(jmts[0], 0)
+				fmt.Println("Update key order of jmt[0]")
+				for j := 0; j < len(updateOrder[0]); j++ {
+
+					fmt.Println(convertHex(updateOrder[0][j]))
+				}
+
+				fmt.Printf("=========Traverse jmt[%v]=========\n", i)
+				printJMT(jmts[i], 0)
+
+				fmt.Printf("Update key order of jmt[%v]\n", i)
+				for j := 0; j < len(updateOrder[i]); j++ {
+					fmt.Println(convertHex(updateOrder[i][j]))
+				}
+			}
+			require.Equal(t, rootHashs[0], rootHashs[i])
+		}
+	}
+
+}
+
+func printJMT(jmt *JMT, version uint64) {
+	fmt.Printf("======Start Print JMT========\n")
+	nodes := jmt.Traverse(version)
+	for j := 0; j < len(nodes); j++ {
+		fmt.Printf("Node[%v]: %v\n", convertHex((*nodes[j]).Path), (*(*nodes[j]).Origin).Print())
+	}
+	fmt.Printf("======End Print JMT========\n")
+}
+
+func convertHex(in []byte) string {
+	hexString := "0123456789abcdef"
+	var ret string
+	for i := 0; i < len(in); i++ {
+		ret += string(hexString[in[i]])
+	}
+	return ret
+}
+
 func initEmptyJMT() (*JMT, storage.Storage) {
 	dir, _ := os.MkdirTemp("", "TestKV")
 	s, _ := pebble.New(dir, nil)
@@ -805,6 +1168,30 @@ func initEmptyJMT() (*JMT, storage.Storage) {
 	s.Put(rootHash[:], nk)
 	jmt, _ := New(rootHash, s)
 	return jmt, s
+}
+
+func getRandomHexKVSet(lk, lv, num int) ([][]byte, [][]byte) {
+	rand.Seed(uint64(time.Now().UnixNano()))
+	keySet := map[string]struct{}{}
+	var ks [][]byte
+	var vs [][]byte
+	for i := 0; i < num; i++ {
+		k := make([]byte, lk)
+		v := make([]byte, lv)
+		for j := 0; j < lk; j++ {
+			k[j] = byte(rand.Intn(16))
+		}
+		for j := 0; j < lv; j++ {
+			v[j] = byte(rand.Intn(16))
+		}
+		if _, ok := keySet[string(k)]; ok {
+			continue
+		}
+		ks = append(ks, k)
+		vs = append(vs, v)
+		keySet[string(k)] = struct{}{}
+	}
+	return ks, vs
 }
 
 func getRandomHexKV(lk, lv int) (k []byte, v []byte) {

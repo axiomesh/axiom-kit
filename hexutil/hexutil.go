@@ -75,14 +75,14 @@ func Decode(s string) []byte {
 }
 
 func EncodeToNibbles(s string) []byte {
-	isOdd := (len(s) & 1) > 0
 	if len(s) > 1 {
 		if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
 			s = s[2:]
 		}
-		if isOdd {
-			s = "0" + s
-		}
+	}
+	isOdd := (len(s) & 1) > 0
+	if isOdd {
+		s = "0" + s
 	}
 	h, err := hex.DecodeString(s)
 	if err != nil {
