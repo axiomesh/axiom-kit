@@ -12,11 +12,16 @@ import (
 	"github.com/axiomesh/axiom-kit/hexutil"
 )
 
-type node interface {
+type Node interface {
 	encode() []byte // todo use customized encoding method (RLP)
 	hash() common.Hash
-	copy() node
-	print() string // just for debug
+	copy() Node
+	Print() string // just for debug
+}
+
+type TraversedNode struct {
+	Origin *Node
+	Path   []byte
 }
 
 type (
@@ -65,7 +70,7 @@ func (nk NodeKey) print() string {
 }
 
 // just for debug
-func (n InternalNode) print() string {
+func (n InternalNode) Print() string {
 	res := strings.Builder{}
 	for i := 0; i < 16; i++ {
 		res.WriteString(strconv.Itoa(i))
@@ -74,7 +79,7 @@ func (n InternalNode) print() string {
 		} else {
 			child := n.Children[i]
 			res.WriteString(":<Hash[")
-			//res.Write((child.Hash)[:])
+			res.WriteString(child.Hash.String()[2:6])
 			res.WriteString("], Version[")
 			res.WriteString(strconv.Itoa(int(child.Version)))
 			res.WriteString("], Leaf[")
@@ -86,14 +91,14 @@ func (n InternalNode) print() string {
 }
 
 // just for debug
-func (n LeafNode) print() string {
+func (n LeafNode) Print() string {
 	res := strings.Builder{}
 	res.WriteString("Key[")
 	res.WriteString(hexutil.DecodeFromNibbles(n.Key))
 	res.WriteString("], Value[")
-	//res.WriteString(string(n.Val))
+	res.Write(n.Val)
 	res.WriteString("], Hash[")
-	//res.WriteString(string((n.Hash)[:]))
+	res.WriteString(n.Hash.String()[2:6])
 	res.WriteString("]")
 	return res.String()
 }
@@ -113,14 +118,14 @@ func (n LeafNode) hash() common.Hash {
 }
 
 // deep copy
-func (n InternalNode) copy() node {
+func (n InternalNode) copy() Node {
 	return InternalNode{
 		Children: n.Children,
 	}
 }
 
 // deep copy
-func (n LeafNode) copy() node {
+func (n LeafNode) copy() Node {
 	nn := LeafNode{
 		Hash: n.Hash,
 	}
@@ -129,7 +134,7 @@ func (n LeafNode) copy() node {
 	return nn
 }
 
-func decodeNode(rawNode []byte) (n node, err error) {
+func decodeNode(rawNode []byte) (n Node, err error) {
 	if len(rawNode) == 0 {
 		return nil, nil
 	}
@@ -145,7 +150,7 @@ func decodeNode(rawNode []byte) (n node, err error) {
 	return nil, nil
 }
 
-func decodeInternalNode(rawNode []byte) (node, error) {
+func decodeInternalNode(rawNode []byte) (Node, error) {
 	n := InternalNode{}
 	err := json.Unmarshal(rawNode, &n)
 	if err != nil {
@@ -154,7 +159,7 @@ func decodeInternalNode(rawNode []byte) (node, error) {
 	return n, nil
 }
 
-func decodeLeafNode(rawNode []byte) (node, error) {
+func decodeLeafNode(rawNode []byte) (Node, error) {
 	n := LeafNode{}
 	err := json.Unmarshal(rawNode, &n)
 	if err != nil {

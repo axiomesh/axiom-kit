@@ -121,7 +121,7 @@ func Test_SingleLeafNodeProof(t *testing.T) {
 	require.Nil(t, err)
 	proof, err := jmt.Prove([]byte("abf3"))
 	require.Nil(t, err)
-	//fmt.Println("proof:", proof.print())
+	//fmt.Println("proof:", proof.printJMT())
 	hash := jmt.Commit()
 	exist, err := VerifyProof(hash, proof)
 	require.Nil(t, err)

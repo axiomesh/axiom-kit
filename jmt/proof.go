@@ -28,7 +28,7 @@ func (jmt *JMT) Prove(key []byte) (*ProofResult, error) {
 	return proof, nil
 }
 
-func (jmt *JMT) prove(root node, key []byte, next int, proof *ProofResult) error {
+func (jmt *JMT) prove(root Node, key []byte, next int, proof *ProofResult) error {
 	switch n := (root).(type) {
 	case InternalNode:
 		proof.Proof = append(proof.Proof, string(n.encode()))
@@ -42,7 +42,7 @@ func (jmt *JMT) prove(root node, key []byte, next int, proof *ProofResult) error
 			Path:    key[:next+1],
 			Prefix:  jmt.prefix,
 		}
-		var nextNode node
+		var nextNode Node
 		nextNode, err := jmt.getNode(nextNodeKey)
 		if err != nil {
 			return err
