@@ -1155,7 +1155,7 @@ func convertHex(in []byte) string {
 
 func initEmptyJMT() (*JMT, storage.Storage) {
 	dir, _ := os.MkdirTemp("", "TestKV")
-	s, _ := pebble.New(dir, nil)
+	s, _ := pebble.New(dir, nil, nil)
 	// init dummy jmt
 	rootHash := common.Hash{}
 	rootNodeKey := NodeKey{
@@ -1209,7 +1209,7 @@ func getRandomHexKV(lk, lv int) (k []byte, v []byte) {
 
 func initKV() storage.Storage {
 	dir, _ := os.MkdirTemp("", "TestKV")
-	s, _ := pebble.New(dir, nil)
+	s, _ := pebble.New(dir, nil, nil)
 	// init dummy jmt
 	rootHash := placeHolder
 	rootNodeKey := NodeKey{

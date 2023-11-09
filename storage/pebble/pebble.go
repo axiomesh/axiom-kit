@@ -9,12 +9,13 @@ import (
 
 type pdb struct {
 	db *pebble.DB
+	wo *pebble.WriteOptions
 }
 
 // todo (zqr): use logger to record panic
 // todo (zqr): add metrics for kv
 
-func New(path string, opts *pebble.Options) (storage.Storage, error) {
+func New(path string, opts *pebble.Options, wo *pebble.WriteOptions) (storage.Storage, error) {
 	db, err := pebble.Open(path, opts)
 	if err != nil {
 		return nil, err
@@ -22,17 +23,18 @@ func New(path string, opts *pebble.Options) (storage.Storage, error) {
 
 	return &pdb{
 		db: db,
+		wo: wo,
 	}, nil
 }
 
 func (p *pdb) Put(key, value []byte) {
-	if err := p.db.Set(key, value, pebble.NoSync); err != nil {
+	if err := p.db.Set(key, value, p.wo); err != nil {
 		panic(err)
 	}
 }
 
 func (p *pdb) Delete(key []byte) {
-	if err := p.db.Delete(key, pebble.NoSync); err != nil {
+	if err := p.db.Delete(key, p.wo); err != nil {
 		panic(err)
 	}
 }
@@ -91,6 +93,7 @@ func (p *pdb) Prefix(prefix []byte) storage.Iterator {
 func (p *pdb) NewBatch() storage.Batch {
 	return &pdbBatch{
 		batch: p.db.NewBatch(),
+		wo:    p.wo,
 	}
 }
 
@@ -142,6 +145,7 @@ func (it *iter) Value() []byte {
 
 type pdbBatch struct {
 	batch *pebble.Batch
+	wo    *pebble.WriteOptions
 }
 
 func (p *pdbBatch) Put(key, value []byte) {
@@ -153,7 +157,7 @@ func (p *pdbBatch) Delete(key []byte) {
 }
 
 func (p *pdbBatch) Commit() {
-	if err := p.batch.Commit(pebble.NoSync); err != nil {
+	if err := p.batch.Commit(p.wo); err != nil {
 		panic(err)
 	}
 }
