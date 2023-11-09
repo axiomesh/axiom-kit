@@ -4,6 +4,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	leveldbstorage "github.com/syndtr/goleveldb/leveldb/storage"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
 	"github.com/axiomesh/axiom-kit/storage"
@@ -19,6 +20,16 @@ func New(path string, o *opt.Options) (storage.Storage, error) {
 		return nil, err
 	}
 
+	return &ldb{
+		db: db,
+	}, nil
+}
+
+func NewMemory() (storage.Storage, error) {
+	db, err := leveldb.Open(leveldbstorage.NewMemStorage(), nil)
+	if err != nil {
+		return nil, err
+	}
 	return &ldb{
 		db: db,
 	}, nil

@@ -363,3 +363,15 @@ func BenchmarkLevelDbSuite(b *testing.B) {
 		return db
 	})
 }
+
+func TestLdb_Mem(t *testing.T) {
+	s, err := NewMemory()
+	require.Nil(t, err)
+
+	s.Put([]byte("key"), []byte("value"))
+	v1 := s.Get([]byte("key"))
+	assert.Equal(t, v1, []byte("value"))
+	s.Delete([]byte("key"))
+	v2 := s.Get([]byte("key"))
+	assert.True(t, v2 == nil)
+}
