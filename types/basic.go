@@ -312,7 +312,10 @@ func MarshalObjects[T any, Constraint CodecObjectConstraint[T]](objs []*T) ([]by
 
 func UnmarshalObjects[T any, Constraint CodecObjectConstraint[T]](data []byte) ([]*T, error) {
 	helper := pb.BytesSliceFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return nil, err
@@ -330,7 +333,10 @@ func UnmarshalObjects[T any, Constraint CodecObjectConstraint[T]](data []byte) (
 
 func UnmarshalObjectsWithIndex[T any, Constraint CodecObjectConstraint[T]](data []byte, index uint64) (*T, error) {
 	helper := pb.BytesSliceFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return nil, err

@@ -119,7 +119,10 @@ func (e *Event) Marshal() ([]byte, error) {
 
 func (e *Event) Unmarshal(data []byte) error {
 	helper := pb.EventFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -199,7 +202,10 @@ func (l *EvmLog) Marshal() ([]byte, error) {
 
 func (l *EvmLog) Unmarshal(data []byte) error {
 	helper := pb.EvmLogFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -336,7 +342,10 @@ func (r *Receipt) Marshal() ([]byte, error) {
 
 func (r *Receipt) Unmarshal(data []byte) error {
 	helper := pb.ReceiptFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
