@@ -80,7 +80,10 @@ func (h *BlockHeader) Marshal() ([]byte, error) {
 
 func (h *BlockHeader) Unmarshal(data []byte) error {
 	helper := pb.BlockHeaderFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -177,7 +180,10 @@ func (b *Block) Marshal() ([]byte, error) {
 
 func (b *Block) Unmarshal(data []byte) error {
 	helper := pb.BlockFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err

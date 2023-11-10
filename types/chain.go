@@ -49,7 +49,10 @@ func (m *ChainMeta) Marshal() ([]byte, error) {
 
 func (m *ChainMeta) Unmarshal(data []byte) error {
 	helper := pb.ChainMetaFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
@@ -97,7 +100,10 @@ func (m *TransactionMeta) Marshal() ([]byte, error) {
 
 func (m *TransactionMeta) Unmarshal(data []byte) error {
 	helper := pb.TransactionMetaFromVTPool()
-	defer helper.ReturnToVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
 	err := helper.UnmarshalVT(data)
 	if err != nil {
 		return err
