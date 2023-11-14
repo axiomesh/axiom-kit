@@ -142,7 +142,7 @@ func (mf *MiniFile) Close() error {
 	return mf.instanceLock.Release()
 }
 
-func (mf *MiniFile) GetAll() (map[string][]byte, error) {
+func (mf *MiniFile) GetAll(prefix string) (map[string][]byte, error) {
 	if mf.isClosed() {
 		return nil, errors.New("the miniFile storage is closed")
 	}
@@ -152,7 +152,7 @@ func (mf *MiniFile) GetAll() (map[string][]byte, error) {
 
 	all := make(map[string][]byte)
 
-	files, err := mf.prefix("")
+	files, err := mf.prefix(prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (mf *MiniFile) GetAll() (map[string][]byte, error) {
 	return all, nil
 }
 
-func (mf *MiniFile) DeleteAll() error {
+func (mf *MiniFile) DeleteAll(prefix string) error {
 	if mf.isClosed() {
 		return errors.New("the miniFile storage is closed")
 	}
@@ -178,7 +178,7 @@ func (mf *MiniFile) DeleteAll() error {
 	mf.lock.Lock()
 	defer mf.lock.Unlock()
 
-	files, err := mf.prefix("")
+	files, err := mf.prefix(prefix)
 	if err != nil {
 		return err
 	}
