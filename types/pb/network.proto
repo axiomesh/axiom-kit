@@ -10,6 +10,8 @@ message Message {
     SYNC_STATE_RESPONSE = 1;
     SYNC_BLOCK_REQUEST = 2;
     SYNC_BLOCK_RESPONSE = 3;
+    SYNC_TRIE_REQUEST = 4;
+    SYNC_TRIE_RESPONSE = 5;
   }
   string from = 1;
   Type type = 2;
@@ -35,4 +37,29 @@ message SyncBlockRequest {
 message CheckpointState {
   uint64 height = 1;
   string digest = 2;
+}
+
+message SyncTrieRequest {
+  uint64 height = 1;
+  uint64 version = 2;
+}
+
+message SyncTrieResponse {
+  enum Type {
+    SYNC_START = 0;
+    SYNC_PROCESSING = 1;
+    SYNC_END = 2;
+    SYNC_ERROR = 3;
+  }
+  Type type = 1;
+  TrieNodes trieNodes = 2;
+}
+
+message TrieNodes {
+  repeated TrieNode nodes = 1;
+}
+
+message TrieNode {
+  bytes key = 1;
+  bytes value = 2;
 }

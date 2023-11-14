@@ -24,6 +24,11 @@ type TraversedNode struct {
 	Path   []byte
 }
 
+type FullNode struct {
+	Key   []byte
+	Value []byte
+}
+
 type (
 	InternalNode struct {
 		Children [16]*Child `json:"children"`

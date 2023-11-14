@@ -7,6 +7,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 var (
@@ -59,6 +60,56 @@ func (jmt *JMT) Root() Node {
 // Specially, if version is 0, Traverse will traverse the whole tree.
 func (jmt *JMT) Traverse(version uint64) []*TraversedNode {
 	return jmt.dfs(jmt.root, version, []byte{})
+}
+
+func (jmt *JMT) GetAllNodesByRoot() *pb.TrieNodes {
+	return jmt.getAllNodes(jmt.root, jmt.rootNodeKey)
+}
+
+func (jmt *JMT) getAllNodes(root Node, nodeKey *NodeKey) *pb.TrieNodes {
+	if jmt.root == nil {
+		return nil
+	}
+	var ret *pb.TrieNodes
+	// traverse current sub tree
+	switch n := (root).(type) {
+	case InternalNode:
+		var hex byte
+		ret.Nodes = append(ret.Nodes, &pb.TrieNode{
+			Key:   nodeKey.encode(),
+			Value: root.encode(),
+		})
+		for hex = 0; hex < 16; hex++ {
+			child := n.Children[hex]
+			nextNodeKey := &NodeKey{
+				Version: child.Version,
+				Path:    make([]byte, len(nodeKey.Path)),
+				Prefix:  jmt.prefix,
+			}
+			copy(nextNodeKey.Path, nodeKey.Path)
+			nextNodeKey.Path = append(nextNodeKey.Path, hex)
+
+			var nextNode Node
+			nextNode, err := jmt.getNode(nextNodeKey)
+			if err != nil {
+				return nil
+			}
+			subTreeNodeSet := jmt.getAllNodes(nextNode, nextNodeKey)
+			if len(subTreeNodeSet.Nodes) != 0 {
+				ret.Nodes = append(ret.Nodes, subTreeNodeSet.Nodes...)
+			}
+		}
+		break
+	case LeafNode:
+		ret.Nodes = append(ret.Nodes, &pb.TrieNode{
+			Key:   nodeKey.encode(),
+			Value: root.encode(),
+		})
+		break
+	default:
+		break
+	}
+	return ret
 }
 
 func (jmt *JMT) dfs(root Node, version uint64, path []byte) []*TraversedNode {
