@@ -3,15 +3,13 @@ package minifile
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBatchFile(t *testing.T) {
-	path, err := os.MkdirTemp("", "*")
-	assert.Nil(t, err)
+	path := t.TempDir()
 
 	b, err := New(path)
 	assert.Nil(t, err)
@@ -35,8 +33,7 @@ func TestNewBatchFile(t *testing.T) {
 }
 
 func TestBatchFile_Put(t *testing.T) {
-	path, err := os.MkdirTemp("", "*")
-	assert.Nil(t, err)
+	path := t.TempDir()
 
 	b, err := New(path)
 	assert.Nil(t, err)
@@ -70,8 +67,7 @@ func TestBatchFile_Put(t *testing.T) {
 }
 
 func TestBatchFile_Prefix(t *testing.T) {
-	path, err := os.MkdirTemp("", "*")
-	assert.Nil(t, err)
+	path := t.TempDir()
 
 	b, err := New(path)
 	assert.Nil(t, err)
@@ -91,14 +87,14 @@ func TestBatchFile_Prefix(t *testing.T) {
 	err = b.Put("2", val)
 	assert.Nil(t, err)
 
-	files, err := b.GetAll()
+	files, err := b.GetAll("")
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(files))
 
-	err = b.DeleteAll()
+	err = b.DeleteAll("")
 	assert.Nil(t, err)
 
-	m, err := b.GetAll()
+	m, err := b.GetAll("")
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(m))
 
@@ -107,8 +103,7 @@ func TestBatchFile_Prefix(t *testing.T) {
 }
 
 func BenchmarkMiniFile_Get(b *testing.B) {
-	path, err := os.MkdirTemp("", "*")
-	assert.Nil(b, err)
+	path := b.TempDir()
 
 	f, err := New(path)
 	assert.Nil(b, err)
@@ -131,9 +126,10 @@ func BenchmarkMiniFile_Get(b *testing.B) {
 			assert.Equal(b, val, v)
 		}
 
-		e := f.DeleteAll()
+		e := f.DeleteAll("")
 		assert.Nil(b, e)
 	}
 
-	f.Close()
+	err = f.Close()
+	assert.Nil(b, err)
 }
