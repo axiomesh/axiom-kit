@@ -40,6 +40,13 @@ func TestMultiSinger(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestLoadSignerWithPk(t *testing.T) {
+	InitEIP155Signer(big.NewInt(1))
+	s, err := LoadSignerWithPk("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+	assert.Nil(t, err)
+	assert.Equal(t, "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", s.Addr.String())
+}
+
 func TestWrongSinger(t *testing.T) {
 	InitEIP155Signer(big.NewInt(1))
 	tx, s, err := GenerateWrongSignTransactionAndSigner(true)
