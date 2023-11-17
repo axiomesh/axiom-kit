@@ -3,11 +3,13 @@ package types
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math/big"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
@@ -674,6 +677,27 @@ func (tx *Transaction) Sign(prv *ecdsa.PrivateKey) error {
 type Signer struct {
 	Sk   *ecdsa.PrivateKey
 	Addr *Address
+}
+
+func LoadSignerWithPk(pk string) (*Signer, error) {
+	privateKeyHex := strings.TrimPrefix(pk, "0x")
+	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+	if err != nil {
+		return nil, fmt.Errorf("decode private key error: %v", err)
+	}
+
+	privateKey := &ecdsa.PrivateKey{}
+	privateKey.Curve = secp256k1.S256()
+	privateKey.D = new(big.Int).SetBytes(privateKeyBytes)
+
+	privateKey.X, privateKey.Y = secp256k1.S256().ScalarBaseMult(privateKey.D.Bytes())
+
+	addr := crypto.PubkeyToAddress(privateKey.PublicKey)
+	s := &Signer{
+		Sk:   privateKey,
+		Addr: NewAddress(addr.Bytes()),
+	}
+	return s, nil
 }
 
 func GenerateSigner() (*Signer, error) {
