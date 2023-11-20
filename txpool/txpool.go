@@ -38,7 +38,7 @@ type TxPool[T any, Constraint types.TXConstraint[T]] interface {
 	// ReConstructBatchByOrder reconstruct batch from empty txPool by order, must be called after RestorePool.
 	ReConstructBatchByOrder(oldBatch *RequestHashBatch[T, Constraint]) (deDuplicateTxHashes []string, err error)
 
-	FilterOutOfDateRequests() []*T
+	FilterOutOfDateRequests(timeout bool) []*T
 
 	// RestoreOneBatch moves one batch from batchStore back to non-batched txs.
 	RestoreOneBatch(hash string) error
