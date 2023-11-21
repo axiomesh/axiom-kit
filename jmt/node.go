@@ -138,7 +138,7 @@ func decodeNode(rawNode []byte) (n Node, err error) {
 	if len(rawNode) == 0 {
 		return nil, nil
 	}
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	if err := json.Unmarshal(rawNode, &m); err != nil {
 		return nil, err
 	}

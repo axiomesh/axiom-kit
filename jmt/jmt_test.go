@@ -840,7 +840,7 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v4"))
 
-	//===========
+	// ===========
 
 	// init version 0 jmt
 	jmt2, s2 := initEmptyJMT()
@@ -922,7 +922,7 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v3"))
 
-	//===========
+	// ===========
 
 	// init version 0 jmt
 	jmt2, s2 := initEmptyJMT()
@@ -973,7 +973,7 @@ func Test_Case_Random_1(t *testing.T) {
 	cnt := 10    // number of test cases
 	for i := 0; i < cnt; i++ {
 		jmt, s := initEmptyJMT()
-		//nnum := rand.Intn(maxn)
+		// nnum := rand.Intn(maxn)
 		nnum := maxn
 		fmt.Println("【Random Testcase ", i, "】, node num:", nnum)
 		kv := make(map[string][]byte, nnum)
@@ -1013,7 +1013,7 @@ func Test_Case_Random_2(t *testing.T) {
 				jmt, err = New(rootHash, s)
 				require.Nil(t, err)
 			}
-			//nnum := rand.Intn(maxn)
+			// nnum := rand.Intn(maxn)
 			nnum := maxn
 			inserted := make(map[string][]byte, nnum)
 			deleted := make(map[string]struct{}, nnum)
@@ -1117,7 +1117,6 @@ func Test_Case_Random_3(t *testing.T) {
 				printJMT(jmts[0], 0)
 				fmt.Println("Update key order of jmt[0]")
 				for j := 0; j < len(updateOrder[0]); j++ {
-
 					fmt.Println(convertHex(updateOrder[0][j]))
 				}
 
@@ -1132,16 +1131,15 @@ func Test_Case_Random_3(t *testing.T) {
 			require.Equal(t, rootHashs[0], rootHashs[i])
 		}
 	}
-
 }
 
 func printJMT(jmt *JMT, version uint64) {
-	fmt.Printf("======Start Print JMT========\n")
+	fmt.Print("======Start Print JMT========\n")
 	nodes := jmt.Traverse(version)
 	for j := 0; j < len(nodes); j++ {
 		fmt.Printf("Node[%v]: %v\n", convertHex((*nodes[j]).Path), (*(*nodes[j]).Origin).Print())
 	}
-	fmt.Printf("======End Print JMT========\n")
+	fmt.Print("======End Print JMT========\n")
 }
 
 func convertHex(in []byte) string {

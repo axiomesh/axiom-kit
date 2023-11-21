@@ -18,6 +18,7 @@ type BlockHeader struct {
 	GasPrice        int64
 	GasUsed         uint64
 	ProposerAccount string
+	ProposerNodeID  uint64
 }
 
 func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
@@ -34,8 +35,9 @@ func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
 		Epoch:           h.Epoch,
 		Bloom:           h.Bloom.Bytes(),
 		GasPrice:        h.GasPrice,
-		GasUsed:         h.GasUsed,
 		ProposerAccount: h.ProposerAccount,
+		GasUsed:         h.GasUsed,
+		ProposerNodeId:  h.ProposerNodeID,
 	}, nil
 }
 
@@ -67,6 +69,7 @@ func (h *BlockHeader) fromPB(m *pb.BlockHeader) error {
 	}
 	h.GasPrice = m.GasPrice
 	h.GasUsed = m.GasUsed
+	h.ProposerNodeID = m.ProposerNodeId
 	return nil
 }
 
@@ -95,14 +98,16 @@ func (h *BlockHeader) Unmarshal(data []byte) error {
 func (h *BlockHeader) Hash() *Hash {
 	blockheader := &BlockHeader{
 		Number:          h.Number,
-		ParentHash:      h.ParentHash,
 		StateRoot:       h.StateRoot,
 		TxRoot:          h.TxRoot,
 		ReceiptRoot:     h.ReceiptRoot,
+		ParentHash:      h.ParentHash,
+		Timestamp:       h.Timestamp,
 		Epoch:           h.Epoch,
 		GasPrice:        h.GasPrice,
 		GasUsed:         h.GasUsed,
 		ProposerAccount: h.ProposerAccount,
+		ProposerNodeID:  h.ProposerNodeID,
 	}
 	body, err := blockheader.Marshal()
 	if err != nil {

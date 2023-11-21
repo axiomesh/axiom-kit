@@ -24,4 +24,5 @@ message BlockHeader {
   int64 gas_price = 10;
   string proposer_account = 11;
   uint64 gas_used = 12;
+  uint64 proposer_node_id = 13;
 }

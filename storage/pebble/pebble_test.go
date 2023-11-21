@@ -346,7 +346,7 @@ func BenchmarkPebbleSuite(b *testing.B) {
 		// memory allowance for cache.
 		Cache: pebble.NewCache(int64(cache * 1024 * 1024)),
 
-		//MaxOpenFiles: 1000,
+		// MaxOpenFiles: 1000,
 
 		// The size of memory table(as well as the write buffer).
 		// Note, there may have more than two memory tables in the system.
