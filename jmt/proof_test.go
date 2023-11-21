@@ -121,7 +121,7 @@ func Test_SingleLeafNodeProof(t *testing.T) {
 	require.Nil(t, err)
 	proof, err := jmt.Prove([]byte("abf3"))
 	require.Nil(t, err)
-	//fmt.Println("proof:", proof.printJMT())
+	// fmt.Println("proof:", proof.printJMT())
 	hash := jmt.Commit()
 	exist, err := VerifyProof(hash, proof)
 	require.Nil(t, err)
@@ -165,7 +165,7 @@ func Test_Case_Proof_Random_1(t *testing.T) {
 				jmt, err = New(rootHash, s)
 				require.Nil(t, err)
 			}
-			//nnum := rand.Intn(maxn)
+			// nnum := rand.Intn(maxn)
 			nnum := maxn
 			inserted := make(map[string][]byte, nnum)
 			deleted := make(map[string]struct{}, nnum)

@@ -1,7 +1,7 @@
 package jmt
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"golang.org/x/exp/slices"
@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrorNotFound = fmt.Errorf("not found in DB")
+	ErrorNotFound = errors.New("not found in DB")
 )
 
 var placeHolder = LeafNode{}.hash()

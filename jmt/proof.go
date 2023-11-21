@@ -1,7 +1,7 @@
 package jmt
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrorBadProof = fmt.Errorf("proof is invalid") // proof content or struct is illegal
+	ErrorBadProof = errors.New("proof is invalid") // proof content or struct is illegal
 )
 
 type ProofResult struct {

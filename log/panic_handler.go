@@ -14,7 +14,7 @@ func redirectPanic(errLogFilePath string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := stdErrFile.Write([]byte(fmt.Sprintf("\n\n-------------------- process start time: %s --------------------\n", time.Now().Format("2006-01-02 15:04:05")))); err != nil {
+	if _, err := fmt.Fprintf(stdErrFile, "\n\n-------------------- process start time: %s --------------------\n", time.Now().Format("2006-01-02 15:04:05")); err != nil {
 		return err
 	}
 	redirectStderr(stdErrFile)
