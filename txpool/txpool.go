@@ -29,7 +29,7 @@ type TxPool[T any, Constraint types.TXConstraint[T]] interface {
 	RemoveBatches(batchHashList []string)
 
 	// RemoveStateUpdatingTxs removes all committed txs when state update one block during state updating
-	RemoveStateUpdatingTxs(txHashList []string)
+	RemoveStateUpdatingTxs(txPointerList []*WrapperTxPointer)
 
 	// RestorePool move all batched txs back to non-batched tx which should
 	// only be used after abnormal recovery.

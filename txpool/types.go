@@ -56,6 +56,12 @@ type ConsensusConfig struct {
 	NotifyFindNextBatchFn func(completionMissingBatchHashes ...string) // notify consensus that it can find next batch
 }
 
+type WrapperTxPointer struct {
+	TxHash  string
+	Account string
+	Nonce   uint64
+}
+
 const (
 	GenBatchTimeoutEvent = iota
 	GenBatchNoTxTimeoutEvent
