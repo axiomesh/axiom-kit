@@ -3,7 +3,6 @@ module github.com/axiomesh/axiom-kit
 go 1.20
 
 require (
-	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/cbergoon/merkletree v0.2.0
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811
 	github.com/ethereum/go-ethereum v1.12.0
@@ -13,6 +12,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+	go.uber.org/mock v0.3.0
 	golang.org/x/crypto v0.11.0
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
 	google.golang.org/protobuf v1.31.0
@@ -22,6 +22,7 @@ require (
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect

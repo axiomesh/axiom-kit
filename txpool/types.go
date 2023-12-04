@@ -1,6 +1,12 @@
 package txpool
 
-import "github.com/axiomesh/axiom-kit/types"
+import (
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
+
+	"github.com/axiomesh/axiom-kit/types"
+)
 
 type TxInfo[T any, Constraint types.TXConstraint[T]] struct {
 	Tx          *T
@@ -70,3 +76,17 @@ const (
 	ReConstructBatchEvent
 	GetTxsForGenBatchEvent
 )
+
+// GetBatchHash calculate hash of a RequestHashBatch
+func GetBatchHash[T any, Constraint types.TXConstraint[T]](batch *RequestHashBatch[T, Constraint]) string {
+	h := md5.New()
+	for _, hash := range batch.TxHashList {
+		_, _ = h.Write([]byte(hash))
+	}
+	if batch.Timestamp > 0 {
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, uint64(batch.Timestamp))
+		_, _ = h.Write(b)
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
