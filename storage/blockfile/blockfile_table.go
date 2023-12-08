@@ -151,6 +151,7 @@ func (b *BlockTable) repair() error {
 			if err := truncateBlockFile(b.head, contentExp); err != nil {
 				return err
 			}
+			contentSize = contentExp
 		}
 		if contentExp > contentSize {
 			b.logger.WithFields(logrus.Fields{
