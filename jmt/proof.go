@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
+	"github.com/axiomesh/axiom-kit/types"
 )
 
 var (
@@ -28,10 +29,10 @@ func (jmt *JMT) Prove(key []byte) (*ProofResult, error) {
 	return proof, nil
 }
 
-func (jmt *JMT) prove(root Node, key []byte, next int, proof *ProofResult) error {
+func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult) error {
 	switch n := (root).(type) {
-	case InternalNode:
-		proof.Proof = append(proof.Proof, string(n.encode()))
+	case *types.InternalNode:
+		proof.Proof = append(proof.Proof, string(n.Encode()))
 		if n.Children[key[next]] == nil {
 			return nil
 		}
@@ -42,14 +43,14 @@ func (jmt *JMT) prove(root Node, key []byte, next int, proof *ProofResult) error
 			Path:    key[:next+1],
 			Prefix:  jmt.prefix,
 		}
-		var nextNode Node
+		var nextNode types.Node
 		nextNode, err := jmt.getNode(nextNodeKey)
 		if err != nil {
 			return err
 		}
 		return jmt.prove(nextNode, key, next+1, proof) // find in next layer in tree
-	case LeafNode:
-		proof.Proof = append(proof.Proof, string(n.encode()))
+	case *types.LeafNode:
+		proof.Proof = append(proof.Proof, string(n.Encode()))
 		proof.Key = n.Key
 		proof.Value = n.Val
 		return nil
@@ -70,25 +71,25 @@ func verify(hash common.Hash, level int, proof *ProofResult) (bool, error) {
 	if level >= len(proof.Proof) {
 		return false, nil
 	}
-	n, err := decodeNode([]byte(proof.Proof[level]))
+	n, err := types.UnmarshalJMTNode([]byte(proof.Proof[level]))
 	if err != nil {
 		return false, ErrorBadProof
 	}
 	switch nn := (n).(type) {
-	case InternalNode:
+	case *types.InternalNode:
 		if nn.Children[proof.Key[level]] == nil {
 			return false, nil
 		}
-		if hash != nn.hash() { // verify current node's hash is include in proof
+		if hash != nn.GetHash() { // verify current node's hash is include in proof
 			return false, nil
 		}
 		return verify(nn.Children[proof.Key[level]].Hash, level+1, proof) // verify node in next layer
-	case LeafNode:
-		leaf := LeafNode{
+	case *types.LeafNode:
+		leaf := types.LeafNode{
 			Key: proof.Key,
 			Val: proof.Value,
 		}
-		if leaf.hash() != hash { // 验证本节点的哈希包含在proof内
+		if leaf.GetHash() != hash { // verify whether current node's hash were included in proof
 			return false, nil
 		}
 		return true, nil
