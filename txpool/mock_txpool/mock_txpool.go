@@ -78,6 +78,42 @@ func (c *TxPoolAddLocalTxCall[T, Constraint]) DoAndReturn(f func(*T) error) *TxP
 	return c
 }
 
+// AddRebroadcastTxs mocks base method.
+func (m *MockTxPool[T, Constraint]) AddRebroadcastTxs(txs []*T) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddRebroadcastTxs", txs)
+}
+
+// AddRebroadcastTxs indicates an expected call of AddRebroadcastTxs.
+func (mr *MockTxPoolMockRecorder[T, Constraint]) AddRebroadcastTxs(txs any) *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRebroadcastTxs", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).AddRebroadcastTxs), txs)
+	return &TxPoolAddRebroadcastTxsCall[T, Constraint]{Call: call}
+}
+
+// TxPoolAddRebroadcastTxsCall wrap *gomock.Call
+type TxPoolAddRebroadcastTxsCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TxPoolAddRebroadcastTxsCall[T, Constraint]) Return() *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+	c.Call = c.Call.Return()
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TxPoolAddRebroadcastTxsCall[T, Constraint]) Do(f func([]*T)) *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TxPoolAddRebroadcastTxsCall[T, Constraint]) DoAndReturn(f func([]*T)) *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // AddRemoteTxs mocks base method.
 func (m *MockTxPool[T, Constraint]) AddRemoteTxs(txs []*T) {
 	m.ctrl.T.Helper()

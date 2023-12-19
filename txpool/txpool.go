@@ -20,6 +20,9 @@ type TxPool[T any, Constraint types.TXConstraint[T]] interface {
 	// AddRemoteTxs add p2p txs into txPool
 	AddRemoteTxs(txs []*T)
 
+	// AddRebroadcastTxs add rebroadcast txs into txPool
+	AddRebroadcastTxs(txs []*T)
+
 	// GenerateRequestBatch generates a transaction batch and post it
 	// to outside if there are transactions in txPool.
 	GenerateRequestBatch(typ int) (*RequestHashBatch[T, Constraint], error)
