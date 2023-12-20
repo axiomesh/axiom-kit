@@ -96,6 +96,11 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 			mock.addTx(tx)
 		})
 	}).AnyTimes()
+	mock.EXPECT().AddRebroadcastTxs(gomock.Any()).Do(func(txs []*T) {
+		lo.ForEach(txs, func(tx *T, _ int) {
+			mock.addTx(tx)
+		})
+	}).AnyTimes()
 
 	mock.EXPECT().GetRequestsByHashList(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 		func(batchHash string, timestamp int64, txHashList []string, _ []string) ([]*T, []bool, map[uint64]string, error) {
