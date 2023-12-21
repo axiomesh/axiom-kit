@@ -21,7 +21,7 @@ linter:
 
 prepare:
 	${GO_BIN} install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
-	${GO_BIN} install github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto@v0.4.1-0.20230809200157-1a874c671c55
+	${GO_BIN} install github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto@v0.5
 
 clean-pb:
 	rm -rf $(CURRENT_PATH)/*.pb.go
@@ -47,6 +47,9 @@ compile-pb: clean-pb
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncStateRequest \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncStateResponse \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncBlockRequest \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).Node \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).InternalNode \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).LeafNode \
 		$(CURRENT_PATH)/*.proto
 
 .PHONY: prepare clean-pb compile-pb

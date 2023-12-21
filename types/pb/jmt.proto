@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "../pb";
+
+message Node{
+  bool leaf = 1;
+  bytes content = 2;
+}
+
+message InternalNode {
+  repeated Child children = 1;
+}
+
+message LeafNode {
+  bytes key = 1;
+  bytes value = 2;
+  bytes hash = 3;
+}
+
+message  Child{
+  optional bytes hash = 1;
+  uint64 version = 2;
+  bool leaf = 3;
+}
