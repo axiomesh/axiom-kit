@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/axiomesh/axiom-kit/types/pb"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -154,6 +156,40 @@ func (tx *AccessListTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.ChainID, tx.V, tx.R, tx.S = chainID, v, r, s
 }
 
+func (tx *AccessListTx) toPB() *pb.AccessListTx {
+	if tx == nil {
+		return &pb.AccessListTx{}
+	}
+
+	return &pb.AccessListTx{
+		ChainId:    toPBBigInt(tx.ChainID),
+		Nonce:      tx.Nonce,
+		GasPrice:   toPBBigInt(tx.GasPrice),
+		Gas:        tx.Gas,
+		To:         toPBAddress(tx.To),
+		Value:      toPBBigInt(tx.Value),
+		Data:       tx.Data,
+		AccessList: toPBAccessList(tx.AccessList),
+		V:          toPBBigInt(tx.V),
+		R:          toPBBigInt(tx.R),
+		S:          toPBBigInt(tx.S),
+	}
+}
+
+func (tx *AccessListTx) fromPB(pb *pb.AccessListTx) {
+	tx.ChainID = fromPBBigInt(pb.ChainId)
+	tx.Nonce = pb.Nonce
+	tx.GasPrice = fromPBBigInt(pb.GasPrice)
+	tx.Gas = pb.Gas
+	tx.To = fromPBAddress(pb.To)
+	tx.Value = fromPBBigInt(pb.Value)
+	tx.Data = pb.Data
+	tx.AccessList = fromPBAccessList(pb.AccessList)
+	tx.V = fromPBBigInt(pb.V)
+	tx.R = fromPBBigInt(pb.R)
+	tx.S = fromPBBigInt(pb.S)
+}
+
 // copy creates a deep copy of the transaction data and initializes all fields.
 func (tx *LegacyTx) copy() TxData {
 	cpy := &LegacyTx{
@@ -216,6 +252,36 @@ func (tx *LegacyTx) RawSignatureValues() (v, r, s *big.Int) {
 
 func (tx *LegacyTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.V, tx.R, tx.S = v, r, s
+}
+
+func (tx *LegacyTx) toPB() *pb.LegacyTx {
+	if tx == nil {
+		return &pb.LegacyTx{}
+	}
+
+	return &pb.LegacyTx{
+		Nonce:    tx.Nonce,
+		GasPrice: toPBBigInt(tx.GasPrice),
+		Gas:      tx.Gas,
+		To:       toPBAddress(tx.To),
+		Value:    toPBBigInt(tx.Value),
+		Data:     tx.Data,
+		V:        toPBBigInt(tx.V),
+		R:        toPBBigInt(tx.R),
+		S:        toPBBigInt(tx.S),
+	}
+}
+
+func (tx *LegacyTx) fromPB(pb *pb.LegacyTx) {
+	tx.Nonce = pb.Nonce
+	tx.GasPrice = fromPBBigInt(pb.GasPrice)
+	tx.Gas = pb.Gas
+	tx.To = fromPBAddress(pb.To)
+	tx.Value = fromPBBigInt(pb.Value)
+	tx.Data = pb.Data
+	tx.V = fromPBBigInt(pb.V)
+	tx.R = fromPBBigInt(pb.R)
+	tx.S = fromPBBigInt(pb.S)
 }
 
 // copy creates a deep copy of the transaction data and initializes all fields.
@@ -291,6 +357,41 @@ func (tx *DynamicFeeTx) RawSignatureValues() (v, r, s *big.Int) {
 
 func (tx *DynamicFeeTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.ChainID, tx.V, tx.R, tx.S = chainID, v, r, s
+}
+
+func (tx *DynamicFeeTx) toPB() *pb.DynamicFeeTx {
+	if tx == nil {
+		return &pb.DynamicFeeTx{}
+	}
+
+	return &pb.DynamicFeeTx{
+		ChainId:    toPBBigInt(tx.ChainID),
+		Nonce:      tx.Nonce,
+		GasTipCap:  toPBBigInt(tx.GasTipCap),
+		GasFeeCap:  toPBBigInt(tx.GasFeeCap),
+		Gas:        tx.Gas,
+		To:         toPBAddress(tx.To),
+		Value:      toPBBigInt(tx.Value),
+		Data:       tx.Data,
+		AccessList: toPBAccessList(tx.AccessList),
+		V:          toPBBigInt(tx.V),
+		R:          toPBBigInt(tx.R),
+		S:          toPBBigInt(tx.S),
+	}
+}
+
+func (tx *DynamicFeeTx) fromPB(pb *pb.DynamicFeeTx) {
+	tx.Nonce = pb.Nonce
+	tx.GasTipCap = fromPBBigInt(pb.GasTipCap)
+	tx.GasFeeCap = fromPBBigInt(pb.GasFeeCap)
+	tx.Gas = pb.Gas
+	tx.To = fromPBAddress(pb.To)
+	tx.Value = fromPBBigInt(pb.Value)
+	tx.Data = pb.Data
+	tx.AccessList = fromPBAccessList(pb.AccessList)
+	tx.V = fromPBBigInt(pb.V)
+	tx.R = fromPBBigInt(pb.R)
+	tx.S = fromPBBigInt(pb.S)
 }
 
 // deriveChainId derives the chain id from the given v parameter
