@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "../pb";
+
+// use string to replace big.Int
+message BigInt {
+  string value = 1;
+}
+
+message Transaction {
+  TxDataVariant inner = 1;
+  int64 time = 2;
+}
+
+message TxDataVariant {
+  oneof tx_data_type {
+    AccessListTx access_list_tx = 1;
+    LegacyTx legacy_tx = 2;
+    DynamicFeeTx dynamic_fee_tx = 3;
+  }
+}
+
+message AccessListTx {
+  BigInt chain_id = 1;
+  uint64 nonce = 2;
+  BigInt gas_price = 3;
+  uint64 gas = 4;
+  bytes to = 5;
+  BigInt value = 6;
+  bytes data = 7;
+  AccessList access_list = 8;
+  BigInt v = 9;
+  BigInt r = 10;
+  BigInt s = 11;
+}
+
+message LegacyTx {
+  uint64 nonce = 1;
+  BigInt gas_price = 2;
+  uint64 gas = 3;
+  bytes to = 4;
+  BigInt value = 5;
+  bytes data = 6;
+  BigInt v = 7;
+  BigInt r = 8;
+  BigInt s = 9;
+}
+
+message DynamicFeeTx {
+  BigInt chain_id = 1;
+  uint64 nonce = 2;
+  BigInt gas_tip_cap = 3;
+  BigInt gas_fee_cap = 4;
+  uint64 gas = 5;
+  bytes to = 6;
+  BigInt value = 7;
+  bytes data = 8;
+  AccessList access_list = 9;
+  BigInt v = 10;
+  BigInt r = 11;
+  BigInt s = 12;
+}
+
+message AccessTuple {
+  bytes address = 1;
+  repeated bytes storage_keys = 2;
+}
+
+// AccessList，EIP-2930
+  message AccessList {
+  repeated AccessTuple access_tuples = 1;
+}
+
+
+

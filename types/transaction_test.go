@@ -2,7 +2,13 @@ package types
 
 import (
 	"math/big"
+	"sync/atomic"
 	"testing"
+	"time"
+
+	"github.com/axiomesh/axiom-kit/types/pb"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -91,4 +97,109 @@ func TestEthTransaction_Generate(t *testing.T) {
 	decodeFrom = tx.GetFrom()
 	assert.Nil(t, err)
 	assert.Equal(t, from.Addr.Bytes(), decodeFrom.Bytes())
+}
+
+// TestTransaction_PB is a test function that tests the serialization and deserialization
+// of different types of transactions to and from Protocol Buffers.
+func TestTransaction_PB(t *testing.T) {
+	assert.True(t, common.IsHexAddress("0x264e23168e80f15e9311F2B88b4D7abeAba47E54"))
+	addr := common.HexToAddress("0x264e23168e80f15e9311F2B88b4D7abeAba47E54")
+
+	/** test case 1 LegacyTx */
+	legacyTx := &Transaction{
+		Inner: &LegacyTx{
+			Nonce:    100,
+			GasPrice: big.NewInt(5000000),
+			Gas:      100000000,
+			To:       &addr,
+			Value:    big.NewInt(1),
+			Data:     []byte{0, 1, 2, 3, 4, 5, 6, 7, 8},
+			V:        big.NewInt(2),
+			R:        big.NewInt(3),
+			S:        big.NewInt(4),
+		},
+		Time: time.Now(),
+		hash: atomic.Value{},
+		size: atomic.Value{},
+		from: atomic.Value{},
+	}
+
+	legacyTxPB := legacyTx.toPB()
+	a, err := legacyTxPB.MarshalVT()
+	assert.Nil(t, err)
+	assert.NotNil(t, legacyTxPB)
+
+	legacyTxPB2 := &pb.Transaction{}
+	err = legacyTxPB2.UnmarshalVT(a)
+	assert.Nil(t, err)
+
+	legacyTx2 := &Transaction{}
+	legacyTx2.fromPB(legacyTxPB2)
+	// Ignore monotonic clock readings
+	assert.Equal(t, legacyTx.Inner.GetGasPrice(), legacyTx2.Inner.GetGasPrice())
+	if legacyTx2.Inner.GetTo() != nil {
+		assert.Equal(t, legacyTx.Inner.GetTo().String(), legacyTx2.Inner.GetTo().String())
+	}
+
+	/** test case 2 AccessListTx */
+	accessListTx := &Transaction{
+		Inner: &AccessListTx{
+			Nonce:    100,
+			GasPrice: big.NewInt(5000000),
+			Gas:      100000000,
+			To:       &addr,
+			Value:    big.NewInt(1),
+			Data:     []byte{0, 1, 2, 3, 4, 5, 6, 7, 8},
+			V:        big.NewInt(2),
+			R:        big.NewInt(3),
+			S:        big.NewInt(4),
+			AccessList: types.AccessList{
+				{
+					addr,
+					[]common.Hash{common.BytesToHash([]byte{0}), common.BytesToHash([]byte{1})},
+				},
+			},
+		},
+		Time: time.Now(),
+		hash: atomic.Value{},
+		size: atomic.Value{},
+	}
+
+	accessListTxPB := accessListTx.toPB()
+	assert.NotNil(t, accessListTxPB)
+
+	accessListTx2 := &Transaction{}
+	accessListTx2.fromPB(accessListTxPB)
+	assert.Equal(t, accessListTx.Inner.GetGasPrice(), accessListTx2.Inner.GetGasPrice())
+	assert.Equal(t, accessListTx.Inner.GetTo().String(), accessListTx2.Inner.GetTo().String())
+	assert.Equal(t, accessListTx.Inner.GetAccessList()[0].Address.String(), accessListTx2.Inner.GetAccessList()[0].Address.String())
+	assert.Equal(t, accessListTx.Inner.GetAccessList()[0].StorageKeys[0].String(), accessListTx2.Inner.GetAccessList()[0].StorageKeys[0].String())
+
+	/** test case 3 DynamicFeeTx */
+	dynamicFeeTx := &Transaction{
+		Inner: &DynamicFeeTx{
+			Nonce:     100,
+			GasTipCap: big.NewInt(5000000),
+			GasFeeCap: big.NewInt(5000000),
+			Gas:       100000000,
+			To:        &addr,
+			Value:     big.NewInt(1),
+			Data:      []byte{0, 1, 2, 3, 4, 5, 6, 7, 8},
+			V:         big.NewInt(2),
+			R:         big.NewInt(3),
+			S:         big.NewInt(4),
+		},
+		Time: time.Now(),
+		hash: atomic.Value{},
+		size: atomic.Value{},
+	}
+
+	dynamicFeeTxPB := dynamicFeeTx.toPB()
+	assert.NotNil(t, dynamicFeeTxPB)
+
+	dynamicFeeTx2 := &Transaction{}
+	dynamicFeeTx2.fromPB(dynamicFeeTxPB)
+	assert.Equal(t, dynamicFeeTx.Inner.GetGasTipCap(), dynamicFeeTx2.Inner.GetGasTipCap())
+	assert.Equal(t, dynamicFeeTx.Inner.GetGasFeeCap(), dynamicFeeTx2.Inner.GetGasFeeCap())
+	assert.Equal(t, dynamicFeeTx.Inner.GetTo().String(), dynamicFeeTx2.Inner.GetTo().String())
 }

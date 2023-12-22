@@ -14,6 +14,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/axiomesh/axiom-kit/types/pb"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -577,11 +579,17 @@ func (tx *Transaction) RbftGetNonce() uint64 {
 }
 
 func (tx *Transaction) RbftUnmarshal(raw []byte) error {
-	return tx.UnmarshalBinary(raw)
+	pbTx := &pb.Transaction{}
+	if err := pbTx.UnmarshalVT(raw); err != nil {
+		return err
+	}
+	tx.fromPB(pbTx)
+	return nil
 }
 
 func (tx *Transaction) RbftMarshal() ([]byte, error) {
-	return tx.MarshalBinary()
+	pbTx := tx.toPB()
+	return pbTx.MarshalVT()
 }
 
 func (tx *Transaction) Unmarshal(buf []byte) error {
@@ -672,6 +680,63 @@ func (tx *Transaction) Sign(prv *ecdsa.PrivateKey) error {
 	}
 	tx.Inner.setSignatureValues(signer.chainId, v, r, s)
 	return nil
+}
+
+func (tx *Transaction) toPB() *pb.Transaction {
+	if tx == nil || tx.Inner == nil {
+		return nil
+	}
+
+	var txData pb.TxDataVariant
+	switch tx := tx.Inner.(type) {
+	case *AccessListTx:
+		txData.TxDataType = &pb.TxDataVariant_AccessListTx{
+			AccessListTx: tx.toPB(),
+		}
+	case *LegacyTx:
+		txData.TxDataType = &pb.TxDataVariant_LegacyTx{
+			LegacyTx: tx.toPB(),
+		}
+	case *DynamicFeeTx:
+		txData.TxDataType = &pb.TxDataVariant_DynamicFeeTx{
+			DynamicFeeTx: tx.toPB(),
+		}
+	}
+
+	return &pb.Transaction{
+		Inner: &txData,
+		Time:  toPBTime(tx.Time),
+	}
+}
+
+func (tx *Transaction) fromPB(PBTx *pb.Transaction) {
+	if PBTx == nil {
+		return
+	}
+
+	switch x := PBTx.Inner.TxDataType.(type) {
+	case *pb.TxDataVariant_AccessListTx:
+		txData := &AccessListTx{}
+		txData.fromPB(x.AccessListTx)
+		tx.Inner = txData
+	case *pb.TxDataVariant_LegacyTx:
+		txData := &LegacyTx{}
+		txData.fromPB(x.LegacyTx)
+		tx.Inner = txData
+	case *pb.TxDataVariant_DynamicFeeTx:
+		txData := &DynamicFeeTx{}
+		txData.fromPB(x.DynamicFeeTx)
+		tx.Inner = txData
+	}
+	// ignore time
+}
+
+func toPBTime(t time.Time) int64 {
+	return t.UnixNano()
+}
+
+func fromPBTime(timestamp int64) time.Time {
+	return time.Unix(0, timestamp)
 }
 
 type Signer struct {
@@ -841,4 +906,89 @@ func GenerateDynamicFeeTxAndSinger() (*Transaction, error) {
 		return nil, err
 	}
 	return tx, nil
+}
+
+func toPBBigInt(bi *big.Int) *pb.BigInt {
+	if bi == nil {
+		return nil
+	}
+	return &pb.BigInt{Value: bi.String()}
+}
+
+func fromPBBigInt(bi *pb.BigInt) *big.Int {
+	if bi == nil {
+		return nil
+	}
+	n := new(big.Int)
+	n.SetString(bi.Value, 10)
+	return n
+}
+
+func toPBAddress(addr *common.Address) []byte {
+	if addr == nil {
+		return nil
+	}
+	return addr.Bytes()
+}
+
+func fromPBAddress(pbAddr []byte) *common.Address {
+	if pbAddr == nil {
+		return nil
+	}
+	var addr common.Address
+	addr.SetBytes(pbAddr)
+	return &addr
+}
+
+func toPBAccessList(ac types.AccessList) *pb.AccessList {
+	if ac == nil {
+		return nil
+	}
+	accessListPB := make([]*pb.AccessTuple, len(ac))
+	for i, tuple := range ac {
+		accessListPB[i] = &pb.AccessTuple{
+			Address:     tuple.Address[:],
+			StorageKeys: toPBHashes(tuple.StorageKeys),
+		}
+	}
+	AccessList := &pb.AccessList{
+		AccessTuples: accessListPB,
+	}
+	return AccessList
+}
+
+func fromPBAccessList(accessListPB *pb.AccessList) types.AccessList {
+	if accessListPB == nil {
+		return nil
+	}
+	accessList := make(types.AccessList, len(accessListPB.AccessTuples))
+	for i, tuplePB := range accessListPB.AccessTuples {
+		accessList[i] = types.AccessTuple{
+			Address:     common.BytesToAddress(tuplePB.Address),
+			StorageKeys: fromPBHashes(tuplePB.StorageKeys),
+		}
+	}
+	return accessList
+}
+
+func fromPBHashes(hashesPB [][]byte) []common.Hash {
+	if hashesPB == nil {
+		return nil
+	}
+	hashes := make([]common.Hash, len(hashesPB))
+	for i, hashPB := range hashesPB {
+		hashes[i] = common.BytesToHash(hashPB)
+	}
+	return hashes
+}
+
+func toPBHashes(hashes []common.Hash) [][]byte {
+	if hashes == nil {
+		return nil
+	}
+	hashesPB := make([][]byte, len(hashes))
+	for i, hash := range hashes {
+		hashesPB[i] = hash.Bytes()
+	}
+	return hashesPB
 }
