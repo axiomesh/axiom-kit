@@ -19,7 +19,7 @@ var placeHolder = (&types.LeafNode{}).GetHash()
 type JMT struct {
 	root        types.Node
 	rootNodeKey *NodeKey
-	prefix      []byte
+	typ         []byte
 	backend     storage.Storage
 	dirtyNodes  map[string]types.Node
 }
@@ -46,67 +46,12 @@ func New(rootHash common.Hash, backend storage.Storage) (*JMT, error) {
 	}
 	jmt.root = root
 	jmt.rootNodeKey = rootNodeKey
-	jmt.prefix = rootNodeKey.Prefix
+	jmt.typ = rootNodeKey.Type
 	return jmt, nil
 }
 
 func (jmt *JMT) Root() types.Node {
 	return jmt.root
-}
-
-// Traverse traverses jmt in deep-first order, and will only traverse branches whose version is GTE the specific version.
-// Specially, if version is 0, Traverse will traverse the whole tree.
-func (jmt *JMT) Traverse(version uint64) []*TraversedNode {
-	return jmt.dfs(jmt.root, version, []byte{})
-}
-
-func (jmt *JMT) dfs(root types.Node, version uint64, path []byte) []*TraversedNode {
-	if jmt.root == nil {
-		return nil
-	}
-	var ret []*TraversedNode
-	// traverse current sub tree
-	switch n := (root).(type) {
-	case *types.InternalNode:
-		var hex byte
-		ret = append(ret, &TraversedNode{
-			Origin: &root,
-			Path:   path,
-		})
-		for hex = 0; hex < 16; hex++ {
-			if n.Children[hex] == nil || n.Children[hex].Version < version {
-				continue
-			}
-			child := n.Children[hex]
-			nextNodeKey := &NodeKey{
-				Version: child.Version,
-				Path:    make([]byte, len(path)),
-				Prefix:  jmt.prefix,
-			}
-			copy(nextNodeKey.Path, path)
-			nextNodeKey.Path = append(nextNodeKey.Path, hex)
-
-			var nextNode types.Node
-			nextNode, err := jmt.getNode(nextNodeKey)
-			if err != nil {
-				return nil
-			}
-			subTreeNodeSet := jmt.dfs(nextNode, version, nextNodeKey.Path)
-			if len(subTreeNodeSet) != 0 {
-				ret = append(ret, subTreeNodeSet...)
-			}
-		}
-		break
-	case *types.LeafNode:
-		ret = append(ret, &TraversedNode{
-			Origin: &root,
-			Path:   path,
-		})
-		break
-	default:
-		break
-	}
-	return ret
 }
 
 // Get finds the value according to  key in tree.
@@ -126,7 +71,7 @@ func (jmt *JMT) get(root types.Node, key []byte, next int) (value []byte, err er
 		nextNodeKey := &NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
-			Prefix:  jmt.prefix,
+			Type:    jmt.typ,
 		}
 		var nextNode types.Node
 		nextNode, err = jmt.getNode(nextNodeKey)
@@ -164,7 +109,7 @@ func (jmt *JMT) Update(version uint64, key, value []byte) error {
 			jmt.rootNodeKey = &NodeKey{
 				Version: version,
 				Path:    []byte{},
-				Prefix:  jmt.prefix,
+				Type:    jmt.typ,
 			}
 		} else {
 			jmt.rootNodeKey = newRootNodeKey
@@ -187,7 +132,7 @@ func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *NodeKey, version 
 		}
 		newLeaf.Hash = newLeaf.GetHash()
 		nk := jmt.traceNewNode(version, key[:next], newLeaf)
-		nk.Prefix = jmt.prefix
+		nk.Type = jmt.typ
 		return newLeaf, nk, true, nil
 	case *types.InternalNode:
 		var nextNode types.Node
@@ -199,7 +144,7 @@ func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *NodeKey, version 
 			nextNodeKey = &NodeKey{
 				Version: nextBlkNum,
 				Path:    key[:next+1],
-				Prefix:  jmt.prefix,
+				Type:    jmt.typ,
 			}
 			nextNode, err = jmt.getNode(nextNodeKey)
 			if err != nil {
@@ -256,7 +201,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 		nextNodeKey = &NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
-			Prefix:  jmt.prefix,
+			Type:    jmt.typ,
 		}
 		nextNode, err = jmt.getNode(nextNodeKey)
 		if err != nil {
@@ -280,7 +225,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 				leafNk := &NodeKey{
 					Version: dstChild.Version,
 					Path:    append(key[:next], pos), // copy slice
-					Prefix:  jmt.prefix,
+					Type:    jmt.typ,
 				}
 				leaf, err := jmt.getNode(leafNk)
 				if err != nil {
@@ -423,7 +368,7 @@ func (jmt *JMT) traceNewNode(version uint64, path []byte, newNode types.Node) *N
 	nk := &NodeKey{
 		Version: version,
 		Path:    make([]byte, len(path)),
-		Prefix:  jmt.prefix,
+		Type:    jmt.typ,
 	}
 	copy(nk.Path, path)
 	k := string(nk.encode())
