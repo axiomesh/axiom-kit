@@ -265,6 +265,44 @@ func (c *TxPoolGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, boo
 	return c
 }
 
+// GetLocalTxs mocks base method.
+func (m *MockTxPool[T, Constraint]) GetLocalTxs() [][]byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLocalTxs")
+	ret0, _ := ret[0].([][]byte)
+	return ret0
+}
+
+// GetLocalTxs indicates an expected call of GetLocalTxs.
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetLocalTxs() *TxPoolGetLocalTxsCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLocalTxs", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetLocalTxs))
+	return &TxPoolGetLocalTxsCall[T, Constraint]{Call: call}
+}
+
+// TxPoolGetLocalTxsCall wrap *gomock.Call
+type TxPoolGetLocalTxsCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TxPoolGetLocalTxsCall[T, Constraint]) Return(arg0 [][]byte) *TxPoolGetLocalTxsCall[T, Constraint] {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TxPoolGetLocalTxsCall[T, Constraint]) Do(f func() [][]byte) *TxPoolGetLocalTxsCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TxPoolGetLocalTxsCall[T, Constraint]) DoAndReturn(f func() [][]byte) *TxPoolGetLocalTxsCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // GetMeta mocks base method.
 func (m *MockTxPool[T, Constraint]) GetMeta(full bool) *txpool.Meta[T, Constraint] {
 	m.ctrl.T.Helper()

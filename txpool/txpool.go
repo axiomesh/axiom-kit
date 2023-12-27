@@ -72,6 +72,8 @@ type TxPool[T any, Constraint types.TXConstraint[T]] interface {
 
 	// ReceiveMissingRequests receives txs fetched from primary and add txs to txPool
 	ReceiveMissingRequests(batchHash string, txs map[uint64]*T) error
+
+	GetLocalTxs() [][]byte
 }
 
 type txPoolInfo[T any, Constraint types.TXConstraint[T]] interface {
