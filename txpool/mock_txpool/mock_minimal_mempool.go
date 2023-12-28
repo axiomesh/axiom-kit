@@ -209,6 +209,16 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 		mock.notifyGenerateBatchFn = config.NotifyGenerateBatchFn
 		mock.notifyFindNextBatchFn = config.NotifyFindNextBatchFn
 	}).AnyTimes()
+	mock.EXPECT().GetLocalTxs().DoAndReturn(func() [][]byte {
+		res := make([][]byte, 0)
+		for _, txs := range mock.allTxs {
+			for _, tx := range txs {
+				marshal, _ := Constraint(tx).RbftMarshal()
+				res = append(res, marshal)
+			}
+		}
+		return res
+	}).AnyTimes()
 	return mock
 }
 

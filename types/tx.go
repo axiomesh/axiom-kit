@@ -381,6 +381,7 @@ func (tx *DynamicFeeTx) toPB() *pb.DynamicFeeTx {
 }
 
 func (tx *DynamicFeeTx) fromPB(pb *pb.DynamicFeeTx) {
+	tx.ChainID = fromPBBigInt(pb.ChainId)
 	tx.Nonce = pb.Nonce
 	tx.GasTipCap = fromPBBigInt(pb.GasTipCap)
 	tx.GasFeeCap = fromPBBigInt(pb.GasFeeCap)
