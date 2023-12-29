@@ -47,6 +47,9 @@ compile-pb: clean-pb
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncStateRequest \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncStateResponse \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncBlockRequest \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncChainDataRequest \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncChainDataResponse \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).FetchEpochStateRequest \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Node \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).InternalNode \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).LeafNode \
