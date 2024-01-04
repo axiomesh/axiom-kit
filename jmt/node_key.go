@@ -30,6 +30,8 @@ func (nk NodeKey) print() string {
 	res := strings.Builder{}
 	res.WriteString("Version[")
 	res.WriteString(strconv.Itoa(int(nk.Version)))
+	res.WriteString("], Type[")
+	res.WriteString(strconv.Itoa(len(nk.Type)))
 	res.WriteString("], Path[")
 	res.WriteString(hexutil.DecodeFromNibbles(nk.Path))
 	res.WriteString("]")

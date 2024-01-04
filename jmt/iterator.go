@@ -19,7 +19,6 @@ var (
 type Iterator struct {
 	rootHash common.Hash
 	backend  storage.Storage
-	typ      []byte
 
 	BufferC chan *RawNode // use buffer to balance between read and write
 	ErrC    chan error
@@ -67,6 +66,18 @@ func (it *Iterator) Iterate() {
 		var currentNode types.Node
 		nk := currentNodeKey.encode()
 		currentNodeBlob := it.backend.Get(nk)
+		currentNode, err := types.UnmarshalJMTNode(currentNodeBlob)
+		if err != nil {
+			it.ErrC <- err
+			return
+		}
+
+		var leafContent []byte
+		n, ok := currentNode.(*types.InternalNode)
+		if !ok {
+			leaf, _ := currentNode.(*types.LeafNode)
+			leafContent = leaf.Val
+		}
 
 		select {
 		case <-it.StopC:
@@ -76,20 +87,17 @@ func (it *Iterator) Iterate() {
 			it.ErrC <- ErrorTimeout
 			return
 		case it.BufferC <- &RawNode{
-			Key:   nk,
-			Value: currentNodeBlob,
+			RawKey:      nk,
+			RawValue:    currentNodeBlob,
+			LeafContent: leafContent,
 		}:
 		}
 
-		currentNode, err := types.UnmarshalJMTNode(currentNodeBlob)
-		if err != nil {
-			it.ErrC <- err
-			return
-		}
-		n, ok := currentNode.(*types.InternalNode)
+		// continue if current node is leaf node
 		if !ok {
 			continue
 		}
+
 		var hex byte
 		for hex = 0; hex < 16; hex++ {
 			if n.Children[hex] == nil {
@@ -98,7 +106,7 @@ func (it *Iterator) Iterate() {
 			child := n.Children[hex]
 			childNodeKey := &NodeKey{
 				Version: child.Version,
-				Type:    it.typ,
+				Type:    rootNodeKey.Type,
 				Path:    make([]byte, len(currentNodeKey.Path)),
 			}
 			copy(childNodeKey.Path, currentNodeKey.Path)
@@ -116,13 +124,14 @@ func (it *Iterator) Stop() {
 
 // RawNode represents trie node in physical storage
 type RawNode struct {
-	Key   []byte
-	Value []byte
+	RawKey      []byte
+	RawValue    []byte
+	LeafContent []byte // non-empty iff current node is a leaf node
 }
 
 // just for debug
 func (n *RawNode) print() string {
-	nk := decodeNodeKey(n.Key)
-	node, _ := types.UnmarshalJMTNode(n.Value)
+	nk := decodeNodeKey(n.RawKey)
+	node, _ := types.UnmarshalJMTNode(n.RawValue)
 	return fmt.Sprintf("[RawNode]: nodeKey={%v}, nodeValue={%v}", nk.print(), node.Print())
 }

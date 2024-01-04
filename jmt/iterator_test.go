@@ -166,7 +166,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 	batch := s0.NewBatch()
 	batch.Put(rootHash0[:], root0NK)
 	for _, n := range res {
-		batch.Put(n.Key, n.Value)
+		batch.Put(n.RawKey, n.RawValue)
 	}
 	batch.Commit()
 
@@ -226,7 +226,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 	batch = s1.NewBatch()
 	batch.Put(rootHash1[:], root1NK)
 	for _, n := range res {
-		batch.Put(n.Key, n.Value)
+		batch.Put(n.RawKey, n.RawValue)
 	}
 	batch.Commit()
 
@@ -290,7 +290,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 	batch = s2.NewBatch()
 	batch.Put(rootHash2[:], root2NK)
 	for _, n := range res {
-		batch.Put(n.Key, n.Value)
+		batch.Put(n.RawKey, n.RawValue)
 	}
 	batch.Commit()
 
