@@ -216,3 +216,31 @@ func (b *Block) Size() int {
 	}
 	return helper.SizeVT()
 }
+
+func (b *Block) Clone() *Block {
+	txs := make([]*Transaction, len(b.Transactions))
+	copy(txs, b.Transactions)
+
+	bl := &Bloom{}
+	bl.SetBytes(b.BlockHeader.Bloom.Bytes())
+	return &Block{
+		BlockHeader: &BlockHeader{
+			Number:          b.BlockHeader.Number,
+			StateRoot:       NewHashByStr(b.BlockHeader.StateRoot.String()),
+			TxRoot:          NewHashByStr(b.BlockHeader.TxRoot.String()),
+			ReceiptRoot:     NewHashByStr(b.BlockHeader.ReceiptRoot.String()),
+			ParentHash:      NewHashByStr(b.BlockHeader.ParentHash.String()),
+			Timestamp:       b.BlockHeader.Timestamp,
+			Epoch:           b.BlockHeader.Epoch,
+			GasPrice:        b.BlockHeader.GasPrice,
+			GasUsed:         b.BlockHeader.GasUsed,
+			ProposerAccount: b.BlockHeader.ProposerAccount,
+			ProposerNodeID:  b.BlockHeader.ProposerNodeID,
+			Bloom:           bl,
+		},
+		Transactions: txs,
+		BlockHash:    NewHashByStr(b.BlockHash.String()),
+		Signature:    b.Signature,
+		Extra:        b.Extra,
+	}
+}

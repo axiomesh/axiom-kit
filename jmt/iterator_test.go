@@ -1,12 +1,14 @@
 package jmt
 
 import (
-	"github.com/axiomesh/axiom-kit/storage"
-	"github.com/axiomesh/axiom-kit/storage/pebble"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/pebble"
 )
 
 func Test_IterateEmptyTree(t *testing.T) {
