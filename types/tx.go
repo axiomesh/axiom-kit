@@ -109,7 +109,7 @@ type IncentiveTx struct {
 func (tx *AccessListTx) copy() TxData {
 	cpy := &AccessListTx{
 		Nonce: tx.Nonce,
-		To:    tx.To, // TODO: copy pointed-to address
+		To:    CopyAddress(tx.To),
 		Data:  common.CopyBytes(tx.Data),
 		Gas:   tx.Gas,
 		// These are copied below.
@@ -219,7 +219,7 @@ func (tx *AccessListTx) fromPB(pb *pb.AccessListTx) {
 func (tx *LegacyTx) copy() TxData {
 	cpy := &LegacyTx{
 		Nonce: tx.Nonce,
-		To:    tx.To, // TODO: copy pointed-to address
+		To:    CopyAddress(tx.To),
 		Data:  common.CopyBytes(tx.Data),
 		Gas:   tx.Gas,
 		// These are initialized below.
@@ -317,7 +317,7 @@ func (tx *LegacyTx) fromPB(pb *pb.LegacyTx) {
 func (tx *DynamicFeeTx) copy() TxData {
 	cpy := &DynamicFeeTx{
 		Nonce: tx.Nonce,
-		To:    tx.To, // TODO: copy pointed-to address
+		To:    CopyAddress(tx.To),
 		Data:  common.CopyBytes(tx.Data),
 		Gas:   tx.Gas,
 		// These are copied below.
@@ -431,7 +431,7 @@ func (tx *DynamicFeeTx) fromPB(pb *pb.DynamicFeeTx) {
 func (tx *IncentiveTx) copy() TxData {
 	cpy := &IncentiveTx{
 		Nonce: tx.Nonce,
-		To:    tx.To, // TODO: copy pointed-to address
+		To:    CopyAddress(tx.To),
 		Data:  common.CopyBytes(tx.Data),
 		Gas:   tx.Gas,
 		// These are copied below.
@@ -440,7 +440,7 @@ func (tx *IncentiveTx) copy() TxData {
 		ChainID:          new(big.Int),
 		GasTipCap:        new(big.Int),
 		GasFeeCap:        new(big.Int),
-		IncentiveAddress: tx.IncentiveAddress,
+		IncentiveAddress: CopyAddress(tx.IncentiveAddress),
 		V:                new(big.Int),
 		R:                new(big.Int),
 		S:                new(big.Int),
@@ -689,4 +689,15 @@ func (args *CallArgs) toTransaction() *types.Transaction {
 // This assumes that setDefaults has been called.
 func (args *CallArgs) ToTransaction() *types.Transaction {
 	return args.toTransaction()
+}
+
+func CopyAddress(src *common.Address) *common.Address {
+	if src == nil {
+		return nil
+	}
+
+	copiedBytes := common.CopyBytes(src.Bytes())
+	copiedAddress := common.BytesToAddress(copiedBytes)
+
+	return &copiedAddress
 }
