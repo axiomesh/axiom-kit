@@ -14,6 +14,7 @@ import (
 var (
 	ErrorTimeout     = errors.New("wait too long when iterating trie")
 	ErrorInterrupted = errors.New("interrupt iterating trie")
+	ErrorNoMoreData  = errors.New("no more trie data")
 )
 
 // Iterator traverse whole jmt trie
@@ -21,9 +22,9 @@ type Iterator struct {
 	rootHash common.Hash
 	backend  storage.Storage
 
-	BufferC chan *RawNode // use buffer to balance between read and write
-	ErrC    chan error
-	StopC   chan struct{}
+	bufferC chan *RawNode // use buffer to balance between read and write
+	errC    chan error
+	stopC   chan struct{}
 	timeout time.Duration
 
 	nodeKeyHeap *NodeKeyHeap // max heap, store NodeKeys that are waiting to be visited
@@ -35,9 +36,9 @@ func NewIterator(rootHash common.Hash, backend storage.Storage, bufSize int, tim
 	return &Iterator{
 		rootHash:    rootHash,
 		backend:     backend,
-		BufferC:     make(chan *RawNode, bufSize),
-		ErrC:        make(chan error, 1),
-		StopC:       make(chan struct{}),
+		bufferC:     make(chan *RawNode, bufSize),
+		errC:        make(chan error, 1),
+		stopC:       make(chan struct{}),
 		timeout:     timeout,
 		nodeKeyHeap: nodeKeyHeap,
 	}
@@ -45,15 +46,15 @@ func NewIterator(rootHash common.Hash, backend storage.Storage, bufSize int, tim
 
 func (it *Iterator) Iterate() {
 	defer func() {
-		close(it.StopC)
-		close(it.BufferC)
-		close(it.ErrC)
+		close(it.stopC)
+		close(it.bufferC)
+		close(it.errC)
 	}()
 
 	// initialize trie
 	rawRootNodeKey := it.backend.Get(it.rootHash[:])
 	if rawRootNodeKey == nil {
-		it.ErrC <- ErrorNotFound
+		it.errC <- ErrorNotFound
 		return
 	}
 	rootNodeKey := decodeNodeKey(rawRootNodeKey)
@@ -69,7 +70,7 @@ func (it *Iterator) Iterate() {
 		currentNodeBlob := it.backend.Get(nk)
 		currentNode, err := types.UnmarshalJMTNode(currentNodeBlob)
 		if err != nil {
-			it.ErrC <- err
+			it.errC <- err
 			return
 		}
 
@@ -81,13 +82,13 @@ func (it *Iterator) Iterate() {
 		}
 
 		select {
-		case <-it.StopC:
-			it.ErrC <- ErrorInterrupted
+		case <-it.stopC:
+			it.errC <- ErrorInterrupted
 			return
 		case <-time.After(it.timeout):
-			it.ErrC <- ErrorTimeout
+			it.errC <- ErrorTimeout
 			return
-		case it.BufferC <- &RawNode{
+		case it.bufferC <- &RawNode{
 			RawKey:      nk,
 			RawValue:    currentNodeBlob,
 			LeafContent: leafContent,
@@ -120,7 +121,23 @@ func (it *Iterator) Iterate() {
 }
 
 func (it *Iterator) Stop() {
-	it.StopC <- struct{}{}
+	it.stopC <- struct{}{}
+}
+
+func (it *Iterator) Next() (*RawNode, error) {
+	for {
+		select {
+		case err, ok := <-it.errC:
+			if ok {
+				return nil, err
+			}
+		case node, ok := <-it.bufferC:
+			if ok {
+				return node, nil
+			}
+			return nil, ErrorNoMoreData
+		}
+	}
 }
 
 // RawNode represents trie node in physical storage
