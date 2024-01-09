@@ -212,12 +212,17 @@ type TxDataVariant_LegacyTx struct {
 type TxDataVariant_DynamicFeeTx struct {
 	DynamicFeeTx *DynamicFeeTx `protobuf:"bytes,3,opt,name=dynamic_fee_tx,json=dynamicFeeTx,proto3,oneof"`
 }
+type TxDataVariant_IncentiveTx struct {
+	IncentiveTx *IncentiveTx `protobuf:"bytes,4,opt,name=incentive_tx,json=incentiveTx,proto3,oneof"`
+}
 
 func (*TxDataVariant_AccessListTx) isTxDataVariant_TxDataType() {}
 
 func (*TxDataVariant_LegacyTx) isTxDataVariant_TxDataType() {}
 
 func (*TxDataVariant_DynamicFeeTx) isTxDataVariant_TxDataType() {}
+
+func (*TxDataVariant_IncentiveTx) isTxDataVariant_TxDataType() {}
 
 type AccessListTx struct {
 	state         protoimpl.MessageState
@@ -694,6 +699,33 @@ func (x *AccessList) GetAccessTuples() []*AccessTuple {
 	}
 	return nil
 }
+
+
+type IncentiveTx struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ChainId    *BigInt     `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	Nonce      uint64      `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	GasTipCap  *BigInt     `protobuf:"bytes,3,opt,name=gas_tip_cap,json=gasTipCap,proto3" json:"gas_tip_cap,omitempty"`
+	GasFeeCap  *BigInt     `protobuf:"bytes,4,opt,name=gas_fee_cap,json=gasFeeCap,proto3" json:"gas_fee_cap,omitempty"`
+	Gas        uint64      `protobuf:"varint,5,opt,name=gas,proto3" json:"gas,omitempty"`
+	To         []byte      `protobuf:"bytes,6,opt,name=to,proto3" json:"to,omitempty"`
+	Value      *BigInt     `protobuf:"bytes,7,opt,name=value,proto3" json:"value,omitempty"`
+	Data       []byte      `protobuf:"bytes,8,opt,name=data,proto3" json:"data,omitempty"`
+	AccessList *AccessList `protobuf:"bytes,9,opt,name=access_list,json=accessList,proto3" json:"access_list,omitempty"`
+	IncentiveAddress []byte      `protobuf:"bytes,10,opt,name=incentive_address,proto3" json:"incentive_address,omitempty"`
+	V          *BigInt     `protobuf:"bytes,11,opt,name=v,proto3" json:"v,omitempty"`
+	R          *BigInt     `protobuf:"bytes,12,opt,name=r,proto3" json:"r,omitempty"`
+	S          *BigInt     `protobuf:"bytes,13,opt,name=s,proto3" json:"s,omitempty"`
+}
+
+
+
+
+
+
 
 var File_transaction_proto protoreflect.FileDescriptor
 

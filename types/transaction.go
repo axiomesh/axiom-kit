@@ -204,7 +204,7 @@ func (e *Transaction) sender() (*Address, error) {
 		}
 		V = new(big.Int).Sub(V, signer.chainIdMul)
 		V.Sub(V, big.NewInt(8))
-	case AccessListTxType, DynamicFeeTxType:
+	case AccessListTxType, DynamicFeeTxType, IncentiveTxType:
 		// ACL txs are defined to use 0 and 1 as their recovery id, add
 		// 27 to become equivalent to unprotected Homestead signatures.
 		V = new(big.Int).Add(V, big.NewInt(27))
@@ -350,6 +350,22 @@ func (e *Transaction) GetSignHash() *Hash {
 				e.Inner.GetAccessList(),
 			})
 		return NewHash(hash.Bytes())
+	case IncentiveTxType:
+		hash := PrefixedRlpHash(
+			e.GetType(),
+			[]any{
+				signer.chainId,
+				e.GetNonce(),
+				e.GetGasTipCap(),
+				e.GetGasFeeCap(),
+				e.GetGas(),
+				e.Inner.GetTo(),
+				e.GetValue(),
+				e.Inner.GetData(),
+				e.Inner.GetAccessList(),
+				e.Inner.GetIncentiveAddress(),
+			})
+		return NewHash(hash.Bytes())
 	default:
 		// This _should_ not happen, but in case someone sends in a bad
 		// json struct via RPC, it's probably more prudent to return an
@@ -475,6 +491,10 @@ func (tx *Transaction) decodeTyped(b []byte) (TxData, error) {
 		return &inner, err
 	case DynamicFeeTxType:
 		var inner DynamicFeeTx
+		err := rlp.DecodeBytes(b[1:], &inner)
+		return &inner, err
+	case IncentiveTxType:
+		var inner IncentiveTx
 		err := rlp.DecodeBytes(b[1:], &inner)
 		return &inner, err
 	default:
@@ -655,6 +675,33 @@ func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {
 			return err
 		}
 		tx.Inner.setSignatureValues(signer.chainId, v, r, s)
+	case IncentiveTxType:
+		incentiveSigner := NewLondonSigner(signer.chainId)
+		h := PrefixedRlpHash(
+			tx.GetType(),
+			[]any{
+				signer.chainId,
+				tx.GetNonce(),
+				tx.Inner.GetGasTipCap(),
+				tx.Inner.GetGasFeeCap(),
+				tx.Inner.GetGas(),
+				tx.Inner.GetTo(),
+				tx.Inner.GetValue(),
+				tx.Inner.GetData(),
+				tx.Inner.GetAccessList(),
+				tx.Inner.GetIncentiveAddress(),
+			})
+		sig, err := crypto.Sign(h.Bytes(), prv)
+		if err != nil {
+			return err
+		}
+
+		r, s, v, err := incentiveSigner.SignatureValues(tx, sig)
+		if err != nil {
+			return err
+		}
+		tx.Inner.setSignatureValues(signer.chainId, v, r, s)
+
 	}
 	return nil
 }
@@ -701,6 +748,10 @@ func (tx *Transaction) toPB() *pb.Transaction {
 		txData.TxDataType = &pb.TxDataVariant_DynamicFeeTx{
 			DynamicFeeTx: tx.toPB(),
 		}
+	case *IncentiveTx:
+		txData.TxDataType = &pb.TxDataVariant_IncentiveTx{
+			IncentiveTx: tx.toPB(),
+		}
 	}
 
 	return &pb.Transaction{
@@ -727,6 +778,10 @@ func (tx *Transaction) fromPB(PBTx *pb.Transaction) {
 		txData := &DynamicFeeTx{}
 		txData.fromPB(x.DynamicFeeTx)
 		tx.Inner = txData
+	case *pb.TxDataVariant_IncentiveTx:
+		TxData := &IncentiveTx{}
+		TxData.fromPB(x.IncentiveTx)
+		tx.Inner = TxData
 	}
 	// ignore time
 }

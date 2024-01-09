@@ -18,6 +18,7 @@ const (
 	LegacyTxType = iota
 	AccessListTxType
 	DynamicFeeTxType
+	IncentiveTxType
 )
 
 // TxData is the underlying data of a transaction.
@@ -37,6 +38,7 @@ type TxData interface {
 	GetValue() *big.Int
 	GetNonce() uint64
 	GetTo() *common.Address
+	GetIncentiveAddress() *common.Address
 
 	RawSignatureValues() (v, r, s *big.Int)
 	setSignatureValues(chainID, v, r, s *big.Int)
@@ -80,6 +82,25 @@ type DynamicFeeTx struct {
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"`
 
+	R *big.Int `json:"r" gencodec:"required"`
+	S *big.Int `json:"s" gencodec:"required"`
+}
+
+type IncentiveTx struct {
+	ChainID    *big.Int
+	Nonce      uint64
+	GasTipCap  *big.Int
+	GasFeeCap  *big.Int
+	Gas        uint64
+	To         *common.Address `rlp:"nil"` // nil means contract creation
+	Value      *big.Int
+	Data       []byte
+	AccessList types.AccessList
+
+	IncentiveAddress *common.Address
+
+	// Signature values
+	V *big.Int `json:"v" gencodec:"required"`
 	R *big.Int `json:"r" gencodec:"required"`
 	S *big.Int `json:"s" gencodec:"required"`
 }
@@ -147,6 +168,10 @@ func (tx *AccessListTx) GetValue() *big.Int { return tx.Value }
 func (tx *AccessListTx) GetNonce() uint64 { return tx.Nonce }
 
 func (tx *AccessListTx) GetTo() *common.Address { return tx.To }
+
+func (tx *AccessListTx) GetIncentiveAddress() *common.Address {
+	return nil
+}
 
 func (tx *AccessListTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
@@ -245,6 +270,10 @@ func (tx *LegacyTx) GetValue() *big.Int { return tx.Value }
 func (tx *LegacyTx) GetNonce() uint64 { return tx.Nonce }
 
 func (tx *LegacyTx) GetTo() *common.Address { return tx.To }
+
+func (tx *LegacyTx) GetIncentiveAddress() *common.Address {
+	return nil
+}
 
 func (tx *LegacyTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
@@ -351,6 +380,10 @@ func (tx *DynamicFeeTx) GetNonce() uint64 { return tx.Nonce }
 
 func (tx *DynamicFeeTx) GetTo() *common.Address { return tx.To }
 
+func (tx *DynamicFeeTx) GetIncentiveAddress() *common.Address {
+	return nil
+}
+
 func (tx *DynamicFeeTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
 }
@@ -390,6 +423,120 @@ func (tx *DynamicFeeTx) fromPB(pb *pb.DynamicFeeTx) {
 	tx.Value = fromPBBigInt(pb.Value)
 	tx.Data = pb.Data
 	tx.AccessList = fromPBAccessList(pb.AccessList)
+	tx.V = fromPBBigInt(pb.V)
+	tx.R = fromPBBigInt(pb.R)
+	tx.S = fromPBBigInt(pb.S)
+}
+
+func (tx *IncentiveTx) copy() TxData {
+	cpy := &IncentiveTx{
+		Nonce: tx.Nonce,
+		To:    tx.To, // TODO: copy pointed-to address
+		Data:  common.CopyBytes(tx.Data),
+		Gas:   tx.Gas,
+		// These are copied below.
+		AccessList:       make(types.AccessList, len(tx.AccessList)),
+		Value:            new(big.Int),
+		ChainID:          new(big.Int),
+		GasTipCap:        new(big.Int),
+		GasFeeCap:        new(big.Int),
+		IncentiveAddress: tx.IncentiveAddress,
+		V:                new(big.Int),
+		R:                new(big.Int),
+		S:                new(big.Int),
+	}
+	copy(cpy.AccessList, tx.AccessList)
+	if tx.Value != nil {
+		cpy.Value.Set(tx.Value)
+	}
+	if tx.ChainID != nil {
+		cpy.ChainID.Set(tx.ChainID)
+	}
+	if tx.GasTipCap != nil {
+		cpy.GasTipCap.Set(tx.GasTipCap)
+	}
+	if tx.GasFeeCap != nil {
+		cpy.GasFeeCap.Set(tx.GasFeeCap)
+	}
+	if tx.V != nil {
+		cpy.V.Set(tx.V)
+	}
+	if tx.R != nil {
+		cpy.R.Set(tx.R)
+	}
+	if tx.S != nil {
+		cpy.S.Set(tx.S)
+	}
+	return cpy
+}
+
+func (tx *IncentiveTx) TxType() byte { return IncentiveTxType }
+
+func (tx *IncentiveTx) GetChainID() *big.Int { return tx.ChainID }
+
+func (tx *IncentiveTx) protected() bool { return true }
+
+func (tx *IncentiveTx) GetAccessList() types.AccessList { return tx.AccessList }
+
+func (tx *IncentiveTx) GetData() []byte { return tx.Data }
+
+func (tx *IncentiveTx) GetGas() uint64 { return tx.Gas }
+
+func (tx *IncentiveTx) GetGasFeeCap() *big.Int { return tx.GasFeeCap }
+
+func (tx *IncentiveTx) GetGasTipCap() *big.Int { return tx.GasTipCap }
+
+func (tx *IncentiveTx) GetGasPrice() *big.Int { return tx.GasFeeCap }
+
+func (tx *IncentiveTx) GetValue() *big.Int { return tx.Value }
+
+func (tx *IncentiveTx) GetNonce() uint64 { return tx.Nonce }
+
+func (tx *IncentiveTx) GetTo() *common.Address { return tx.To }
+
+func (tx *IncentiveTx) GetIncentiveAddress() *common.Address {
+	return tx.IncentiveAddress
+}
+func (tx *IncentiveTx) RawSignatureValues() (v, r, s *big.Int) {
+	return tx.V, tx.R, tx.S
+}
+func (tx *IncentiveTx) setSignatureValues(chainID, v, r, s *big.Int) {
+	tx.ChainID, tx.V, tx.R, tx.S = chainID, v, r, s
+}
+
+func (tx *IncentiveTx) toPB() *pb.IncentiveTx {
+	if tx == nil {
+		return &pb.IncentiveTx{}
+	}
+
+	return &pb.IncentiveTx{
+		ChainId:          toPBBigInt(tx.ChainID),
+		Nonce:            tx.Nonce,
+		GasTipCap:        toPBBigInt(tx.GasTipCap),
+		GasFeeCap:        toPBBigInt(tx.GasFeeCap),
+		Gas:              tx.Gas,
+		To:               toPBAddress(tx.To),
+		Value:            toPBBigInt(tx.Value),
+		Data:             tx.Data,
+		AccessList:       toPBAccessList(tx.AccessList),
+		IncentiveAddress: toPBAddress(tx.IncentiveAddress),
+		V:                toPBBigInt(tx.V),
+		R:                toPBBigInt(tx.R),
+		S:                toPBBigInt(tx.S),
+	}
+}
+
+func (tx *IncentiveTx) fromPB(pb *pb.IncentiveTx) {
+	tx.ChainID = fromPBBigInt(pb.ChainId)
+	tx.Nonce = pb.Nonce
+	tx.GasTipCap = fromPBBigInt(pb.GasTipCap)
+	tx.GasFeeCap = fromPBBigInt(pb.GasFeeCap)
+	tx.Gas = pb.Gas
+	tx.To = fromPBAddress(pb.To)
+	tx.Value = fromPBBigInt(pb.Value)
+	tx.Data = pb.Data
+	tx.AccessList = fromPBAccessList(pb.AccessList)
+	tx.IncentiveAddress = fromPBAddress(pb.IncentiveAddress)
 	tx.V = fromPBBigInt(pb.V)
 	tx.R = fromPBBigInt(pb.R)
 	tx.S = fromPBBigInt(pb.S)
