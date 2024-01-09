@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 
 	"github.com/axiomesh/axiom-kit/types/pb"
+	"github.com/samber/lo"
 )
 
 type BlockHeader struct {
@@ -215,4 +216,63 @@ func (b *Block) Size() int {
 		return 0
 	}
 	return helper.SizeVT()
+}
+
+func (b *Block) Clone() *Block {
+	var txs []*Transaction
+	if b.Transactions != nil {
+		txs = make([]*Transaction, len(b.Transactions))
+		lo.ForEach(b.Transactions, func(tx *Transaction, i int) {
+			newTx := &Transaction{}
+			txBytes, err := tx.MarshalBinary()
+			if err != nil {
+				panic(err)
+			}
+			err = newTx.UnmarshalBinary(txBytes)
+			if err != nil {
+				panic(err)
+			}
+			txs[i] = newTx
+		})
+	}
+
+	bl := &Bloom{}
+	if b.BlockHeader != nil {
+		if b.BlockHeader.Bloom != nil {
+			bl.SetBytes(b.BlockHeader.Bloom.Bytes())
+		}
+	}
+
+	var blockHeader *BlockHeader
+	if b.BlockHeader != nil {
+		blockHeader = &BlockHeader{
+			Number:          b.BlockHeader.Number,
+			StateRoot:       convertToHash(b.BlockHeader.StateRoot),
+			TxRoot:          convertToHash(b.BlockHeader.TxRoot),
+			ReceiptRoot:     convertToHash(b.BlockHeader.ReceiptRoot),
+			ParentHash:      convertToHash(b.BlockHeader.ParentHash),
+			Timestamp:       b.BlockHeader.Timestamp,
+			Epoch:           b.BlockHeader.Epoch,
+			GasPrice:        b.BlockHeader.GasPrice,
+			GasUsed:         b.BlockHeader.GasUsed,
+			ProposerAccount: b.BlockHeader.ProposerAccount,
+			ProposerNodeID:  b.BlockHeader.ProposerNodeID,
+			Bloom:           bl,
+		}
+	}
+
+	return &Block{
+		BlockHeader:  blockHeader,
+		Transactions: txs,
+		BlockHash:    convertToHash(b.BlockHash),
+		Signature:    b.Signature,
+		Extra:        b.Extra,
+	}
+}
+
+func convertToHash(h *Hash) *Hash {
+	if h != nil {
+		return NewHashByStr(h.String())
+	}
+	return nil
 }

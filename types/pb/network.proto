@@ -10,6 +10,10 @@ message Message {
     SYNC_STATE_RESPONSE = 1;
     SYNC_BLOCK_REQUEST = 2;
     SYNC_BLOCK_RESPONSE = 3;
+    SYNC_CHAIN_DATA_REQUEST = 4;
+    SYNC_CHAIN_DATA_RESPONSE = 5;
+    FETCH_EPOCH_STATE_REQUEST = 6;
+    FETCH_EPOCH_STATE_RESPONSE = 7;
   }
   string from = 1;
   Type type = 2;
@@ -22,14 +26,53 @@ message SyncStateRequest {
   uint64 version = 2;
 }
 
+enum Status {
+  ERROR = 0;
+  SUCCESS = 1;
+}
+
 message SyncStateResponse {
   CheckpointState checkpoint_state = 1;
-  uint64 version = 2;
+  Status status = 2;
+  string error = 3;
+  uint64 version = 4;
 }
 
 message SyncBlockRequest {
   uint64 height = 1;
   uint64 version = 2;
+}
+
+message SyncBlockResponse {
+  bytes block = 1;
+  Status status = 2;
+  string error = 3;
+  uint64 version = 4;
+}
+
+message SyncChainDataRequest {
+  uint64 height = 1;
+  uint64 version = 2;
+}
+
+message SyncChainDataResponse {
+  bytes block = 1;
+  bytes receipts = 2;
+  Status status = 3;
+  string error = 4;
+  uint64 version = 5;
+}
+
+message FetchEpochStateRequest {
+  uint64 epoch = 1;
+}
+
+message FetchEpochStateResponse {
+  bytes data = 1;
+
+  Status status = 2;
+  string error = 3;
+  uint64 version = 4;
 }
 
 message CheckpointState {

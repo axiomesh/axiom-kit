@@ -827,7 +827,7 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt11.Update(1, toHex("02"), []byte("v3"))
 	require.Nil(t, err)
-	printJMT(jmt11, 1)
+	//printJMT(jmt11, 1)
 	err = jmt11.Update(1, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
 	rootHash11 := jmt11.Commit()
@@ -910,7 +910,7 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt11.Update(1, toHex("02"), []byte{})
 	require.Nil(t, err)
-	printJMT(jmt11, 1)
+	//printJMT(jmt11, 1)
 	err = jmt11.Update(1, toHex("04"), []byte{})
 	require.Nil(t, err)
 	rootHash11 := jmt11.Commit()
@@ -1095,9 +1095,9 @@ func Test_Case_Random_3(t *testing.T) {
 				require.Nil(t, err)
 			}
 			jmt.Commit()
-			if len(nodes0) == 0 {
-				nodes0 = jmt.Traverse(1)
-			}
+			//if len(nodes0) == 0 {
+			//	nodes0 = jmt.Traverse(1)
+			//}
 
 			rand.Shuffle(len(ks), func(i, j int) {
 				ks[i], ks[j] = ks[j], ks[i]
@@ -1127,14 +1127,14 @@ func Test_Case_Random_3(t *testing.T) {
 				fmt.Println("=========END Traverse base jmt=========")
 
 				fmt.Println("=========Traverse jmt[0]=========")
-				printJMT(jmts[0], 0)
+				//printJMT(jmts[0], 0)
 				fmt.Println("Update key order of jmt[0]")
 				for j := 0; j < len(updateOrder[0]); j++ {
 					fmt.Println(convertHex(updateOrder[0][j]))
 				}
 
 				fmt.Printf("=========Traverse jmt[%v]=========\n", i)
-				printJMT(jmts[i], 0)
+				//printJMT(jmts[i], 0)
 
 				fmt.Printf("Update key order of jmt[%v]\n", i)
 				for j := 0; j < len(updateOrder[i]); j++ {
@@ -1146,14 +1146,14 @@ func Test_Case_Random_3(t *testing.T) {
 	}
 }
 
-func printJMT(jmt *JMT, version uint64) {
-	fmt.Print("======Start Print JMT========\n")
-	nodes := jmt.Traverse(version)
-	for j := 0; j < len(nodes); j++ {
-		fmt.Printf("Node[%v]: %v\n", convertHex((*nodes[j]).Path), (*(*nodes[j]).Origin).Print())
-	}
-	fmt.Print("======End Print JMT========\n")
-}
+//func printJMT(jmt *JMT, version uint64) {
+//	fmt.Print("======Start Print JMT========\n")
+//	nodes := jmt.Traverse(version)
+//	for j := 0; j < len(nodes); j++ {
+//		fmt.Printf("Node[%v]: %v\n", convertHex((*nodes[j]).Path), (*(*nodes[j]).Origin).Print())
+//	}
+//	fmt.Print("======End Print JMT========\n")
+//}
 
 func convertHex(in []byte) string {
 	hexString := "0123456789abcdef"
@@ -1169,10 +1169,10 @@ func initEmptyJMT() (*JMT, storage.Storage) {
 	s, _ := pebble.New(dir, nil, nil)
 	// init dummy jmt
 	rootHash := common.Hash{}
-	rootNodeKey := NodeKey{
+	rootNodeKey := &NodeKey{
 		Version: 0,
 		Path:    []byte{},
-		Prefix:  []byte{},
+		Type:    []byte{},
 	}
 	nk := rootNodeKey.encode()
 	s.Put(nk, nil)
@@ -1226,7 +1226,7 @@ func initKV() storage.Storage {
 	rootNodeKey := NodeKey{
 		Version: 0,
 		Path:    []byte{},
-		Prefix:  []byte{},
+		Type:    []byte{},
 	}
 	nk := rootNodeKey.encode()
 	s.Put(nk, nil)

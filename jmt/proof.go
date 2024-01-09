@@ -41,7 +41,7 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 		nextNodeKey := &NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
-			Prefix:  jmt.prefix,
+			Type:    jmt.typ,
 		}
 		var nextNode types.Node
 		nextNode, err := jmt.getNode(nextNodeKey)
