@@ -19,6 +19,7 @@ message TxDataVariant {
     AccessListTx access_list_tx = 1;
     LegacyTx legacy_tx = 2;
     DynamicFeeTx dynamic_fee_tx = 3;
+    IncentiveTx incentive_tx = 4;
   }
 }
 
@@ -61,6 +62,22 @@ message DynamicFeeTx {
   BigInt v = 10;
   BigInt r = 11;
   BigInt s = 12;
+}
+
+message IncentiveTx {
+  BigInt chain_id = 1;
+  uint64 nonce = 2;
+  BigInt gas_tip_cap = 3;
+  BigInt gas_fee_cap = 4;
+  uint64 gas = 5;
+  bytes to = 6;
+  BigInt value = 7;
+  bytes data = 8;
+  AccessList access_list = 9;
+  bytes incentive_address = 10;
+  BigInt v = 11;
+  BigInt r = 12;
+  BigInt s = 13;
 }
 
 message AccessTuple {
