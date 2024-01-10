@@ -259,6 +259,9 @@ func (this *CheckpointState) EqualVT(that *CheckpointState) bool {
 	if this.Digest != that.Digest {
 		return false
 	}
+	if this.LatestHeight != that.LatestHeight {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -760,6 +763,11 @@ func (m *CheckpointState) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.LatestHeight != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.LatestHeight))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.Digest) > 0 {
 		i -= len(m.Digest)
@@ -1268,6 +1276,11 @@ func (m *CheckpointState) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.LatestHeight != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.LatestHeight))
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.Digest) > 0 {
 		i -= len(m.Digest)
 		copy(dAtA[i:], m.Digest)
@@ -1618,6 +1631,9 @@ func (m *CheckpointState) SizeVT() (n int) {
 	l = len(m.Digest)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
+	}
+	if m.LatestHeight != 0 {
+		n += 1 + sov(uint64(m.LatestHeight))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2851,6 +2867,25 @@ func (m *CheckpointState) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Digest = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LatestHeight", wireType)
+			}
+			m.LatestHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LatestHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
