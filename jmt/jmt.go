@@ -324,7 +324,6 @@ func (jmt *JMT) getNode(nk *NodeKey) (types.Node, error) {
 }
 
 // splitLeafNode splits common prefix of two leaf nodes into a series of internal nodes, and construct a tree.
-// todo maybe we can reuse origin leaf node in kv? reference diem implementation
 func (jmt *JMT) splitLeafNode(origin *types.LeafNode, originNodeKey *NodeKey, newLeaf *types.LeafNode, version uint64, pos int) (newRoot types.Node, newRootNodeKey *NodeKey) {
 	root := &types.InternalNode{}
 	if newLeaf.Key[pos] == origin.Key[pos] {

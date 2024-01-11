@@ -19,19 +19,19 @@ type Node interface {
 
 type (
 	InternalNode struct {
-		Children [16]*Child `json:"children"`
+		Children [16]*Child
 	}
 
 	LeafNode struct {
-		Key  []byte      `json:"key"`
-		Val  []byte      `json:"value"`
-		Hash common.Hash `json:"hash"`
+		Key  []byte
+		Val  []byte
+		Hash common.Hash
 	}
 
 	Child struct {
-		Hash    common.Hash `json:"hash"`
-		Version uint64      `json:"version"`
-		Leaf    bool        `json:"leaf"`
+		Hash    common.Hash
+		Version uint64
+		Leaf    bool
 	}
 )
 
@@ -154,7 +154,7 @@ func (n *InternalNode) marshal() ([]byte, error) {
 func (n *InternalNode) fromPB(p *pb.InternalNode) {
 	n.Children = [16]*Child{}
 	for i, child := range p.Children {
-		if child.Hash == nil {
+		if len(child.Hash) == 0 {
 			continue
 		}
 		n.Children[i] = &Child{
@@ -185,7 +185,7 @@ func (n *LeafNode) marshal() ([]byte, error) {
 	}
 
 	blob := &pb.LeafNode{
-		Key:   n.Key,
+		Key:   hexToBytes(n.Key),
 		Value: n.Val,
 		Hash:  n.Hash[:],
 	}
@@ -204,7 +204,7 @@ func (n *LeafNode) marshal() ([]byte, error) {
 
 func (n *LeafNode) fromPB(p *pb.LeafNode) {
 	n.Val = p.Value
-	n.Key = p.Key
+	n.Key = bytesToHex(p.Key)
 	n.Hash = common.BytesToHash(p.Hash)
 }
 
@@ -255,4 +255,44 @@ func UnmarshalJMTNode(data []byte) (Node, error) {
 	}
 
 	return nil, nil
+}
+
+// bytesToHex expand normal bytes to hex bytes (nibbles)
+func bytesToHex(h []byte) []byte {
+	if len(h) == 0 {
+		return h
+	}
+	var i byte = 0
+	length := h[0]
+	tmp := h[1:]
+	dst := make([]byte, length)
+	for ; i < length; i++ {
+		if i&0x01 == 0 {
+			dst[i] = tmp[i/2] >> 4
+		} else {
+			dst[i] = tmp[i/2] & 15
+		}
+	}
+	return dst
+}
+
+// hexToBytes compress hex bytes (also called nibbles) to normal bytes
+func hexToBytes(src []byte) []byte {
+	if len(src) == 0 {
+		return src
+	}
+	if len(src) > 255 {
+		panic("don't support compress bytes with length greater than 255 ")
+	}
+	length := (1 + len(src)) / 2
+	res := make([]byte, 1+length)
+	res[0] = byte(len(src))
+	for i := 0; i < length; i++ {
+		if 2*i+1 == len(src) {
+			res[i+1] = src[2*i] << 4
+		} else {
+			res[i+1] = (src[2*i] << 4) | src[2*i+1]
+		}
+	}
+	return res
 }
