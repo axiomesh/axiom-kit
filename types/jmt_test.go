@@ -27,16 +27,22 @@ func TestInternalNode_Marshal(t *testing.T) {
 
 	blob := n1.Encode()
 	assert.NotNil(t, blob)
-
 	node, err := UnmarshalJMTNode(blob)
 	assert.Nil(t, err)
-
 	assert.True(t, equalInternalNode(n1, node.(*InternalNode)))
+
+	n1.Children[10] = nil
+	blob2 := n1.Encode()
+	assert.NotNil(t, blob2)
+	node1, err := UnmarshalJMTNode(blob2)
+	assert.False(t, equalInternalNode(node1.(*InternalNode), node.(*InternalNode)))
+
+	assert.True(t, len(blob) > len(blob2))
 }
 
 func TestLeafNode_Marshal(t *testing.T) {
 	leaf1 := &LeafNode{
-		Key:  []byte("a1c3"),
+		Key:  []byte{10, 1, 9, 3},
 		Val:  []byte("value"),
 		Hash: common.HexToHash("0x4d5e855f8fb3fe5ed1eb123d4feb2a8f96b025fca63a19f02b8727d3d4f8ef26"),
 	}

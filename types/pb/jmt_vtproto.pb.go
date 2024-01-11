@@ -105,7 +105,7 @@ func (this *Child) EqualVT(that *Child) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if p, q := this.Hash, that.Hash; (p == nil && q != nil) || (p != nil && q == nil) || string(p) != string(q) {
+	if string(this.Hash) != string(that.Hash) {
 		return false
 	}
 	if this.Version != that.Version {
@@ -318,7 +318,7 @@ func (m *Child) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.Hash != nil {
+	if len(m.Hash) > 0 {
 		i -= len(m.Hash)
 		copy(dAtA[i:], m.Hash)
 		i = encodeVarint(dAtA, i, uint64(len(m.Hash)))
@@ -522,7 +522,7 @@ func (m *Child) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.Hash != nil {
+	if len(m.Hash) > 0 {
 		i -= len(m.Hash)
 		copy(dAtA[i:], m.Hash)
 		i = encodeVarint(dAtA, i, uint64(len(m.Hash)))
@@ -657,8 +657,8 @@ func (m *Child) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Hash != nil {
-		l = len(m.Hash)
+	l = len(m.Hash)
+	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
 	if m.Version != 0 {
