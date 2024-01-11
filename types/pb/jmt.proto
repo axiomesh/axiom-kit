@@ -20,7 +20,7 @@ message LeafNode {
 }
 
 message  Child{
-  optional bytes hash = 1;
+  bytes hash = 1;
   uint64 version = 2;
   bool leaf = 3;
 }

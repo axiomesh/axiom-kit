@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "../pb";
+
+message  InnerAccount{
+  uint64 nonce = 1;
+  bytes balance = 2;
+  bytes code_hash = 3;
+  bytes storage_root = 4;
+}
