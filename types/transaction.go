@@ -228,6 +228,10 @@ func (e *Transaction) GetPayload() []byte {
 	return e.Inner.GetData()
 }
 
+func (e *Transaction) GetAccessList() types.AccessList {
+	return e.Inner.GetAccessList()
+}
+
 func (e *Transaction) GetNonce() uint64 {
 	return e.Inner.GetNonce()
 }
@@ -590,6 +594,10 @@ func (tx *Transaction) RbftGetFrom() string {
 	return tx.GetFrom().String()
 }
 
+func (tx *Transaction) RbftGetTo() string {
+	return tx.GetTo().String()
+}
+
 func (tx *Transaction) RbftGetTimeStamp() int64 {
 	return tx.Time.UnixNano()
 }
@@ -610,6 +618,26 @@ func (tx *Transaction) RbftUnmarshal(raw []byte) error {
 func (tx *Transaction) RbftMarshal() ([]byte, error) {
 	pbTx := tx.toPB()
 	return pbTx.MarshalVT()
+}
+
+func (tx *Transaction) RbftGetGasPrice() *big.Int {
+	return tx.GetGasPrice()
+}
+
+func (tx *Transaction) RbftGetGasLimit() uint64 {
+	return tx.GetGas()
+}
+
+func (tx *Transaction) RbftGetGasFeeCap() *big.Int {
+	return tx.GetGasFeeCap()
+}
+
+func (tx *Transaction) RbftGetValue() *big.Int {
+	return tx.GetValue()
+}
+
+func (tx *Transaction) RbftGetAccessList() types.AccessList {
+	return tx.GetAccessList()
 }
 
 func (tx *Transaction) Unmarshal(buf []byte) error {
@@ -840,8 +868,8 @@ func GenerateTransactionWithSigner(nonce uint64, to *Address, value *big.Int, da
 	}
 	inner := &LegacyTx{
 		Nonce:    nonce,
-		GasPrice: big.NewInt(5),
-		Gas:      30000000,
+		GasPrice: big.NewInt(10000000000000),
+		Gas:      21000,
 		Value:    value,
 		Data:     data,
 	}
@@ -849,6 +877,28 @@ func GenerateTransactionWithSigner(nonce uint64, to *Address, value *big.Int, da
 		t := to.ETHAddress()
 		inner.To = &t
 	}
+	tx := &Transaction{
+		Inner: inner,
+		Time:  time.Now(),
+	}
+
+	if err := tx.Sign(s.Sk); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func GenerateTransactionWithGasPrice(nonce uint64, gas uint64, gasPrice *big.Int, s *Signer) (*Transaction, error) {
+	to := NewAddressByStr("0xdAC17F958D2ee523a2206206994597C13D831ec7").ETHAddress()
+	inner := &LegacyTx{
+		Nonce:    nonce,
+		To:       &to,
+		GasPrice: gasPrice,
+		Gas:      gas,
+		Value:    big.NewInt(0),
+		Data:     nil,
+	}
+
 	tx := &Transaction{
 		Inner: inner,
 		Time:  time.Now(),
@@ -914,7 +964,7 @@ func GenerateAccessListTxAndSigner() (*Transaction, error) {
 	inner := &AccessListTx{
 		ChainID:  big.NewInt(1),
 		Nonce:    1,
-		GasPrice: big.NewInt(500),
+		GasPrice: big.NewInt(10000000000000),
 		Gas:      0x5f5e100,
 		To:       &to,
 		Value:    big.NewInt(0),
@@ -946,7 +996,7 @@ func GenerateDynamicFeeTxAndSinger() (*Transaction, error) {
 		ChainID:   big.NewInt(1),
 		Nonce:     0,
 		GasTipCap: big.NewInt(8000000000000),
-		GasFeeCap: big.NewInt(8000000000000),
+		GasFeeCap: big.NewInt(10000000000000),
 		Gas:       0x5f5e100,
 		To:        &to,
 		Data:      []byte{},

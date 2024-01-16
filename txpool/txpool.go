@@ -99,4 +99,6 @@ type txPoolInfo[T any, Constraint types.TXConstraint[T]] interface {
 	PendingRequestsNumberIsReady() bool
 
 	HasPendingRequestInPool() bool
+
+	UpdateChainInfo(info *ChainInfo)
 }
