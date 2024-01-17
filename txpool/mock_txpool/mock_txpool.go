@@ -265,6 +265,44 @@ func (c *TxPoolGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, boo
 	return c
 }
 
+// GetChainInfo mocks base method.
+func (m *MockTxPool[T, Constraint]) GetChainInfo() *txpool.ChainInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainInfo")
+	ret0, _ := ret[0].(*txpool.ChainInfo)
+	return ret0
+}
+
+// GetChainInfo indicates an expected call of GetChainInfo.
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetChainInfo() *TxPoolGetChainInfoCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainInfo", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetChainInfo))
+	return &TxPoolGetChainInfoCall[T, Constraint]{Call: call}
+}
+
+// TxPoolGetChainInfoCall wrap *gomock.Call
+type TxPoolGetChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TxPoolGetChainInfoCall[T, Constraint]) Return(arg0 *txpool.ChainInfo) *TxPoolGetChainInfoCall[T, Constraint] {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TxPoolGetChainInfoCall[T, Constraint]) Do(f func() *txpool.ChainInfo) *TxPoolGetChainInfoCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TxPoolGetChainInfoCall[T, Constraint]) DoAndReturn(f func() *txpool.ChainInfo) *TxPoolGetChainInfoCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // GetLocalTxs mocks base method.
 func (m *MockTxPool[T, Constraint]) GetLocalTxs() [][]byte {
 	m.ctrl.T.Helper()
@@ -1075,6 +1113,44 @@ func (c *txPoolInfoGetAccountMetaCall[T, Constraint]) Do(f func(string, bool) *t
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *txPoolInfoGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *txPoolInfoGetAccountMetaCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// GetChainInfo mocks base method.
+func (m *MocktxPoolInfo[T, Constraint]) GetChainInfo() *txpool.ChainInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainInfo")
+	ret0, _ := ret[0].(*txpool.ChainInfo)
+	return ret0
+}
+
+// GetChainInfo indicates an expected call of GetChainInfo.
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetChainInfo() *txPoolInfoGetChainInfoCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainInfo", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetChainInfo))
+	return &txPoolInfoGetChainInfoCall[T, Constraint]{Call: call}
+}
+
+// txPoolInfoGetChainInfoCall wrap *gomock.Call
+type txPoolInfoGetChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *txPoolInfoGetChainInfoCall[T, Constraint]) Return(arg0 *txpool.ChainInfo) *txPoolInfoGetChainInfoCall[T, Constraint] {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *txPoolInfoGetChainInfoCall[T, Constraint]) Do(f func() *txpool.ChainInfo) *txPoolInfoGetChainInfoCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *txPoolInfoGetChainInfoCall[T, Constraint]) DoAndReturn(f func() *txpool.ChainInfo) *txPoolInfoGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
