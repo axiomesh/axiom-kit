@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
+	"math/big"
 
 	"github.com/axiomesh/axiom-kit/types"
 )
@@ -56,6 +57,30 @@ type RequestHashBatch[T any, Constraint types.TXConstraint[T]] struct {
 	Timestamp  int64    // generation time of this batch
 }
 
+func (rb *RequestHashBatch[T, Constraint]) FillBatchItem(tx *T, local bool) {
+	rb.TxList = append(rb.TxList, tx)
+	rb.TxHashList = append(rb.TxHashList, Constraint(tx).RbftGetTxHash())
+	rb.LocalList = append(rb.LocalList, local)
+}
+
+func (rb *RequestHashBatch[T, Constraint]) BatchItemSize() uint64 {
+	return uint64(len(rb.TxList))
+}
+
+// GetBatchHash calculate hash of a RequestHashBatch
+func (rb *RequestHashBatch[T, Constraint]) GenerateBatchHash() string {
+	h := md5.New()
+	for _, hash := range rb.TxHashList {
+		_, _ = h.Write([]byte(hash))
+	}
+	if rb.Timestamp > 0 {
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, uint64(rb.Timestamp))
+		_, _ = h.Write(b)
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 type ConsensusConfig struct {
 	SelfID                uint64
 	NotifyGenerateBatchFn func(typ int)                                // notify consensus that it can generate a new batch
@@ -68,6 +93,11 @@ type WrapperTxPointer struct {
 	Nonce   uint64
 }
 
+type ChainInfo struct {
+	GasPrice *big.Int
+	Height   uint64
+}
+
 const (
 	GenBatchTimeoutEvent = iota
 	GenBatchNoTxTimeoutEvent
@@ -76,17 +106,3 @@ const (
 	ReConstructBatchEvent
 	GetTxsForGenBatchEvent
 )
-
-// GetBatchHash calculate hash of a RequestHashBatch
-func GetBatchHash[T any, Constraint types.TXConstraint[T]](batch *RequestHashBatch[T, Constraint]) string {
-	h := md5.New()
-	for _, hash := range batch.TxHashList {
-		_, _ = h.Write([]byte(hash))
-	}
-	if batch.Timestamp > 0 {
-		b := make([]byte, 8)
-		binary.LittleEndian.PutUint64(b, uint64(batch.Timestamp))
-		_, _ = h.Write(b)
-	}
-	return hex.EncodeToString(h.Sum(nil))
-}

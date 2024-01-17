@@ -78,7 +78,7 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 			Timestamp:  time.Now().UnixNano(),
 		}
 		mock.noBatchSize.Add(int64(-len(txList)))
-		batchHash := txpool.GetBatchHash[T, Constraint](newBatch)
+		batchHash := newBatch.GenerateBatchHash()
 		newBatch.BatchHash = batchHash
 		mock.batchCache[batchHash] = newBatch
 
