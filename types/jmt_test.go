@@ -27,14 +27,14 @@ func TestInternalNode_Marshal(t *testing.T) {
 
 	blob := n1.Encode()
 	assert.NotNil(t, blob)
-	node, err := UnmarshalJMTNode(blob)
+	node, err := UnmarshalJMTNodeFromPb(blob)
 	assert.Nil(t, err)
 	assert.True(t, equalInternalNode(n1, node.(*InternalNode)))
 
 	n1.Children[10] = nil
 	blob2 := n1.Encode()
 	assert.NotNil(t, blob2)
-	node1, err := UnmarshalJMTNode(blob2)
+	node1, err := UnmarshalJMTNodeFromPb(blob2)
 	assert.False(t, equalInternalNode(node1.(*InternalNode), node.(*InternalNode)))
 
 	assert.True(t, len(blob) > len(blob2))
@@ -50,7 +50,7 @@ func TestLeafNode_Marshal(t *testing.T) {
 	blob, err := leaf1.marshal()
 	assert.Nil(t, err)
 
-	node, err := UnmarshalJMTNode(blob)
+	node, err := UnmarshalJMTNodeFromPb(blob)
 	assert.Nil(t, err)
 
 	assert.True(t, equalLeafNode(leaf1, node.(*LeafNode)))
