@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 
 	"github.com/axiomesh/axiom-kit/storage"
@@ -22,11 +23,12 @@ type JMT struct {
 	typ         []byte
 	backend     storage.Storage
 	dirtyNodes  map[string]types.Node
+	logger      logrus.FieldLogger
 }
 
 // New load and init jmt from kv.
 // Before New, there must be a mapping <rootHash, rootNodeKey> in kv.
-func New(rootHash common.Hash, backend storage.Storage) (*JMT, error) {
+func New(rootHash common.Hash, backend storage.Storage, logger logrus.FieldLogger) (*JMT, error) {
 	var root types.Node
 	var err error
 	var rootNodeKey *NodeKey
@@ -47,6 +49,7 @@ func New(rootHash common.Hash, backend storage.Storage) (*JMT, error) {
 	jmt.root = root
 	jmt.rootNodeKey = rootNodeKey
 	jmt.typ = rootNodeKey.Type
+	jmt.logger = logger
 	return jmt, nil
 }
 
@@ -290,7 +293,7 @@ func (jmt *JMT) Commit() (rootHash common.Hash) {
 	// flush dirty nodes into kv
 	batch := jmt.backend.NewBatch()
 	for k, v := range jmt.dirtyNodes {
-		batch.Put([]byte(k), v.Encode())
+		batch.Put([]byte(k), v.EncodePb())
 	}
 	// persist <rootHash -> rootNodeKey>
 	if jmt.root == nil {
@@ -315,7 +318,7 @@ func (jmt *JMT) getNode(nk *NodeKey) (types.Node, error) {
 	} else {
 		// find in kv
 		nextRawNode := jmt.backend.Get(k)
-		nextNode, err = types.UnmarshalJMTNode(nextRawNode)
+		nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +327,6 @@ func (jmt *JMT) getNode(nk *NodeKey) (types.Node, error) {
 }
 
 // splitLeafNode splits common prefix of two leaf nodes into a series of internal nodes, and construct a tree.
-// todo maybe we can reuse origin leaf node in kv? reference diem implementation
 func (jmt *JMT) splitLeafNode(origin *types.LeafNode, originNodeKey *NodeKey, newLeaf *types.LeafNode, version uint64, pos int) (newRoot types.Node, newRootNodeKey *NodeKey) {
 	root := &types.InternalNode{}
 	if newLeaf.Key[pos] == origin.Key[pos] {

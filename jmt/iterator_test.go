@@ -128,7 +128,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		// commit version 0 jmt, and load it from kv
 		rootHash0 := jmt.Commit()
 		require.Equal(t, rootHash0, jmt.root.GetHash())
-		jmt, err = New(rootHash0, s)
+		jmt, err = New(rootHash0, s, jmt.logger)
 		require.Nil(t, err)
 		// transit from v0 to v1
 		err = jmt.Update(1, toHex("0001"), []byte("v5"))
@@ -142,7 +142,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		// commit version 1 jmt, and load it from kv
 		rootHash1 := jmt.Commit()
 		require.Equal(t, rootHash1, jmt.root.GetHash())
-		jmt, err = New(rootHash1, s)
+		jmt, err = New(rootHash1, s, jmt.logger)
 		require.Nil(t, err)
 		// transit from v1 to v2
 		err = jmt.Update(2, toHex("0001"), []byte("v9"))
@@ -182,8 +182,13 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		}
 		batch.Commit()
 
-		// verify v0
-		jmt, err = New(rootHash0, s0)
+		// verify v0 trie
+		verified, err := VerifyTrie(rootHash0, s0)
+		require.Nil(t, err)
+		require.True(t, verified)
+
+		// verify v0 state
+		jmt, err = New(rootHash0, s0, jmt.logger)
 		require.Nil(t, err)
 		n, err := jmt.Get(toHex("0001"))
 		require.Nil(t, err)
@@ -230,8 +235,13 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		}
 		batch.Commit()
 
-		// verify v1
-		jmt, err = New(rootHash1, s1)
+		// verify v1 trie
+		verified, err = VerifyTrie(rootHash1, s1)
+		require.Nil(t, err)
+		require.True(t, verified)
+
+		// verify v1 state
+		jmt, err = New(rootHash1, s1, jmt.logger)
 		require.Nil(t, err)
 		n, err = jmt.Get(toHex("0001"))
 		require.Nil(t, err)
@@ -281,8 +291,13 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		}
 		batch.Commit()
 
-		// verify v2
-		jmt, err = New(rootHash2, s2)
+		// verify v2 trie
+		verified, err = VerifyTrie(rootHash2, s2)
+		require.Nil(t, err)
+		require.True(t, verified)
+
+		// verify v2 state
+		jmt, err = New(rootHash2, s2, jmt.logger)
 		require.Nil(t, err)
 		n, err = jmt.Get(toHex("0001"))
 		require.Nil(t, err)

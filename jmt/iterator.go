@@ -68,17 +68,18 @@ func (it *Iterator) Iterate() {
 		var currentNode types.Node
 		nk := currentNodeKey.encode()
 		currentNodeBlob := it.backend.Get(nk)
-		currentNode, err := types.UnmarshalJMTNode(currentNodeBlob)
+		currentNode, err := types.UnmarshalJMTNodeFromPb(currentNodeBlob)
 		if err != nil {
 			it.errC <- err
 			return
 		}
 
-		var leafContent []byte
+		var leafKey, leafValue []byte
 		n, ok := currentNode.(*types.InternalNode)
 		if !ok {
 			leaf, _ := currentNode.(*types.LeafNode)
-			leafContent = leaf.Val
+			leafValue = leaf.Val
+			leafKey = types.HexToBytes(leaf.Key)
 		}
 
 		select {
@@ -89,9 +90,10 @@ func (it *Iterator) Iterate() {
 			it.errC <- ErrorTimeout
 			return
 		case it.bufferC <- &RawNode{
-			RawKey:      nk,
-			RawValue:    currentNodeBlob,
-			LeafContent: leafContent,
+			RawKey:    nk,
+			RawValue:  currentNodeBlob,
+			LeafKey:   leafKey,
+			LeafValue: leafValue,
 		}:
 		}
 
@@ -142,14 +144,15 @@ func (it *Iterator) Next() (*RawNode, error) {
 
 // RawNode represents trie node in physical storage
 type RawNode struct {
-	RawKey      []byte
-	RawValue    []byte
-	LeafContent []byte // non-empty iff current node is a leaf node
+	RawKey    []byte
+	RawValue  []byte
+	LeafKey   []byte // non-empty iff current node is a leaf node
+	LeafValue []byte // non-empty iff current node is a leaf node
 }
 
 // just for debug
-func (n *RawNode) print() string {
+func (n *RawNode) String() string {
 	nk := decodeNodeKey(n.RawKey)
-	node, _ := types.UnmarshalJMTNode(n.RawValue)
-	return fmt.Sprintf("[RawNode]: nodeKey={%v}, nodeValue={%v}", nk.print(), node.Print())
+	node, _ := types.UnmarshalJMTNodeFromPb(n.RawValue)
+	return fmt.Sprintf("[RawNode]: nodeKey={%v}, nodeValue={%v}", nk.print(), node.String())
 }

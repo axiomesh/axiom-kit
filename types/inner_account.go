@@ -2,11 +2,12 @@ package types
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 type InnerAccount struct {
@@ -20,21 +21,52 @@ func (o *InnerAccount) String() string {
 	return fmt.Sprintf("{nonce: %d, balance: %v, code_hash: %v, storage_root: %v}", o.Nonce, o.Balance, NewHash(o.CodeHash), o.StorageRoot)
 }
 
-// Marshal Marshal the account into byte
+// Marshal marshals the account into byte
 func (o *InnerAccount) Marshal() ([]byte, error) {
-	obj := &InnerAccount{
-		Nonce:       o.Nonce,
-		Balance:     o.Balance,
-		CodeHash:    o.CodeHash,
-		StorageRoot: o.StorageRoot,
+	if o == nil {
+		return nil, nil
 	}
 
-	return json.Marshal(obj)
+	balance, err := o.Balance.GobEncode()
+	if err != nil {
+		return nil, err
+	}
+
+	blob := &pb.InnerAccount{
+		Nonce:    o.Nonce,
+		Balance:  balance,
+		CodeHash: o.CodeHash,
+	}
+	if o.StorageRoot == (common.Hash{}) {
+		blob.StorageRoot = nil
+	} else {
+		blob.StorageRoot = o.StorageRoot[:]
+	}
+
+	return blob.MarshalVTStrict()
 }
 
-// Unmarshal Unmarshal the account byte into structure
+// Unmarshal unmarshals the account byte into structure
 func (o *InnerAccount) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, o)
+	helper := pb.InnerAccountFromVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
+	err := helper.UnmarshalVT(data)
+	if err != nil {
+		return err
+	}
+
+	o.Balance = big.NewInt(0)
+	if err = o.Balance.GobDecode(helper.Balance); err != nil {
+		return err
+	}
+	o.Nonce = helper.Nonce
+	o.CodeHash = helper.CodeHash
+	o.StorageRoot = common.BytesToHash(helper.StorageRoot)
+
+	return nil
 }
 
 func (o *InnerAccount) InnerAccountChanged(account1 *InnerAccount) bool {
