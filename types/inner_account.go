@@ -2,12 +2,11 @@ package types
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 type InnerAccount struct {
@@ -22,51 +21,65 @@ func (o *InnerAccount) String() string {
 }
 
 // Marshal marshals the account into byte
+//func (o *InnerAccount) Marshal() ([]byte, error) {
+//	if o == nil {
+//		return nil, nil
+//	}
+//
+//	balance, err := o.Balance.GobEncode()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	blob := &pb.InnerAccount{
+//		Nonce:    o.Nonce,
+//		Balance:  balance,
+//		CodeHash: o.CodeHash,
+//	}
+//	if o.StorageRoot == (common.Hash{}) {
+//		blob.StorageRoot = nil
+//	} else {
+//		blob.StorageRoot = o.StorageRoot[:]
+//	}
+//
+//	return blob.MarshalVTStrict()
+//}
+
 func (o *InnerAccount) Marshal() ([]byte, error) {
-	if o == nil {
-		return nil, nil
+	obj := &InnerAccount{
+		Nonce:       o.Nonce,
+		Balance:     o.Balance,
+		CodeHash:    o.CodeHash,
+		StorageRoot: o.StorageRoot,
 	}
-
-	balance, err := o.Balance.GobEncode()
-	if err != nil {
-		return nil, err
-	}
-
-	blob := &pb.InnerAccount{
-		Nonce:    o.Nonce,
-		Balance:  balance,
-		CodeHash: o.CodeHash,
-	}
-	if o.StorageRoot == (common.Hash{}) {
-		blob.StorageRoot = nil
-	} else {
-		blob.StorageRoot = o.StorageRoot[:]
-	}
-
-	return blob.MarshalVTStrict()
+	return json.Marshal(obj)
 }
 
 // Unmarshal unmarshals the account byte into structure
+//func (o *InnerAccount) Unmarshal(data []byte) error {
+//	helper := pb.InnerAccountFromVTPool()
+//	defer func() {
+//		helper.Reset()
+//		helper.ReturnToVTPool()
+//	}()
+//	err := helper.UnmarshalVT(data)
+//	if err != nil {
+//		return err
+//	}
+//
+//	o.Balance = big.NewInt(0)
+//	if err = o.Balance.GobDecode(helper.Balance); err != nil {
+//		return err
+//	}
+//	o.Nonce = helper.Nonce
+//	o.CodeHash = helper.CodeHash
+//	o.StorageRoot = common.BytesToHash(helper.StorageRoot)
+//
+//	return nil
+//}
+
 func (o *InnerAccount) Unmarshal(data []byte) error {
-	helper := pb.InnerAccountFromVTPool()
-	defer func() {
-		helper.Reset()
-		helper.ReturnToVTPool()
-	}()
-	err := helper.UnmarshalVT(data)
-	if err != nil {
-		return err
-	}
-
-	o.Balance = big.NewInt(0)
-	if err = o.Balance.GobDecode(helper.Balance); err != nil {
-		return err
-	}
-	o.Nonce = helper.Nonce
-	o.CodeHash = helper.CodeHash
-	o.StorageRoot = common.BytesToHash(helper.StorageRoot)
-
-	return nil
+	return json.Unmarshal(data, o)
 }
 
 func (o *InnerAccount) InnerAccountChanged(account1 *InnerAccount) bool {
