@@ -187,7 +187,7 @@ func (n *LeafNode) EncodePb() []byte {
 	}
 
 	blob := &pb.LeafNode{
-		Key:   HexToBytes(n.Key),
+		Key:   n.Key,
 		Value: n.Val,
 		Hash:  n.Hash[:],
 	}
@@ -219,7 +219,7 @@ func (n *LeafNode) unmarshalLeafFromPb(data []byte) error {
 		return err
 	}
 	n.Val = helper.Value
-	n.Key = BytesToHex(helper.Key)
+	n.Key = helper.Key
 	n.Hash = common.BytesToHash(helper.Hash)
 	return nil
 }
