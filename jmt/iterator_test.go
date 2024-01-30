@@ -323,6 +323,141 @@ func Test_IterateHistoryTrie(t *testing.T) {
 	}
 }
 
+func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
+	for tc := 0; tc < 10; tc++ {
+		// init version 0 jmt
+		jmt, s := initEmptyJMT()
+		err := jmt.Update(0, toHex("0001"), []byte("v1"))
+		require.Nil(t, err)
+		err = jmt.Update(0, toHex("bbf7"), []byte("v2"))
+		require.Nil(t, err)
+		err = jmt.Update(0, toHex("0003"), []byte("v3"))
+		require.Nil(t, err)
+		err = jmt.Update(0, toHex("bb17"), []byte("v4"))
+		require.Nil(t, err)
+		leafSet1 := map[string][]byte{}
+		leafSet1[string(toHex("0001"))] = []byte("v1")
+		leafSet1[string(toHex("bbf7"))] = []byte("v2")
+		leafSet1[string(toHex("0003"))] = []byte("v3")
+		leafSet1[string(toHex("bb17"))] = []byte("v4")
+		// commit version 0 jmt, and load it from kv
+		rootHash0 := jmt.Commit()
+		require.Equal(t, rootHash0, jmt.root.GetHash())
+		jmt, err = New(rootHash0, s, jmt.logger)
+		require.Nil(t, err)
+
+		// transit from v0 to v1
+		err = jmt.Update(1, toHex("0001"), []byte("v5"))
+		require.Nil(t, err)
+		err = jmt.Update(1, toHex("bbf7"), []byte("v6"))
+		require.Nil(t, err)
+		err = jmt.Update(1, toHex("bb17"), []byte("v8"))
+		require.Nil(t, err)
+		err = jmt.Update(1, toHex("0011"), []byte("v11"))
+		require.Nil(t, err)
+		err = jmt.Update(1, toHex("abcd"), []byte("v1"))
+		require.Nil(t, err)
+		leafSet2 := map[string][]byte{}
+		leafSet2[string(toHex("0001"))] = []byte("v5")
+		leafSet2[string(toHex("bbf7"))] = []byte("v6")
+		leafSet2[string(toHex("0011"))] = []byte("v11")
+		leafSet2[string(toHex("bb17"))] = []byte("v8")
+		leafSet2[string(toHex("0003"))] = []byte("v3")
+		leafSet2[string(toHex("abcd"))] = []byte("v1")
+		// commit version 1 jmt, and load it from kv
+		rootHash1 := jmt.Commit()
+		require.Equal(t, rootHash1, jmt.root.GetHash())
+		jmt, err = New(rootHash1, s, jmt.logger)
+		require.Nil(t, err)
+
+		// transit from v1 to v2
+		err = jmt.Update(2, toHex("0001"), []byte("v9"))
+		require.Nil(t, err)
+		err = jmt.Update(2, toHex("bbf7"), []byte("v10"))
+		require.Nil(t, err)
+		err = jmt.Update(2, toHex("bb17"), []byte("v12"))
+		require.Nil(t, err)
+		err = jmt.Update(2, toHex("ac00"), []byte("v13"))
+		require.Nil(t, err)
+		leafSet3 := map[string][]byte{}
+		leafSet3[string(toHex("0001"))] = []byte("v9")
+		leafSet3[string(toHex("bbf7"))] = []byte("v10")
+		leafSet3[string(toHex("0011"))] = []byte("v11")
+		leafSet3[string(toHex("bb17"))] = []byte("v12")
+		leafSet3[string(toHex("0003"))] = []byte("v3")
+		leafSet3[string(toHex("abcd"))] = []byte("v1")
+		leafSet3[string(toHex("ac00"))] = []byte("v13")
+		rootHash2 := jmt.Commit()
+		require.Equal(t, rootHash2, jmt.root.GetHash())
+
+		// iterate version 0 jmt trie leaf
+		iter := NewIterator(rootHash0, s, 2, time.Second)
+		go iter.IterateLeaf()
+		var res []*RawNode
+
+		for {
+			data, err := iter.Next()
+			if err != nil {
+				require.Nil(t, data)
+				if err == ErrorNoMoreData {
+					break
+				}
+				panic(err)
+			}
+			require.NotNil(t, data)
+			res = append(res, data)
+		}
+		require.Equal(t, len(res), len(leafSet1))
+		for _, d := range res {
+			require.True(t, len(d.LeafKey) != 0)
+			require.Equal(t, d.LeafValue, leafSet1[string(d.LeafKey)])
+		}
+
+		// iterate version 1 jmt trie
+		iter = NewIterator(rootHash1, s, 1, time.Second)
+		go iter.IterateLeaf()
+		res = []*RawNode{}
+		for {
+			data, err := iter.Next()
+			if err != nil {
+				require.Nil(t, data)
+				if err == ErrorNoMoreData {
+					break
+				}
+				panic(err)
+			}
+			require.NotNil(t, data)
+			res = append(res, data)
+		}
+		require.Equal(t, len(res), len(leafSet2))
+		for _, d := range res {
+			require.True(t, len(d.LeafKey) != 0)
+			require.Equal(t, d.LeafValue, leafSet2[string(d.LeafKey)])
+		}
+
+		// iterate version 2 jmt trie
+		iter = NewIterator(rootHash2, s, 10, time.Second)
+		go iter.IterateLeaf()
+		res = []*RawNode{}
+		for {
+			data, err := iter.Next()
+			if err != nil {
+				if err == ErrorNoMoreData {
+					break
+				}
+				panic(err)
+			}
+			require.NotNil(t, data)
+			res = append(res, data)
+		}
+		require.Equal(t, len(res), len(leafSet3))
+		for _, d := range res {
+			require.True(t, len(d.LeafKey) != 0)
+			require.Equal(t, d.LeafValue, leafSet3[string(d.LeafKey)])
+		}
+	}
+}
+
 func initKVStorage() storage.Storage {
 	dir, _ := os.MkdirTemp("", "TestKVStorage")
 	s, _ := pebble.New(dir, nil, nil)
