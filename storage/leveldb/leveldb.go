@@ -92,18 +92,30 @@ func (l *ldb) Close() error {
 type ldbBatch struct {
 	ldb   *leveldb.DB
 	batch *leveldb.Batch
+	size  int
 }
 
 func (l *ldbBatch) Put(key, value []byte) {
 	l.batch.Put(key, value)
+	l.size += len(key) + len(value)
 }
 
 func (l *ldbBatch) Delete(key []byte) {
 	l.batch.Delete(key)
+	l.size += len(key)
 }
 
 func (l *ldbBatch) Commit() {
 	if err := l.ldb.Write(l.batch, nil); err != nil {
 		panic(err)
 	}
+}
+
+func (l *ldbBatch) Size() int {
+	return l.size
+}
+
+func (l *ldbBatch) Reset() {
+	l.batch.Reset()
+	l.size = 0
 }

@@ -68,6 +68,14 @@ type Iterator interface {
 
 type Batch interface {
 	Put(key, value []byte)
+
 	Delete(key []byte)
+
 	Commit()
+
+	// Size returns the size of data in batch.
+	Size() int
+
+	// Reset resets the batch for reuse.
+	Reset()
 }
