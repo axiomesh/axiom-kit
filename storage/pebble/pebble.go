@@ -146,18 +146,30 @@ func (it *iter) Value() []byte {
 type pdbBatch struct {
 	batch *pebble.Batch
 	wo    *pebble.WriteOptions
+	size  int
 }
 
 func (p *pdbBatch) Put(key, value []byte) {
 	p.batch.Set(key, value, nil)
+	p.size += len(key) + len(value)
 }
 
 func (p *pdbBatch) Delete(key []byte) {
 	p.batch.Delete(key, nil)
+	p.size += len(key)
 }
 
 func (p *pdbBatch) Commit() {
 	if err := p.batch.Commit(p.wo); err != nil {
 		panic(err)
 	}
+}
+
+func (p *pdbBatch) Size() int {
+	return p.size
+}
+
+func (p *pdbBatch) Reset() {
+	p.batch.Reset()
+	p.size = 0
 }

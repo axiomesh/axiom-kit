@@ -333,6 +333,79 @@ func TestPdb_Prev(t *testing.T) {
 	assert.EqualValues(t, i, len(expected))
 }
 
+func TestPdb_BatchSize(t *testing.T) {
+	dir, err := os.MkdirTemp("", "TestBatchSize")
+	require.Nil(t, err)
+
+	s, err := New(dir, nil, nil)
+	require.Nil(t, err)
+
+	batch := s.NewBatch()
+	total := 0
+	for i := 0; i < 11; i++ {
+		key := fmt.Sprintf("key%d", i)
+		batch.Put([]byte(key), []byte(key))
+		total += 2 * len([]byte(key))
+	}
+	deleteKey := "key5"
+	batch.Delete([]byte(deleteKey))
+	total += len([]byte(deleteKey))
+	assert.EqualValues(t, total, batch.Size())
+	batch.Commit()
+
+	for i := 0; i < 11; i++ {
+		key := fmt.Sprintf("key%d", i)
+		value := s.Get([]byte(key))
+		if key == deleteKey {
+			assert.Nil(t, value)
+		} else {
+			assert.EqualValues(t, key, value)
+		}
+	}
+}
+
+func TestPdb_BatchReset(t *testing.T) {
+	dir, err := os.MkdirTemp("", "TestBatchReset")
+	require.Nil(t, err)
+
+	s, err := New(dir, nil, nil)
+	require.Nil(t, err)
+
+	batch := s.NewBatch()
+	total := 0
+	for i := 0; i < 11; i++ {
+		key := fmt.Sprintf("key%d", i)
+		batch.Put([]byte(key), []byte(key))
+		total += 2 * len([]byte(key))
+	}
+	deleteKey := "key5"
+	batch.Delete([]byte(deleteKey))
+	total += len([]byte(deleteKey))
+	assert.EqualValues(t, total, batch.Size())
+	batch.Commit()
+
+	batch.Reset()
+	total = 0
+
+	for i := 11; i < 20; i++ {
+		key := fmt.Sprintf("key%d", i)
+		batch.Put([]byte(key), []byte(key))
+		total += 2 * len([]byte(key))
+	}
+	assert.EqualValues(t, total, batch.Size())
+	batch.Commit()
+
+	for i := 0; i < 20; i++ {
+		key := fmt.Sprintf("key%d", i)
+		value := s.Get([]byte(key))
+		if key == deleteKey {
+			assert.Nil(t, value)
+		} else {
+			assert.EqualValues(t, key, value)
+		}
+	}
+}
+
 func BenchmarkPebbleSuite(b *testing.B) {
 	// Two memory tables is configured which is identical to leveldb,
 	// including a frozen memory table and another live one.
