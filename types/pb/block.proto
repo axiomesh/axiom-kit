@@ -8,8 +8,7 @@ message Block {
   BlockHeader block_header = 1;
   repeated bytes transactions = 2;
   bytes block_hash = 3 ;
-  bytes signature = 4;
-  bytes extra = 5;
+  bytes extra = 4;
 }
 
 message BlockHeader {
