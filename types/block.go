@@ -124,7 +124,6 @@ type Block struct {
 	BlockHeader  *BlockHeader
 	Transactions []*Transaction
 	BlockHash    *Hash
-	Signature    []byte
 	Extra        []byte
 }
 
@@ -149,7 +148,6 @@ func (b *Block) toPB() (*pb.Block, error) {
 		BlockHeader:  headerPB,
 		Transactions: txsRaw,
 		BlockHash:    b.BlockHash.Bytes(),
-		Signature:    b.Signature,
 		Extra:        b.Extra,
 	}, nil
 }
@@ -171,7 +169,6 @@ func (b *Block) fromPB(m *pb.Block) error {
 	if err != nil {
 		return err
 	}
-	b.Signature = m.Signature
 	b.Extra = m.Extra
 	return nil
 }
@@ -265,7 +262,6 @@ func (b *Block) Clone() *Block {
 		BlockHeader:  blockHeader,
 		Transactions: txs,
 		BlockHash:    convertToHash(b.BlockHash),
-		Signature:    b.Signature,
 		Extra:        b.Extra,
 	}
 }

@@ -40,9 +40,6 @@ func (this *Block) EqualVT(that *Block) bool {
 	if string(this.BlockHash) != string(that.BlockHash) {
 		return false
 	}
-	if string(this.Signature) != string(that.Signature) {
-		return false
-	}
 	if string(this.Extra) != string(that.Extra) {
 		return false
 	}
@@ -142,13 +139,6 @@ func (m *Block) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.Extra)
 		copy(dAtA[i:], m.Extra)
 		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.Signature) > 0 {
-		i -= len(m.Signature)
-		copy(dAtA[i:], m.Signature)
-		i = encodeVarint(dAtA, i, uint64(len(m.Signature)))
 		i--
 		dAtA[i] = 0x22
 	}
@@ -321,13 +311,6 @@ func (m *Block) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Extra)
 		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
 		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.Signature) > 0 {
-		i -= len(m.Signature)
-		copy(dAtA[i:], m.Signature)
-		i = encodeVarint(dAtA, i, uint64(len(m.Signature)))
-		i--
 		dAtA[i] = 0x22
 	}
 	if len(m.BlockHash) > 0 {
@@ -474,13 +457,11 @@ func (m *Block) ResetVT() {
 	m.BlockHeader.ReturnToVTPool()
 	f0 := m.Transactions[:0]
 	f1 := m.BlockHash[:0]
-	f2 := m.Signature[:0]
-	f3 := m.Extra[:0]
+	f2 := m.Extra[:0]
 	m.Reset()
 	m.Transactions = f0
 	m.BlockHash = f1
-	m.Signature = f2
-	m.Extra = f3
+	m.Extra = f2
 }
 func (m *Block) ReturnToVTPool() {
 	if m != nil {
@@ -537,10 +518,6 @@ func (m *Block) SizeVT() (n int) {
 		}
 	}
 	l = len(m.BlockHash)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	l = len(m.Signature)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
@@ -736,40 +713,6 @@ func (m *Block) UnmarshalVT(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Signature", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Signature = append(m.Signature[:0], dAtA[iNdEx:postIndex]...)
-			if m.Signature == nil {
-				m.Signature = []byte{}
-			}
-			iNdEx = postIndex
-		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Extra", wireType)
 			}
