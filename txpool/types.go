@@ -43,6 +43,7 @@ type Meta[T any, Constraint types.TXConstraint[T]] struct {
 	TxCountLimit    uint64
 	TxCount         uint64
 	ReadyTxCount    uint64
+	NotReadyTxCount uint64
 	Batches         map[string]*BatchSimpleInfo
 	MissingBatchTxs map[string]map[uint64]string
 	Accounts        map[string]*AccountMeta[T, Constraint]
