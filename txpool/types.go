@@ -95,8 +95,25 @@ type WrapperTxPointer struct {
 }
 
 type ChainInfo struct {
-	GasPrice *big.Int
-	Height   uint64
+	GasPrice  *big.Int
+	Height    uint64
+	EpochConf *EpochConfig
+}
+
+type EpochConfig struct {
+	BatchSize           uint64
+	EnableGenEmptyBatch bool
+}
+
+func (c *ChainInfo) Clone() *ChainInfo {
+	return &ChainInfo{
+		GasPrice: c.GasPrice,
+		Height:   c.Height,
+		EpochConf: &EpochConfig{
+			BatchSize:           c.EpochConf.BatchSize,
+			EnableGenEmptyBatch: c.EpochConf.EnableGenEmptyBatch,
+		},
+	}
 }
 
 const (
