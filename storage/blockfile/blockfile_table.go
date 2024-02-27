@@ -29,8 +29,9 @@ type BlockTable struct {
 	headBytes  uint32 // Number of bytes written to the head file
 	itemOffset uint32 // Offset (number of discarded items)
 
-	logger logrus.FieldLogger
-	lock   sync.RWMutex // Mutex protecting the data file descriptors
+	logger     logrus.FieldLogger
+	lock       sync.RWMutex // Mutex protecting the data file descriptors
+	appendLock sync.Mutex   // Mutex protect data appending race
 }
 
 type indexEntry struct {
@@ -298,6 +299,33 @@ func (b *BlockTable) Retrieve(item uint64) ([]byte, error) {
 }
 
 func (b *BlockTable) Append(item uint64, blob []byte) error {
+	b.appendLock.Lock()
+	defer b.appendLock.Unlock()
+	return b.doBatchAppend(item, blob)
+}
+
+func (b *BlockTable) BatchAppend(item uint64, listOfBlob [][]byte) error {
+	b.appendLock.Lock()
+	defer b.appendLock.Unlock()
+	totalBLen := uint32(0)
+	for _, blob := range listOfBlob {
+		totalBLen += uint32(len(blob))
+	}
+	if b.headBytes+totalBLen > b.maxFileSize { // for save storage space
+		for _, blob := range listOfBlob {
+			err := b.doBatchAppend(item, blob)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		return b.doBatchAppend(item, listOfBlob...)
+	}
+	return nil
+}
+
+func (b *BlockTable) doBatchAppend(item uint64, listOfBlob ...[]byte) error {
+
 	b.lock.RLock()
 	if b.index == nil || b.head == nil {
 		b.lock.RUnlock()
@@ -307,9 +335,14 @@ func (b *BlockTable) Append(item uint64, blob []byte) error {
 		b.lock.RUnlock()
 		return fmt.Errorf("appending unexpected item: want %d, have %d", b.items, item)
 	}
-	bLen := uint32(len(blob))
-	if b.headBytes+bLen < bLen ||
-		b.headBytes+bLen > b.maxFileSize {
+	var mergeBlobBytes []byte
+
+	for _, blob := range listOfBlob {
+		mergeBlobBytes = append(mergeBlobBytes, blob...)
+	}
+	totalBLen := uint32(len(mergeBlobBytes))
+
+	if b.headBytes+totalBLen > b.maxFileSize {
 		b.lock.RUnlock()
 		b.lock.Lock()
 		nextID := atomic.LoadUint32(&b.headId) + 1
@@ -336,18 +369,22 @@ func (b *BlockTable) Append(item uint64, blob []byte) error {
 	}
 
 	defer b.lock.RUnlock()
-	if _, err := b.head.Write(blob); err != nil {
+	if _, err := b.head.Write(mergeBlobBytes); err != nil {
 		return err
 	}
-	newOffset := atomic.AddUint32(&b.headBytes, bLen)
-	idx := indexEntry{
-		filenum: atomic.LoadUint32(&b.headId),
-		offset:  newOffset,
+	var mergeIdxBytes []byte
+	for _, blob := range listOfBlob {
+		newOffset := atomic.AddUint32(&b.headBytes, uint32(len(blob)))
+		idx := indexEntry{
+			filenum: atomic.LoadUint32(&b.headId),
+			offset:  newOffset,
+		}
+		mergeIdxBytes = append(mergeIdxBytes, idx.marshallBinary()...)
+
 	}
 	// Write indexEntry
-	_, _ = b.index.Write(idx.marshallBinary())
-
-	atomic.AddUint64(&b.items, 1)
+	_, _ = b.index.Write(mergeIdxBytes)
+	atomic.AddUint64(&b.items, uint64(len(listOfBlob)))
 	return nil
 }
 

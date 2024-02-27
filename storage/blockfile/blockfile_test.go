@@ -68,6 +68,36 @@ func TestBlockTableBasics(t *testing.T) {
 	assert.Equal(t, errors.New("out of bounds"), err)
 }
 
+func TestBatchAppendBlock(t *testing.T) {
+	ast := assert.New(t)
+	// set cutoff at 50 bytes
+	f, err := newTable(os.TempDir(),
+		fmt.Sprintf("unittest-%d", rand.Uint64()), 2*1000*1000*1000, log.NewWithModule("blockfile_test"))
+	assert.Nil(t, err)
+	defer f.Close()
+
+	// test batch append
+	batchNum := 255
+	var listOfBlob [][]byte
+	for i := 0; i < batchNum; i++ {
+		data := getChunk(15, i)
+		listOfBlob = append(listOfBlob, data)
+	}
+	err = f.BatchAppend(uint64(0), listOfBlob)
+	ast.Nil(err)
+	for y := 0; y < batchNum; y++ {
+		exp := getChunk(15, y)
+		got, err := f.Retrieve(uint64(y))
+		ast.Nil(err)
+		if !bytes.Equal(got, exp) {
+			t.Fatalf("test %d, got \n%x != \n%x", y, got, exp)
+		}
+	}
+	// Check that we cannot read too far
+	_, err = f.Retrieve(uint64(batchNum))
+	ast.Equal(errors.New("out of bounds"), err)
+}
+
 func TestAppendBlocKCase1(t *testing.T) {
 	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
