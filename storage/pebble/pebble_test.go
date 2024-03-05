@@ -11,16 +11,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/axiomesh/axiom-kit/log"
 	"github.com/axiomesh/axiom-kit/storage"
 )
+
+var testLogger = log.NewWithModule("storage_test")
 
 func TestIter_Next(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestNext")
 	require.Nil(t, err)
 
-	_, err = New(dir, nil, nil)
+	_, err = New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
-	_, err = New(dir, nil, nil)
+	_, err = New(dir, nil, nil, testLogger)
 	require.EqualValues(t, "lock held by current process", err.Error())
 }
 
@@ -28,7 +31,7 @@ func TestPdb_Put(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPut")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	s.Put([]byte("key"), []byte("value"))
@@ -40,7 +43,7 @@ func TestPdb_Delete(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestDelete")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	s.Put([]byte("key"), []byte("value"))
@@ -51,7 +54,7 @@ func TestPdb_Get(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestGet")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	s.Put([]byte("key"), []byte("value"))
@@ -72,7 +75,7 @@ func TestPdb_GetPanic(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestGetPanic")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	err = s.Close()
@@ -92,7 +95,7 @@ func TestPdb_PutPanic(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPutPanic")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	err = s.Close()
@@ -112,7 +115,7 @@ func TestPdb_DeletePanic(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestDeletePanic")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	err = s.Close()
@@ -126,7 +129,7 @@ func TestPdb_Has(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestHas")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	key := []byte("key")
@@ -144,7 +147,7 @@ func TestPdb_NewBatch(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestNewBatch")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -177,7 +180,7 @@ func TestPdb_CommitPanic(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestDeletePanic")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -196,7 +199,7 @@ func TestPdb_Iterator(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestIterator")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -228,7 +231,7 @@ func TestPdb_Iterator_Empty(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestIterator")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -252,7 +255,7 @@ func TestPdb_Prefix(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPrefix")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -280,7 +283,7 @@ func TestPdb_Seek(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestSeek")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -309,7 +312,7 @@ func TestPdb_Prev(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestPrev")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -337,7 +340,7 @@ func TestPdb_BatchSize(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestBatchSize")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -368,7 +371,7 @@ func TestPdb_BatchReset(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestBatchReset")
 	require.Nil(t, err)
 
-	s, err := New(dir, nil, nil)
+	s, err := New(dir, nil, nil, testLogger)
 	require.Nil(t, err)
 
 	batch := s.NewBatch()
@@ -451,7 +454,7 @@ func BenchmarkPebbleSuite(b *testing.B) {
 	assert.Nil(b, err)
 
 	storage.BenchKvSuite(b, func() storage.Storage {
-		db, err := New(path, opts, nil)
+		db, err := New(path, opts, nil, testLogger)
 		if err != nil {
 			b.Fatal(err)
 		}
