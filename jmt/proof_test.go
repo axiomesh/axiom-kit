@@ -35,9 +35,9 @@ func Test_LegalProof(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(0, toHex("bb17"), []byte{0, 1, 2, 3, 30, 50, 80, 128, 166, 179, 200, 245, 255})
 	require.Nil(t, err)
-	hash0 := jmt.Commit()
+	hash0, _ := jmt.Commit(true)
 
-	jmt, err = New(hash0, s, jmt.logger)
+	jmt, err = New(hash0, s, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// exist key
@@ -55,8 +55,8 @@ func Test_LegalProof(t *testing.T) {
 	// state transit from v0 to v1
 	err = jmt.Update(1, toHex("0001"), []byte{})
 	require.Nil(t, err)
-	hash1 := jmt.Commit()
-	jmt, err = New(hash1, s, jmt.logger)
+	hash1, _ := jmt.Commit(true)
+	jmt, err = New(hash1, s, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// key exist only in v1
@@ -90,9 +90,9 @@ func Test_IllegalProof(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(0, toHex("aaa3"), []byte("v3"))
 	require.Nil(t, err)
-	hash0 := jmt.Commit()
+	hash0, _ := jmt.Commit(true)
 
-	jmt, err = New(hash0, s, jmt.logger)
+	jmt, err = New(hash0, s, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// exist key
@@ -129,7 +129,7 @@ func Test_SingleLeafNodeProof(t *testing.T) {
 	require.Nil(t, err)
 	proof, err := jmt.Prove(toHex("abf3"))
 	require.Nil(t, err)
-	hash := jmt.Commit()
+	hash, _ := jmt.Commit(true)
 	exist, err := VerifyProof(hash, proof)
 	require.Nil(t, err)
 	require.True(t, exist)
@@ -156,7 +156,7 @@ func Test_EmptyTreeProof(t *testing.T) {
 
 func Test_VerifyEmptyTrie(t *testing.T) {
 	jmt, backend := initEmptyJMT()
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 	verified, err := VerifyTrie(rootHash, backend)
 	require.Equal(t, ErrorNotFound, err)
 	require.False(t, verified)
@@ -184,71 +184,71 @@ func Test_VerifyIllegalTrie(t *testing.T) {
 	err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 	require.Nil(t, err)
 
-	nk1 := &NodeKey{
+	nk1 := &types.NodeKey{
 		Version: 0,
 		Path:    toHex("bb"),
 		Type:    jmt.typ,
 	}
-	n1, ok := jmt.dirtyNodes[string(nk1.encode())].(*types.InternalNode)
+	n1, ok := jmt.dirtySet[string(nk1.Encode())].(*types.InternalNode)
 	require.True(t, ok)
 
-	nk2 := &NodeKey{
+	nk2 := &types.NodeKey{
 		Version: 0,
 		Path:    toHex("bbf"),
 		Type:    jmt.typ,
 	}
-	n2, ok := jmt.dirtyNodes[string(nk2.encode())].(*types.LeafNode)
+	n2, ok := jmt.dirtySet[string(nk2.Encode())].(*types.LeafNode)
 	require.True(t, ok)
 
-	nk3 := &NodeKey{
+	nk3 := &types.NodeKey{
 		Version: 0,
 		Path:    toHex("000"),
 		Type:    jmt.typ,
 	}
-	n3, ok := jmt.dirtyNodes[string(nk3.encode())].(*types.InternalNode)
+	n3, ok := jmt.dirtySet[string(nk3.Encode())].(*types.InternalNode)
 	require.True(t, ok)
 
-	nk4 := &NodeKey{
+	nk4 := &types.NodeKey{
 		Version: 0,
 		Path:    toHex("b"),
 		Type:    jmt.typ,
 	}
-	n4, ok := jmt.dirtyNodes[string(nk4.encode())].(*types.InternalNode)
+	n4, ok := jmt.dirtySet[string(nk4.Encode())].(*types.InternalNode)
 	require.True(t, ok)
 
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 
 	t.Run("test internal node content invalid", func(t *testing.T) {
 		n1.Children[1].Version = 1 // modify InternalNode's content
-		backend.Put(nk1.encode(), n1.EncodePb())
+		backend.Put(nk1.Encode(), n1.EncodePb())
 
 		verified, err := VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.False(t, verified)
 
 		n1.Children[1].Version = 0
-		backend.Put(nk1.encode(), n1.EncodePb())
+		backend.Put(nk1.Encode(), n1.EncodePb())
 		verified, err = VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.True(t, verified)
 
-		backend.Delete(nk1.encode())
+		backend.Delete(nk1.Encode())
 		verified, err = VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.False(t, verified)
-		backend.Put(nk1.encode(), n1.EncodePb())
+		backend.Put(nk1.Encode(), n1.EncodePb())
 	})
 
 	t.Run("test leaf node content invalid", func(t *testing.T) {
 		originVal := n2.Val
 		n2.Val = []byte{1} // modify LeafNode's content
-		backend.Put(nk2.encode(), n2.EncodePb())
+		backend.Put(nk2.Encode(), n2.EncodePb())
 		verified, err := VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.False(t, verified)
 
 		n2.Val = originVal
-		backend.Put(nk2.encode(), n2.EncodePb())
+		backend.Put(nk2.Encode(), n2.EncodePb())
 
 		verified, err = VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
@@ -258,13 +258,13 @@ func Test_VerifyIllegalTrie(t *testing.T) {
 	t.Run("test leaf node hash invalid", func(t *testing.T) {
 		originHash := n2.Hash
 		n2.Hash = common.BytesToHash([]byte{1}) // modify LeafNode's content
-		backend.Put(nk2.encode(), n2.EncodePb())
+		backend.Put(nk2.Encode(), n2.EncodePb())
 		verified, err := VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.False(t, verified)
 
 		n2.Hash = originHash
-		backend.Put(nk2.encode(), n2.EncodePb())
+		backend.Put(nk2.Encode(), n2.EncodePb())
 
 		verified, err = VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
@@ -273,19 +273,19 @@ func Test_VerifyIllegalTrie(t *testing.T) {
 
 	t.Run("test internal node of different branch content invalid", func(t *testing.T) {
 		n3.Children[0] = n3.Children[1] // modify InternalNode's content
-		backend.Put(nk3.encode(), n3.EncodePb())
+		backend.Put(nk3.Encode(), n3.EncodePb())
 
 		n4.Children[11].Version = 1 // modify InternalNode's content
-		backend.Put(nk4.encode(), n4.EncodePb())
+		backend.Put(nk4.Encode(), n4.EncodePb())
 
 		verified, err := VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.False(t, verified)
 
 		n3.Children[0] = nil
-		backend.Put(nk3.encode(), n3.EncodePb())
+		backend.Put(nk3.Encode(), n3.EncodePb())
 		n4.Children[11].Version = 0
-		backend.Put(nk4.encode(), n4.EncodePb())
+		backend.Put(nk4.Encode(), n4.EncodePb())
 		verified, err = VerifyTrie(rootHash, backend)
 		require.Nil(t, err)
 		require.True(t, verified)
@@ -308,7 +308,7 @@ func Test_Case_Proof_Random_1(t *testing.T) {
 		v2hash := make(map[int]common.Hash, version)
 		for ver := 0; ver < version; ver++ {
 			if jmt == nil {
-				jmt, err = New(rootHash, s, logger)
+				jmt, err = New(rootHash, s, nil, logger)
 				require.Nil(t, err)
 			}
 			// nnum := rand.Intn(maxn)
@@ -332,13 +332,13 @@ func Test_Case_Proof_Random_1(t *testing.T) {
 			}
 			v2inserted[ver] = inserted
 			v2deleted[ver] = deleted
-			rootHash = jmt.Commit()
+			rootHash, _ = jmt.Commit(true)
 			v2hash[ver] = rootHash
 			jmt = nil
 		}
 		// verify
 		for ver := 0; ver < version; ver++ {
-			jmt, err = New(v2hash[ver], s, logger)
+			jmt, err = New(v2hash[ver], s, nil, logger)
 			require.Nil(t, err)
 			for k, v := range v2inserted[ver] {
 				proof, err := jmt.Prove([]byte(k))

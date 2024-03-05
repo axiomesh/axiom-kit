@@ -56,6 +56,8 @@ compile-pb: clean-pb
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).InternalNode \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).LeafNode \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).InnerAccount \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).TrieJournal \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).TrieJournalBatch \
 		$(CURRENT_PATH)/*.proto
 
 .PHONY: prepare clean-pb compile-pb

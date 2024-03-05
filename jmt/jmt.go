@@ -2,13 +2,11 @@ package jmt
 
 import (
 	"errors"
-
+	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
-
-	"github.com/axiomesh/axiom-kit/storage"
-	"github.com/axiomesh/axiom-kit/types"
 )
 
 var (
@@ -19,37 +17,46 @@ var placeHolder = (&types.LeafNode{}).GetHash()
 
 type JMT struct {
 	root        types.Node
-	rootNodeKey *NodeKey
+	rootNodeKey *types.NodeKey
 	typ         []byte
-	backend     storage.Storage
-	dirtyNodes  map[string]types.Node
-	logger      logrus.FieldLogger
+
+	backend  storage.Storage
+	cache    TrieCache
+	dirtySet map[string]types.Node
+	pruneSet map[string]struct{}
+	logger   logrus.FieldLogger
+}
+
+type PruneArgs struct {
+	Enable  bool
+	Batch   storage.Batch
+	Journal *types.TrieJournal
 }
 
 // New load and init jmt from kv.
 // Before New, there must be a mapping <rootHash, rootNodeKey> in kv.
-func New(rootHash common.Hash, backend storage.Storage, logger logrus.FieldLogger) (*JMT, error) {
+func New(rootHash common.Hash, backend storage.Storage, cache TrieCache, logger logrus.FieldLogger) (*JMT, error) {
 	var root types.Node
 	var err error
-	var rootNodeKey *NodeKey
 	jmt := &JMT{
-		backend:    backend,
-		dirtyNodes: make(map[string]types.Node),
+		backend:  backend,
+		cache:    cache,
+		dirtySet: make(map[string]types.Node),
+		pruneSet: make(map[string]struct{}),
+		logger:   logger,
 	}
 	rawRootNodeKey := backend.Get(rootHash[:])
 	if rawRootNodeKey == nil {
 		return nil, ErrorNotFound
 	}
-	rootNodeKey = decodeNodeKey(rawRootNodeKey)
+	jmt.rootNodeKey = types.DecodeNodeKey(rawRootNodeKey)
 	// root node may be leaf node or internal node
-	root, err = jmt.getNode(rootNodeKey)
+	root, err = jmt.getNode(jmt.rootNodeKey)
 	if err != nil {
 		return nil, err
 	}
 	jmt.root = root
-	jmt.rootNodeKey = rootNodeKey
-	jmt.typ = rootNodeKey.Type
-	jmt.logger = logger
+	jmt.typ = jmt.rootNodeKey.Type
 	return jmt, nil
 }
 
@@ -71,7 +78,7 @@ func (jmt *JMT) get(root types.Node, key []byte, next int) (value []byte, err er
 		}
 		child := n.Children[key[next]]
 		nextBlkNum := child.Version
-		nextNodeKey := &NodeKey{
+		nextNodeKey := &types.NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
 			Type:    jmt.typ,
@@ -109,7 +116,7 @@ func (jmt *JMT) Update(version uint64, key, value []byte) error {
 	if del {
 		jmt.root = newRoot
 		if newRoot == nil {
-			jmt.rootNodeKey = &NodeKey{
+			jmt.rootNodeKey = &types.NodeKey{
 				Version: version,
 				Path:    []byte{},
 				Type:    jmt.typ,
@@ -125,7 +132,7 @@ func (jmt *JMT) Update(version uint64, key, value []byte) error {
 // insert will generate a new tree, and return its root.
 // nodes in the updated path will be traced in cache to be flushed later.
 // parameter "next" means the position tha has not been addressed in current node.
-func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *NodeKey, version uint64, key, value []byte, next int) (newRoot types.Node, newRootNodeKey *NodeKey, isLeaf bool, err error) {
+func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *types.NodeKey, version uint64, key, value []byte, next int) (newRoot types.Node, newRootNodeKey *types.NodeKey, isLeaf bool, err error) {
 	switch n := (currentNode).(type) {
 	case nil:
 		// empty tree, then generate a new LeafNode
@@ -134,17 +141,17 @@ func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *NodeKey, version 
 			Val: value,
 		}
 		newLeaf.Hash = newLeaf.GetHash()
-		nk := jmt.traceNewNode(version, key[:next], newLeaf)
+		nk := jmt.traceDirtyNode(version, key[:next], newLeaf)
 		nk.Type = jmt.typ
 		return newLeaf, nk, true, nil
 	case *types.InternalNode:
 		var nextNode types.Node
-		var nextNodeKey *NodeKey
+		var nextNodeKey *types.NodeKey
 		if n.Children[key[next]] != nil {
 			// if slot isn't empty, get the child node in tha slot for addressing next layer
 			child := n.Children[key[next]]
 			nextBlkNum := child.Version
-			nextNodeKey = &NodeKey{
+			nextNodeKey = &types.NodeKey{
 				Version: nextBlkNum,
 				Path:    key[:next+1],
 				Type:    jmt.typ,
@@ -165,12 +172,14 @@ func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *NodeKey, version 
 			Hash:    newChildNode.GetHash(),
 			Leaf:    leaf,
 		}
-		newInternalNodeKey := jmt.traceNewNode(version, key[:next], newInternalNode)
+		jmt.tracePruningNode(currentNodeKey)
+		newInternalNodeKey := jmt.traceDirtyNode(version, key[:next], newInternalNode)
 		return newInternalNode, newInternalNodeKey, false, nil
 	case *types.LeafNode:
 		// position before next(exclusive) is common prefix of two leaf nodes, which may need split
 		// case 1: two leaf nodes have the same key, which means update
 		if slices.Equal(n.Key, key) {
+			jmt.tracePruningNode(currentNodeKey)
 			return jmt.insert(nil, nil, version, key, value, next)
 		}
 		// case 2: two leaf nodes have different key, need split into a list of InternalNodes
@@ -188,12 +197,12 @@ func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *NodeKey, version 
 // delete will find the target key from current subtree, and adjust the structure of new tree,
 // then returns root node of new tree.
 // parameter "next" means the position that has not been addressed in current node.
-func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version uint64, key []byte, next int) (newRoot types.Node, newRootNodeKey *NodeKey, deleted bool, err error) {
+func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *types.NodeKey, version uint64, key []byte, next int) (newRoot types.Node, newRootNodeKey *types.NodeKey, deleted bool, err error) {
 	switch n := (currentNode).(type) {
 	case *types.InternalNode:
 		// case 1: delete in subtree recursively, then adjust self structure if needed to maintain sparse
 		var nextNode types.Node
-		var nextNodeKey *NodeKey
+		var nextNodeKey *types.NodeKey
 		if n.Children[key[next]] == nil {
 			// target child slot is empty，no-op
 			return nil, nil, false, nil
@@ -201,7 +210,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 		// target child slot isn't empty，then delete in this subtree recursively
 		child := n.Children[key[next]]
 		nextBlkNum := child.Version
-		nextNodeKey = &NodeKey{
+		nextNodeKey = &types.NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
 			Type:    jmt.typ,
@@ -217,6 +226,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 
 		// deletion op is executed indeed in subtree
 		tmpRoot := n.Copy().(*types.InternalNode)
+		jmt.tracePruningNode(currentNodeKey)
 		switch nn := (newNextNode).(type) {
 		case nil:
 			// case 1.1: target slot is empty after deletion op, check if we need to compact current internal node
@@ -225,7 +235,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 			if needCompact {
 				dstChild := tmpRoot.Children[pos]
 				// return the compacted leaf node
-				leafNk := &NodeKey{
+				leafNk := &types.NodeKey{
 					Version: dstChild.Version,
 					Path:    append(key[:next], pos), // copy slice
 					Type:    jmt.typ,
@@ -235,14 +245,13 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 					return nil, nil, false, err
 				}
 				// remove current node and old leaf node in cache
-				jmt.removeOldNode(currentNodeKey)
-				jmt.removeOldNode(leafNk)
+				jmt.tracePruningNode(leafNk)
 				// trace new leaf node in cache
-				leafNk = jmt.traceNewNode(version, key[:next], leaf)
+				leafNk = jmt.traceDirtyNode(version, key[:next], leaf)
 				return leaf, leafNk, true, nil
 			}
 			// current internal node doesn't need to be compacted
-			nk := jmt.traceNewNode(version, key[:next], tmpRoot)
+			nk := jmt.traceDirtyNode(version, key[:next], tmpRoot)
 			return tmpRoot, nk, true, nil
 		case *types.LeafNode:
 			// case 1.2: subtree becomes a leaf node after deletion op, check if we need to compact current internal node
@@ -253,15 +262,13 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 			}
 			_, needCompact := isSingleLeafSubTree(tmpRoot)
 			if needCompact {
-				// remove current internal node in cache
-				jmt.removeOldNode(currentNodeKey)
-				jmt.removeOldNode(newNextNodeKey)
+				jmt.tracePruningNode(newNextNodeKey)
 				// trace origin leaf node by new index
-				newNextNodeKey = jmt.traceNewNode(version, key[:next], nn)
+				newNextNodeKey = jmt.traceDirtyNode(version, key[:next], nn)
 				return nn, newNextNodeKey, true, nil
 			}
 			// current internal node doesn't need to be compacted
-			nk := jmt.traceNewNode(version, key[:next], tmpRoot)
+			nk := jmt.traceDirtyNode(version, key[:next], tmpRoot)
 			return tmpRoot, nk, true, nil
 		case *types.InternalNode:
 			// case 1.3：subtree's root is an internal node after deletion op, so we don't need to compact current node
@@ -270,14 +277,14 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 				Hash:    nn.GetHash(),
 				Leaf:    false,
 			}
-			nk := jmt.traceNewNode(version, key[:next], tmpRoot)
+			nk := jmt.traceDirtyNode(version, key[:next], tmpRoot)
 			return tmpRoot, nk, true, nil
 		}
 		return nil, nil, false, nil
 	case *types.LeafNode:
 		// case 2.1： target key exists in current tree, delete it
 		if slices.Equal(n.Key, key) {
-			jmt.removeOldNode(currentNodeKey)
+			jmt.tracePruningNode(currentNodeKey)
 			return nil, nil, true, nil
 		}
 		// case 2.2： target key doesn't exist in current tree, no-op
@@ -289,45 +296,80 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *NodeKey, version 
 }
 
 // Commit flush dirty nodes in current tree, clear cache, return root hash
-func (jmt *JMT) Commit() (rootHash common.Hash) {
-	// flush dirty nodes into kv
-	batch := jmt.backend.NewBatch()
-	for k, v := range jmt.dirtyNodes {
-		batch.Put([]byte(k), v.EncodePb())
-	}
+func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 	// persist <rootHash -> rootNodeKey>
 	if jmt.root == nil {
 		rootHash = placeHolder
 	} else {
 		rootHash = jmt.root.GetHash()
 	}
-	batch.Put(rootHash[:], jmt.rootNodeKey.encode())
-	batch.Commit()
+	if pruneArgs == nil || !pruneArgs.Enable {
+		// flush dirty nodes into kv
+		batch := jmt.backend.NewBatch()
+		for k, v := range jmt.dirtySet {
+			batch.Put([]byte(k), v.EncodePb())
+		}
+		batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
+		batch.Commit()
+		// gc
+		jmt.dirtySet = make(map[string]types.Node)
+		jmt.pruneSet = make(map[string]struct{})
+		return rootHash
+	}
+
+	pruneArgs.Batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
+	dirtySet := make(map[string][]byte)
+	for k, v := range jmt.dirtySet {
+		dirtySet[k] = v.EncodePb()
+	}
+	pruneArgs.Journal = &types.TrieJournal{
+		PruneSet: jmt.pruneSet,
+		DirtySet: dirtySet,
+		Version:  jmt.rootNodeKey.Version,
+	}
 	// gc
-	jmt.dirtyNodes = make(map[string]types.Node)
+	jmt.dirtySet = make(map[string]types.Node)
+	jmt.pruneSet = make(map[string]struct{})
 	return rootHash
 }
 
-func (jmt *JMT) getNode(nk *NodeKey) (types.Node, error) {
+func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	var nextNode types.Node
 	var err error
-	k := nk.encode()
-	if dirty, ok := jmt.dirtyNodes[string(k)]; ok {
-		// find in cache first
-		nextNode = dirty
-	} else {
-		// find in kv
-		nextRawNode := jmt.backend.Get(k)
-		nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
-		if err != nil {
-			return nil, err
+	var nextRawNode []byte
+	k := nk.Encode()
+
+	// try in dirtySet first
+	if dirty, ok := jmt.dirtySet[string(k)]; ok {
+		return dirty, err
+	}
+
+	// try in trie cache
+	if jmt.cache != nil {
+		if v, ok := jmt.cache.Get(jmt.rootNodeKey.Version, k); ok {
+			nextRawNode = v
+			nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
+			if err != nil {
+				return nil, err
+			}
+			jmt.logger.Debugf("[JMT-getNode] get from cache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+			return nextNode, err
 		}
 	}
+
+	// try in kv at last
+	nextRawNode = jmt.backend.Get(k)
+	nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
+	if err != nil {
+		return nil, err
+	}
+	jmt.logger.Debugf("[JMT-getNode] get from kv, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+
 	return nextNode, err
 }
 
 // splitLeafNode splits common prefix of two leaf nodes into a series of internal nodes, and construct a tree.
-func (jmt *JMT) splitLeafNode(origin *types.LeafNode, originNodeKey *NodeKey, newLeaf *types.LeafNode, version uint64, pos int) (newRoot types.Node, newRootNodeKey *NodeKey) {
+func (jmt *JMT) splitLeafNode(origin *types.LeafNode, originNodeKey *types.NodeKey, newLeaf *types.LeafNode, version uint64, pos int) (newRoot types.Node, newRootNodeKey *types.NodeKey) {
 	root := &types.InternalNode{}
 	if newLeaf.Key[pos] == origin.Key[pos] {
 		// case 1: current position is common prefix, continue split.
@@ -345,36 +387,41 @@ func (jmt *JMT) splitLeafNode(origin *types.LeafNode, originNodeKey *NodeKey, ne
 			Version: version,
 			Leaf:    true,
 		}
-		jmt.removeOldNode(originNodeKey)
-		jmt.traceNewNode(version, origin.Key[:pos+1], origin)
+		jmt.tracePruningNode(originNodeKey)
+		jmt.traceDirtyNode(version, origin.Key[:pos+1], origin)
 		// branch out new leaf node
 		root.Children[newLeaf.Key[pos]] = &types.Child{
 			Hash:    newLeaf.Hash,
 			Version: version,
 			Leaf:    true,
 		}
-		jmt.traceNewNode(version, newLeaf.Key[:pos+1], newLeaf)
+		jmt.traceDirtyNode(version, newLeaf.Key[:pos+1], newLeaf)
 	}
-	nk := jmt.traceNewNode(version, newLeaf.Key[:pos], root)
+	nk := jmt.traceDirtyNode(version, newLeaf.Key[:pos], root)
 	return root, nk
 }
 
-// removeOldNode clear dirty node in memory cache, not in kv.
-func (jmt *JMT) removeOldNode(nk *NodeKey) {
-	k := string(nk.encode())
-	delete(jmt.dirtyNodes, k)
+// tracePruningNode clear dirty node in memory cache, then record its key.
+func (jmt *JMT) tracePruningNode(nk *types.NodeKey) {
+	k := string(nk.Encode())
+	if _, ok := jmt.dirtySet[k]; ok {
+		delete(jmt.dirtySet, k)
+	} else {
+		jmt.pruneSet[k] = struct{}{}
+	}
 }
 
-// traceNewNode records new node in memory cache.
-func (jmt *JMT) traceNewNode(version uint64, path []byte, newNode types.Node) *NodeKey {
-	nk := &NodeKey{
+// traceDirtyNode records new node in memory cache.
+func (jmt *JMT) traceDirtyNode(version uint64, path []byte, newNode types.Node) *types.NodeKey {
+	nk := &types.NodeKey{
 		Version: version,
 		Path:    make([]byte, len(path)),
 		Type:    jmt.typ,
 	}
 	copy(nk.Path, path)
-	k := string(nk.encode())
-	jmt.dirtyNodes[k] = newNode
+	k := string(nk.Encode())
+	jmt.dirtySet[k] = newNode
+	delete(jmt.pruneSet, k)
 	return nk
 }
 

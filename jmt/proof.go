@@ -44,7 +44,7 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 		}
 		child := n.Children[key[next]]
 		nextBlkNum := child.Version
-		nextNodeKey := &NodeKey{
+		nextNodeKey := &types.NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
 			Type:    jmt.typ,
@@ -69,10 +69,10 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 }
 
 // VerifyTrie verifies a whole trie
-func VerifyTrie(rootHash common.Hash, backend storage.Storage) (bool, error) {
+func VerifyTrie(rootHash common.Hash, backend storage.Storage, cache TrieCache) (bool, error) {
 	logger := log.NewWithModule("JMT-VerifyTrie")
 
-	trie, err := New(rootHash, backend, logger)
+	trie, err := New(rootHash, backend, cache, logger)
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +94,7 @@ func VerifyTrie(rootHash common.Hash, backend storage.Storage) (bool, error) {
 			}
 
 			nextPath := []byte{i}
-			nextNodeKey := &NodeKey{
+			nextNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Path:    nextPath,
 				Type:    trie.typ,
@@ -152,7 +152,7 @@ func (jmt *JMT) verifySubTrie(root types.Node, rootHash common.Hash, path []byte
 			nextPath := make([]byte, len(path))
 			copy(nextPath, path)
 			nextPath = append(nextPath, i)
-			nextNodeKey := &NodeKey{
+			nextNodeKey := &types.NodeKey{
 				Version: n.Children[i].Version,
 				Path:    nextPath,
 				Type:    jmt.typ,

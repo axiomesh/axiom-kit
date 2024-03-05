@@ -2,6 +2,7 @@ package jmt
 
 import (
 	"fmt"
+	"github.com/axiomesh/axiom-kit/types"
 	"os"
 	"testing"
 	"time"
@@ -43,10 +44,10 @@ func Test_SingleTreeNode(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v1"))
 
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 	require.Equal(t, rootHash, jmt.root.GetHash())
 
-	jmt, err = New(rootHash, s, jmt.logger)
+	jmt, err = New(rootHash, s, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// get from kv
@@ -215,7 +216,7 @@ func Test_GetNonExistKey(t *testing.T) {
 
 func Test_LoadNonExistTree(t *testing.T) {
 	s := initKV()
-	jmt, err := New(common.Hash{}, s, nil)
+	jmt, err := New(common.Hash{}, s, nil, nil)
 	require.Nil(t, jmt)
 	require.NotNil(t, err)
 	require.Equal(t, err, ErrorNotFound)
@@ -263,17 +264,17 @@ func Test_DeleteUntilEmptyTreeWithStateTransit1(t *testing.T) {
 	n, err = jmt.Get(toHex("a2"))
 	require.Nil(t, err)
 	require.Equal(t, n, []byte("v2"))
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 
 	// state transit
-	jmt1, err := New(rootHash, s, jmt.logger)
+	jmt1, err := New(rootHash, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt1.Get(toHex("a2"))
 	require.Nil(t, err)
 	require.Equal(t, n, []byte("v2"))
 	err = jmt1.Update(1, toHex("a2"), nil)
 	require.Nil(t, err)
-	jmt1.Commit()
+	jmt1.Commit(true)
 	n, err = jmt1.Get(toHex("a1"))
 	require.Nil(t, err)
 	require.Nil(t, n)
@@ -294,19 +295,19 @@ func Test_DeleteUntilEmptyTreeWithStateTransit2(t *testing.T) {
 	n, err = jmt.Get(toHex("a2"))
 	require.Nil(t, err)
 	require.Equal(t, n, []byte("v2"))
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 
 	// state transit
-	jmt1, err := New(rootHash, s, jmt.logger)
+	jmt1, err := New(rootHash, s, nil, jmt.logger)
 	require.Nil(t, err)
 	err = jmt1.Update(1, toHex("a1"), nil)
 	require.Nil(t, err)
 	err = jmt1.Update(1, toHex("a2"), nil)
 	require.Nil(t, err)
-	rootHash1 := jmt1.Commit()
+	rootHash1, _ := jmt1.Commit(true)
 
 	// verify
-	jmt2, err := New(rootHash1, s, jmt.logger)
+	jmt2, err := New(rootHash1, s, nil, jmt.logger)
 	n, err = jmt2.Get(toHex("a1"))
 	require.Nil(t, err)
 	require.Nil(t, n)
@@ -417,8 +418,8 @@ func Test_DeleteFromEmptyTree(t *testing.T) {
 	n, err := jmt.Get(toHex("0001"))
 	require.Nil(t, err)
 	require.Nil(t, n)
-	rootHash := jmt.Commit()
-	jmt, err = New(rootHash, s, jmt.logger)
+	rootHash, _ := jmt.Commit(true)
+	jmt, err = New(rootHash, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -499,9 +500,9 @@ func Test_GetAfterCommit(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 	require.Nil(t, err)
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 	require.Equal(t, rootHash, jmt.root.GetHash())
-	jmt, err = New(rootHash, s, jmt.logger)
+	jmt, err = New(rootHash, s, nil, jmt.logger)
 	require.Nil(t, err)
 	// get from kv
 	n, err := jmt.Get(toHex("0001"))
@@ -553,9 +554,9 @@ func Test_DeleteExistKeyAndCommit(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(0, toHex("bb17"), []byte{})
 	require.Nil(t, err)
-	rootHash := jmt.Commit()
+	rootHash, _ := jmt.Commit(true)
 	require.Equal(t, rootHash, jmt.root.GetHash())
-	jmt, err = New(rootHash, s, jmt.logger)
+	jmt, err = New(rootHash, s, nil, jmt.logger)
 	require.Nil(t, err)
 	// get from kv
 	n, err := jmt.Get(toHex("0001"))
@@ -599,9 +600,9 @@ func Test_StateTransit(t *testing.T) {
 	err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 	require.Nil(t, err)
 	// commit version 0 jmt, and load it from kv
-	rootHash0 := jmt.Commit()
+	rootHash0, _ := jmt.Commit(true)
 	require.Equal(t, rootHash0, jmt.root.GetHash())
-	jmt, err = New(rootHash0, s, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, jmt.logger)
 	require.Nil(t, err)
 	// transit from v0 to v1
 	err = jmt.Update(1, toHex("0001"), []byte("v5"))
@@ -611,9 +612,9 @@ func Test_StateTransit(t *testing.T) {
 	err = jmt.Update(1, toHex("bb17"), []byte("v8"))
 	require.Nil(t, err)
 	// commit version 1 jmt, and load it from kv
-	rootHash1 := jmt.Commit()
+	rootHash1, _ := jmt.Commit(true)
 	require.Equal(t, rootHash1, jmt.root.GetHash())
-	jmt, err = New(rootHash1, s, jmt.logger)
+	jmt, err = New(rootHash1, s, nil, jmt.logger)
 	require.Nil(t, err)
 	// transit from v1 to v2
 	err = jmt.Update(2, toHex("0001"), []byte("v9"))
@@ -622,10 +623,10 @@ func Test_StateTransit(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(2, toHex("bb17"), []byte("v12"))
 	require.Nil(t, err)
-	rootHash2 := jmt.Commit()
+	rootHash2, _ := jmt.Commit(true)
 	require.Equal(t, rootHash2, jmt.root.GetHash())
 	// verify v0
-	jmt, err = New(rootHash0, s, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err := jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -645,7 +646,7 @@ func Test_StateTransit(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v4"))
 	// verify v1
-	jmt, err = New(rootHash1, s, jmt.logger)
+	jmt, err = New(rootHash1, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -665,7 +666,7 @@ func Test_StateTransit(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v8"))
 	// verify v2
-	jmt, err = New(rootHash2, s, jmt.logger)
+	jmt, err = New(rootHash2, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -698,9 +699,9 @@ func Test_StateTransitWithDelete(t *testing.T) {
 	err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 	require.Nil(t, err)
 	// commit version 0 jmt, and load it from kv
-	rootHash0 := jmt.Commit()
+	rootHash0, _ := jmt.Commit(true)
 	require.Equal(t, rootHash0, jmt.root.GetHash())
-	jmt, err = New(rootHash0, s, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, jmt.logger)
 	require.Nil(t, err)
 	// transit from v0 to v1
 	err = jmt.Update(1, toHex("0001"), []byte{})
@@ -710,9 +711,9 @@ func Test_StateTransitWithDelete(t *testing.T) {
 	err = jmt.Update(1, toHex("bb17"), []byte("v6"))
 	require.Nil(t, err)
 	// commit version 1 jmt, and load it from kv
-	rootHash1 := jmt.Commit()
+	rootHash1, _ := jmt.Commit(true)
 	require.Equal(t, rootHash1, jmt.root.GetHash())
-	jmt, err = New(rootHash1, s, jmt.logger)
+	jmt, err = New(rootHash1, s, nil, jmt.logger)
 	require.Nil(t, err)
 	// transit from v1 to v2
 	err = jmt.Update(2, toHex("0001"), []byte("v7"))
@@ -721,10 +722,10 @@ func Test_StateTransitWithDelete(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(2, toHex("bb17"), []byte("v8"))
 	require.Nil(t, err)
-	rootHash2 := jmt.Commit()
+	rootHash2, _ := jmt.Commit(true)
 	require.Equal(t, rootHash2, jmt.root.GetHash())
 	// verify v0
-	jmt, err = New(rootHash0, s, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err := jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -743,7 +744,7 @@ func Test_StateTransitWithDelete(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v4"))
 	// verify v1
-	jmt, err = New(rootHash1, s, jmt.logger)
+	jmt, err = New(rootHash1, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -761,7 +762,7 @@ func Test_StateTransitWithDelete(t *testing.T) {
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v6"))
 	// verify v2
-	jmt, err = New(rootHash2, s, jmt.logger)
+	jmt, err = New(rootHash2, s, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -785,19 +786,19 @@ func Test_KeyLengthEqualTo2(t *testing.T) {
 	jmt0, s0 := initEmptyJMT()
 	err := jmt0.Update(0, toHex("02"), []byte("v2"))
 	require.Nil(t, err)
-	rootHash0 := jmt0.Commit()
+	rootHash0, _ := jmt0.Commit(true)
 
 	// transit from v0 to v1
-	jmt1, err := New(rootHash0, s0, jmt0.logger)
+	jmt1, err := New(rootHash0, s0, nil, jmt0.logger)
 	require.Nil(t, err)
 	err = jmt1.Update(1, toHex("02"), []byte("v3"))
 	require.Nil(t, err)
 	err = jmt1.Update(1, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
-	rootHash1 := jmt1.Commit()
+	rootHash1, _ := jmt1.Commit(true)
 
 	// verify v0
-	jmt0, err = New(rootHash0, s0, jmt0.logger)
+	jmt0, err = New(rootHash0, s0, nil, jmt0.logger)
 	require.Nil(t, err)
 	n, err := jmt0.Get(toHex("02"))
 	require.Nil(t, err)
@@ -805,7 +806,7 @@ func Test_KeyLengthEqualTo2(t *testing.T) {
 	require.Equal(t, n, []byte("v2"))
 
 	// verify v1
-	jmt1, err = New(rootHash1, s0, jmt0.logger)
+	jmt1, err = New(rootHash1, s0, nil, jmt0.logger)
 	require.Nil(t, err)
 	n, err = jmt1.Get(toHex("02"))
 	require.Nil(t, err)
@@ -822,20 +823,20 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	jmt1, s1 := initEmptyJMT()
 	err := jmt1.Update(0, toHex("02"), []byte("v2"))
 	require.Nil(t, err)
-	rootHash1 := jmt1.Commit()
+	rootHash1, _ := jmt1.Commit(true)
 
 	// transit from v0 to v1
-	jmt11, err := New(rootHash1, s1, jmt1.logger)
+	jmt11, err := New(rootHash1, s1, nil, jmt1.logger)
 	require.Nil(t, err)
 	err = jmt11.Update(1, toHex("02"), []byte("v3"))
 	require.Nil(t, err)
 	//printJMT(jmt11, 1)
 	err = jmt11.Update(1, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
-	rootHash11 := jmt11.Commit()
+	rootHash11, _ := jmt11.Commit(true)
 
 	// verify v0
-	jmt1, err = New(rootHash1, s1, jmt1.logger)
+	jmt1, err = New(rootHash1, s1, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err := jmt1.Get(toHex("02"))
 	require.Nil(t, err)
@@ -843,7 +844,7 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	require.Equal(t, n, []byte("v2"))
 
 	// verify v1
-	jmt11, err = New(rootHash11, s1, jmt1.logger)
+	jmt11, err = New(rootHash11, s1, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err = jmt11.Get(toHex("02"))
 	require.Nil(t, err)
@@ -860,19 +861,19 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	jmt2, s2 := initEmptyJMT()
 	err = jmt2.Update(0, toHex("02"), []byte("v2"))
 	require.Nil(t, err)
-	rootHash2 := jmt2.Commit()
+	rootHash2, _ := jmt2.Commit(true)
 
 	// transit from v0 to v1, but with different update order
-	jmt22, err := New(rootHash2, s2, jmt1.logger)
+	jmt22, err := New(rootHash2, s2, nil, jmt1.logger)
 	require.Nil(t, err)
 	err = jmt22.Update(1, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
 	err = jmt22.Update(1, toHex("02"), []byte("v3"))
 	require.Nil(t, err)
-	rootHash22 := jmt22.Commit()
+	rootHash22, _ := jmt22.Commit(true)
 
 	// verify v0
-	jmt2, err = New(rootHash2, s2, jmt1.logger)
+	jmt2, err = New(rootHash2, s2, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err = jmt2.Get(toHex("02"))
 	require.Nil(t, err)
@@ -880,7 +881,7 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	require.Equal(t, n, []byte("v2"))
 
 	// verify v1
-	jmt22, err = New(rootHash22, s2, jmt1.logger)
+	jmt22, err = New(rootHash22, s2, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err = jmt22.Get(toHex("02"))
 	require.Nil(t, err)
@@ -905,20 +906,20 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt1.Update(0, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
-	rootHash1 := jmt1.Commit()
+	rootHash1, _ := jmt1.Commit(true)
 
 	// transit from v0 to v1
-	jmt11, err := New(rootHash1, s1, jmt1.logger)
+	jmt11, err := New(rootHash1, s1, nil, jmt1.logger)
 	require.Nil(t, err)
 	err = jmt11.Update(1, toHex("02"), []byte{})
 	require.Nil(t, err)
-	//printJMT(jmt11, 1)
+	printJMT(jmt11, 1)
 	err = jmt11.Update(1, toHex("04"), []byte{})
 	require.Nil(t, err)
-	rootHash11 := jmt11.Commit()
+	rootHash11, _ := jmt11.Commit(true)
 
 	// verify v0
-	jmt1, err = New(rootHash1, s1, jmt1.logger)
+	jmt1, err = New(rootHash1, s1, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err := jmt1.Get(toHex("02"))
 	require.Nil(t, err)
@@ -926,7 +927,7 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.Equal(t, n, []byte("v2"))
 
 	// verify v1
-	jmt11, err = New(rootHash11, s1, jmt1.logger)
+	jmt11, err = New(rootHash11, s1, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err = jmt11.Get(toHex("02"))
 	require.Nil(t, err)
@@ -948,19 +949,19 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt2.Update(0, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
-	rootHash2 := jmt2.Commit()
+	rootHash2, _ := jmt2.Commit(true)
 
 	// transit from v0 to v1, but with different delete order
-	jmt22, err := New(rootHash2, s2, jmt1.logger)
+	jmt22, err := New(rootHash2, s2, nil, jmt1.logger)
 	require.Nil(t, err)
 	err = jmt22.Update(1, toHex("04"), []byte{})
 	require.Nil(t, err)
 	err = jmt22.Update(1, toHex("02"), []byte{})
 	require.Nil(t, err)
-	rootHash22 := jmt22.Commit()
+	rootHash22, _ := jmt22.Commit(true)
 
 	// verify v0
-	jmt2, err = New(rootHash2, s2, jmt1.logger)
+	jmt2, err = New(rootHash2, s2, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err = jmt2.Get(toHex("03"))
 	require.Nil(t, err)
@@ -968,7 +969,7 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.Equal(t, n, []byte("v3"))
 
 	// verify v1
-	jmt22, err = New(rootHash22, s2, jmt1.logger)
+	jmt22, err = New(rootHash22, s2, nil, jmt1.logger)
 	require.Nil(t, err)
 	n, err = jmt22.Get(toHex("02"))
 	require.Nil(t, err)
@@ -997,8 +998,8 @@ func Test_Case_Random_1(t *testing.T) {
 			err := jmt.Update(0, k, v)
 			require.Nil(t, err)
 		}
-		rootHash := jmt.Commit()
-		jmt, err := New(rootHash, s, jmt.logger)
+		rootHash, _ := jmt.Commit(true)
+		jmt, err := New(rootHash, s, nil, jmt.logger)
 		require.Nil(t, err)
 		for k, v := range kv {
 			n, err := jmt.Get(([]byte)(k))
@@ -1025,7 +1026,7 @@ func Test_Case_Random_2(t *testing.T) {
 		v2hash := make(map[int]common.Hash, version)
 		for ver := 0; ver < version; ver++ {
 			if jmt == nil {
-				jmt, err = New(rootHash, s, logger)
+				jmt, err = New(rootHash, s, nil, logger)
 				require.Nil(t, err)
 			}
 			// nnum := rand.Intn(maxn)
@@ -1049,13 +1050,13 @@ func Test_Case_Random_2(t *testing.T) {
 			}
 			v2inserted[ver] = inserted
 			v2deleted[ver] = deleted
-			rootHash = jmt.Commit()
+			rootHash, _ = jmt.Commit(true)
 			v2hash[ver] = rootHash
 			jmt = nil
 		}
 		// get all
 		for ver := 0; ver < version; ver++ {
-			jmt, err = New(v2hash[ver], s, logger)
+			jmt, err = New(v2hash[ver], s, nil, logger)
 			require.Nil(t, err)
 			for k, v := range v2inserted[ver] {
 				n, err := jmt.Get(([]byte)(k))
@@ -1088,7 +1089,6 @@ func Test_Case_Random_3(t *testing.T) {
 
 		ks0, _ := getRandomHexKVSet(lk, lv, nnum)
 		ks, vs := getRandomHexKVSet(lk, lv, nnum)
-		var nodes0 []*TraversedNode
 
 		for i := 0; i < cnt; i++ {
 			// init base jmt
@@ -1097,10 +1097,7 @@ func Test_Case_Random_3(t *testing.T) {
 				err := jmt.Update(1, ks0[idx], dummyValue)
 				require.Nil(t, err)
 			}
-			jmt.Commit()
-			//if len(nodes0) == 0 {
-			//	nodes0 = jmt.Traverse(1)
-			//}
+			jmt.Commit(true)
 
 			rand.Shuffle(len(ks), func(i, j int) {
 				ks[i], ks[j] = ks[j], ks[i]
@@ -1113,7 +1110,7 @@ func Test_Case_Random_3(t *testing.T) {
 				updateOrder[i] = append(updateOrder[i], ks[idx])
 			}
 
-			rootHash := jmt.Commit()
+			rootHash, _ := jmt.Commit(true)
 
 			rootHashs[i] = rootHash
 			jmts[i] = jmt
@@ -1123,21 +1120,16 @@ func Test_Case_Random_3(t *testing.T) {
 		for i := 0; i < len(rootHashs); i++ {
 			if rootHashs[0] != rootHashs[i] {
 				fmt.Println("=========[ERROR] jmt forked=========")
-				fmt.Println("=========Traverse base jmt=========")
-				for j := 0; j < len(nodes0); j++ {
-					fmt.Printf("Node[%v]: %v\n", convertHex((*nodes0[j]).Path), (*(*nodes0[j]).Origin).String())
-				}
-				fmt.Println("=========END Traverse base jmt=========")
 
 				fmt.Println("=========Traverse jmt[0]=========")
-				//printJMT(jmts[0], 0)
+				printJMT(jmts[0], 0)
 				fmt.Println("Update key order of jmt[0]")
 				for j := 0; j < len(updateOrder[0]); j++ {
 					fmt.Println(convertHex(updateOrder[0][j]))
 				}
 
 				fmt.Printf("=========Traverse jmt[%v]=========\n", i)
-				//printJMT(jmts[i], 0)
+				printJMT(jmts[i], 0)
 
 				fmt.Printf("Update key order of jmt[%v]\n", i)
 				for j := 0; j < len(updateOrder[i]); j++ {
@@ -1149,14 +1141,29 @@ func Test_Case_Random_3(t *testing.T) {
 	}
 }
 
-//func printJMT(jmt *JMT, version uint64) {
-//	fmt.Print("======Start Print JMT========\n")
-//	nodes := jmt.Traverse(version)
-//	for j := 0; j < len(nodes); j++ {
-//		fmt.Printf("Node[%v]: %v\n", convertHex((*nodes[j]).Path), (*(*nodes[j]).Origin).Print())
-//	}
-//	fmt.Print("======End Print JMT========\n")
-//}
+func printJMT(jmt *JMT, version uint64) {
+	fmt.Printf("======Start Print JMT %v========\n", version)
+	// iterate version 0 jmt trie
+	iter := NewIterator(jmt.root.GetHash(), jmt.backend, jmt.cache, 2, time.Second)
+	go iter.Iterate()
+	var res []*RawNode
+
+	for {
+		data, err := iter.Next()
+		if err != nil {
+			if err == ErrorNoMoreData {
+				break
+			}
+			panic(err)
+		}
+		res = append(res, data)
+	}
+
+	for j := 0; j < len(res); j++ {
+		fmt.Printf("%v\n", res[j].String())
+	}
+	fmt.Printf("======End Print JMT========\n")
+}
 
 func convertHex(in []byte) string {
 	hexString := "0123456789abcdef"
@@ -1173,15 +1180,15 @@ func initEmptyJMT() (*JMT, storage.Storage) {
 	logger := log.NewWithModule("JMT-Test")
 	// init dummy jmt
 	rootHash := common.Hash{}
-	rootNodeKey := &NodeKey{
+	rootNodeKey := &types.NodeKey{
 		Version: 0,
 		Path:    []byte{},
 		Type:    []byte{},
 	}
-	nk := rootNodeKey.encode()
+	nk := rootNodeKey.Encode()
 	s.Put(nk, nil)
 	s.Put(rootHash[:], nk)
-	jmt, _ := New(rootHash, s, logger)
+	jmt, _ := New(rootHash, s, nil, logger)
 	return jmt, s
 }
 
@@ -1227,12 +1234,12 @@ func initKV() storage.Storage {
 	s, _ := pebble.New(dir, nil, nil, logrus.New())
 	// init dummy jmt
 	rootHash := placeHolder
-	rootNodeKey := NodeKey{
+	rootNodeKey := &types.NodeKey{
 		Version: 0,
 		Path:    []byte{},
 		Type:    []byte{},
 	}
-	nk := rootNodeKey.encode()
+	nk := rootNodeKey.Encode()
 	s.Put(nk, nil)
 	s.Put(rootHash[:], nk)
 	return s
