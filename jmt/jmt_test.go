@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
 
@@ -1168,7 +1169,7 @@ func convertHex(in []byte) string {
 
 func initEmptyJMT() (*JMT, storage.Storage) {
 	dir, _ := os.MkdirTemp("", "TestKV")
-	s, _ := pebble.New(dir, nil, nil)
+	s, _ := pebble.New(dir, nil, nil, logrus.New())
 	logger := log.NewWithModule("JMT-Test")
 	// init dummy jmt
 	rootHash := common.Hash{}
@@ -1223,7 +1224,7 @@ func getRandomHexKV(lk, lv int) (k []byte, v []byte) {
 
 func initKV() storage.Storage {
 	dir, _ := os.MkdirTemp("", "TestKV")
-	s, _ := pebble.New(dir, nil, nil)
+	s, _ := pebble.New(dir, nil, nil, logrus.New())
 	// init dummy jmt
 	rootHash := placeHolder
 	rootNodeKey := NodeKey{

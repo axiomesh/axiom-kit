@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/axiomesh/axiom-kit/storage"
@@ -460,6 +461,6 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 
 func initKVStorage() storage.Storage {
 	dir, _ := os.MkdirTemp("", "TestKVStorage")
-	s, _ := pebble.New(dir, nil, nil)
+	s, _ := pebble.New(dir, nil, nil, logrus.New())
 	return s
 }
