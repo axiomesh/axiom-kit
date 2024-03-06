@@ -7,7 +7,6 @@ option go_package = "../pb";
 message Block {
   BlockHeader block_header = 1;
   repeated bytes transactions = 2;
-  bytes block_hash = 3 ;
   bytes extra = 4;
 }
 

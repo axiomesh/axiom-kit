@@ -2,6 +2,7 @@ package types
 
 import (
 	"crypto/sha256"
+	"sync/atomic"
 
 	"github.com/axiomesh/axiom-kit/types/pb"
 	"github.com/samber/lo"
@@ -20,6 +21,8 @@ type BlockHeader struct {
 	GasUsed         uint64
 	ProposerAccount string
 	ProposerNodeID  uint64
+
+	hashCache atomic.Value
 }
 
 func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
@@ -96,7 +99,7 @@ func (h *BlockHeader) Unmarshal(data []byte) error {
 	return h.fromPB(helper)
 }
 
-func (h *BlockHeader) Hash() *Hash {
+func (h *BlockHeader) CalculateHash() *Hash {
 	blockheader := &BlockHeader{
 		Number:          h.Number,
 		StateRoot:       h.StateRoot,
@@ -120,10 +123,23 @@ func (h *BlockHeader) Hash() *Hash {
 	return NewHash(data[:])
 }
 
+func (h *BlockHeader) Hash() *Hash {
+	if h == nil {
+		return nil
+	}
+
+	if hash := h.hashCache.Load(); hash != nil {
+		return hash.(*Hash)
+	}
+
+	res := h.CalculateHash()
+	h.hashCache.Store(res)
+	return res
+}
+
 type Block struct {
 	BlockHeader  *BlockHeader
 	Transactions []*Transaction
-	BlockHash    *Hash
 	Extra        []byte
 }
 
@@ -147,7 +163,6 @@ func (b *Block) toPB() (*pb.Block, error) {
 	return &pb.Block{
 		BlockHeader:  headerPB,
 		Transactions: txsRaw,
-		BlockHash:    b.BlockHash.Bytes(),
 		Extra:        b.Extra,
 	}, nil
 }
@@ -164,10 +179,6 @@ func (b *Block) fromPB(m *pb.Block) error {
 			return err
 		}
 		b.Transactions = append(b.Transactions, tx)
-	}
-	b.BlockHash, err = decodeHash(m.BlockHash)
-	if err != nil {
-		return err
 	}
 	b.Extra = m.Extra
 	return nil
@@ -196,6 +207,10 @@ func (b *Block) Unmarshal(data []byte) error {
 }
 
 func (b *Block) Hash() *Hash {
+	if b == nil {
+		return nil
+	}
+
 	return b.BlockHeader.Hash()
 }
 
@@ -250,18 +265,18 @@ func (b *Block) Clone() *Block {
 			ParentHash:      convertToHash(b.BlockHeader.ParentHash),
 			Timestamp:       b.BlockHeader.Timestamp,
 			Epoch:           b.BlockHeader.Epoch,
+			Bloom:           bl,
 			GasPrice:        b.BlockHeader.GasPrice,
 			GasUsed:         b.BlockHeader.GasUsed,
 			ProposerAccount: b.BlockHeader.ProposerAccount,
 			ProposerNodeID:  b.BlockHeader.ProposerNodeID,
-			Bloom:           bl,
+			hashCache:       atomic.Value{},
 		}
 	}
 
 	return &Block{
 		BlockHeader:  blockHeader,
 		Transactions: txs,
-		BlockHash:    convertToHash(b.BlockHash),
 		Extra:        b.Extra,
 	}
 }
