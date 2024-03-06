@@ -15,7 +15,6 @@ func TestBlock_Marshal(t *testing.T) {
 		{
 			BlockHeader:  &BlockHeader{},
 			Transactions: []*Transaction{},
-			BlockHash:    &Hash{},
 			Extra:        []byte{},
 		},
 	}
@@ -41,7 +40,6 @@ func TestClone(t *testing.T) {
 		{
 			BlockHeader:  &BlockHeader{},
 			Transactions: []*Transaction{tx1, tx2},
-			BlockHash:    &Hash{},
 			Extra:        []byte{},
 		},
 		{
@@ -78,8 +76,9 @@ func TestClone(t *testing.T) {
 				})
 			}
 
-			if tt.BlockHash != nil {
-				assert.Equal(t, tt.BlockHash.String(), clonedBlock.BlockHash.String())
+			if tt.BlockHeader != nil {
+				assert.NotEmpty(t, tt.Hash().String())
+				assert.Equal(t, tt.Hash().String(), clonedBlock.Hash().String())
 			}
 
 			assert.Equal(t, tt.Extra, clonedBlock.Extra)
