@@ -1,22 +1,21 @@
 package blockfile
 
 const (
-	// freezerHashTable indicates the name of the freezer canonical hash table.
-	BlockFileHashTable = "hashes"
-
 	// freezerBodiesTable indicates the name of the freezer block body table.
-	BlockFileBodiesTable = "bodies"
+	BlockFileHeaderTable = "header"
 
 	// freezerHeaderTable indicates the name of the freezer header table.
 	BlockFileTXsTable = "transactions"
 
+	BlockFileExtraTable = "extra"
+
 	// freezerReceiptTable indicates the name of the freezer receipts table.
-	BlockFileReceiptTable = "receipts"
+	BlockFileReceiptsTable = "receipts"
 )
 
 var BlockFileSchema = map[string]bool{
-	BlockFileHashTable:    true,
-	BlockFileBodiesTable:  true,
-	BlockFileTXsTable:     true,
-	BlockFileReceiptTable: true,
+	BlockFileHeaderTable:   true,
+	BlockFileTXsTable:      true,
+	BlockFileExtraTable:    true,
+	BlockFileReceiptsTable: true,
 }
