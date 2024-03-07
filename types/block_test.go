@@ -1,6 +1,7 @@
 package types
 
 import (
+	"math/big"
 	"reflect"
 	"strconv"
 	"testing"
@@ -10,13 +11,36 @@ import (
 )
 
 func TestBlock_Marshal(t *testing.T) {
+	from, err := GenerateSigner()
+	assert.Nil(t, err)
+	tx, err := GenerateTransactionWithSigner(1, NewAddressByStr("0xdAC17F958D2ee523a2206206994597C13D831ec7"), big.NewInt(1), nil, from)
+	assert.Nil(t, err)
+
 	tests := []*Block{
 		{},
 		{
-			BlockHeader:  &BlockHeader{},
+			Header:       &BlockHeader{},
 			Transactions: []*Transaction{},
-			Extra:        []byte{},
+			Extra:        &BlockExtra{},
 		},
+		{
+			Header: &BlockHeader{
+				Number:          0,
+				StateRoot:       NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				TxRoot:          NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				ReceiptRoot:     NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				ParentHash:      NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				Timestamp:       0,
+				Epoch:           0,
+				Bloom:           new(Bloom),
+				GasPrice:        0,
+				ProposerAccount: "111",
+				GasUsed:         0,
+				ProposerNodeID:  0,
+			},
+			Transactions: []*Transaction{
+				tx,
+			}},
 	}
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
@@ -24,6 +48,37 @@ func TestBlock_Marshal(t *testing.T) {
 			assert.Nil(t, err)
 
 			e := &Block{}
+			err = e.Unmarshal(data)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.Hash(), e.Hash())
+		})
+	}
+}
+
+func TestBlockBody_Marshal(t *testing.T) {
+	from, err := GenerateSigner()
+	assert.Nil(t, err)
+	tx, err := GenerateTransactionWithSigner(1, NewAddressByStr("0xdAC17F958D2ee523a2206206994597C13D831ec7"), big.NewInt(1), nil, from)
+	assert.Nil(t, err)
+
+	tests := []*BlockBody{
+		{},
+		{
+			Transactions: []*Transaction{},
+			Extra:        &BlockExtra{},
+		},
+		{
+			Transactions: []*Transaction{
+				tx,
+			},
+		},
+	}
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			data, err := tt.Marshal()
+			assert.Nil(t, err)
+
+			e := &BlockBody{}
 			err = e.Unmarshal(data)
 			assert.Nil(t, err)
 		})
@@ -38,12 +93,12 @@ func TestClone(t *testing.T) {
 	tests := []*Block{
 		{},
 		{
-			BlockHeader:  &BlockHeader{},
+			Header:       &BlockHeader{},
 			Transactions: []*Transaction{tx1, tx2},
-			Extra:        []byte{},
+			Extra:        &BlockExtra{},
 		},
 		{
-			BlockHeader: &BlockHeader{
+			Header: &BlockHeader{
 				Number:          0,
 				StateRoot:       NewHashByStr("1111111111111111111111111111111111111111111111111111111111111111"),
 				TxRoot:          NewHashByStr("2222222222222222222222222222222222222222222222222222222222222222"),
@@ -76,45 +131,45 @@ func TestClone(t *testing.T) {
 				})
 			}
 
-			if tt.BlockHeader != nil {
+			if tt.Header != nil {
 				assert.NotEmpty(t, tt.Hash().String())
 				assert.Equal(t, tt.Hash().String(), clonedBlock.Hash().String())
 			}
 
-			assert.Equal(t, tt.Extra, clonedBlock.Extra)
+			assert.True(t, reflect.DeepEqual(tt.Extra, clonedBlock.Extra))
 
-			if tt.BlockHeader != nil {
-				assert.NotEqual(t, reflect.ValueOf(tt.BlockHeader).Pointer(), reflect.ValueOf(clonedBlock.BlockHeader).Pointer())
+			if tt.Header != nil {
+				assert.NotEqual(t, reflect.ValueOf(tt.Header).Pointer(), reflect.ValueOf(clonedBlock.Header).Pointer())
 
-				if tt.BlockHeader.TxRoot != nil {
-					assert.NotEqual(t, reflect.ValueOf(tt.BlockHeader.TxRoot).Pointer(), reflect.ValueOf(clonedBlock.BlockHeader.TxRoot).Pointer())
-					assert.Equal(t, tt.BlockHeader.TxRoot.String(), clonedBlock.BlockHeader.TxRoot.String())
+				if tt.Header.TxRoot != nil {
+					assert.NotEqual(t, reflect.ValueOf(tt.Header.TxRoot).Pointer(), reflect.ValueOf(clonedBlock.Header.TxRoot).Pointer())
+					assert.Equal(t, tt.Header.TxRoot.String(), clonedBlock.Header.TxRoot.String())
 				}
-				if tt.BlockHeader.StateRoot != nil {
-					assert.NotEqual(t, reflect.ValueOf(tt.BlockHeader.StateRoot).Pointer(), reflect.ValueOf(clonedBlock.BlockHeader.StateRoot).Pointer())
-					assert.Equal(t, tt.BlockHeader.StateRoot.String(), clonedBlock.BlockHeader.StateRoot.String())
+				if tt.Header.StateRoot != nil {
+					assert.NotEqual(t, reflect.ValueOf(tt.Header.StateRoot).Pointer(), reflect.ValueOf(clonedBlock.Header.StateRoot).Pointer())
+					assert.Equal(t, tt.Header.StateRoot.String(), clonedBlock.Header.StateRoot.String())
 				}
-				if tt.BlockHeader.ReceiptRoot != nil {
-					assert.NotEqual(t, reflect.ValueOf(tt.BlockHeader.ReceiptRoot).Pointer(), reflect.ValueOf(clonedBlock.BlockHeader.ReceiptRoot).Pointer())
-					assert.Equal(t, tt.BlockHeader.ReceiptRoot.String(), clonedBlock.BlockHeader.ReceiptRoot.String())
+				if tt.Header.ReceiptRoot != nil {
+					assert.NotEqual(t, reflect.ValueOf(tt.Header.ReceiptRoot).Pointer(), reflect.ValueOf(clonedBlock.Header.ReceiptRoot).Pointer())
+					assert.Equal(t, tt.Header.ReceiptRoot.String(), clonedBlock.Header.ReceiptRoot.String())
 				}
-				if tt.BlockHeader.Bloom != nil {
-					assert.NotEqual(t, reflect.ValueOf(tt.BlockHeader.Bloom).Pointer(), reflect.ValueOf(clonedBlock.BlockHeader.Bloom).Pointer())
-					assert.Equal(t, tt.BlockHeader.Bloom.Bytes(), clonedBlock.BlockHeader.Bloom.Bytes())
-				}
-
-				if tt.BlockHeader.ParentHash != nil {
-					assert.NotEqual(t, reflect.ValueOf(tt.BlockHeader.ParentHash).Pointer(), reflect.ValueOf(clonedBlock.BlockHeader.ParentHash).Pointer())
-					assert.Equal(t, tt.BlockHeader.ParentHash.String(), clonedBlock.BlockHeader.ParentHash.String())
+				if tt.Header.Bloom != nil {
+					assert.NotEqual(t, reflect.ValueOf(tt.Header.Bloom).Pointer(), reflect.ValueOf(clonedBlock.Header.Bloom).Pointer())
+					assert.Equal(t, tt.Header.Bloom.Bytes(), clonedBlock.Header.Bloom.Bytes())
 				}
 
-				assert.Equal(t, tt.BlockHeader.Number, clonedBlock.BlockHeader.Number)
-				assert.Equal(t, tt.BlockHeader.Epoch, clonedBlock.BlockHeader.Epoch)
-				assert.Equal(t, tt.BlockHeader.GasPrice, clonedBlock.BlockHeader.GasPrice)
-				assert.Equal(t, tt.BlockHeader.GasUsed, clonedBlock.BlockHeader.GasUsed)
-				assert.Equal(t, tt.BlockHeader.Timestamp, clonedBlock.BlockHeader.Timestamp)
-				assert.Equal(t, tt.BlockHeader.ProposerAccount, clonedBlock.BlockHeader.ProposerAccount)
-				assert.Equal(t, tt.BlockHeader.ProposerNodeID, clonedBlock.BlockHeader.ProposerNodeID)
+				if tt.Header.ParentHash != nil {
+					assert.NotEqual(t, reflect.ValueOf(tt.Header.ParentHash).Pointer(), reflect.ValueOf(clonedBlock.Header.ParentHash).Pointer())
+					assert.Equal(t, tt.Header.ParentHash.String(), clonedBlock.Header.ParentHash.String())
+				}
+
+				assert.Equal(t, tt.Header.Number, clonedBlock.Header.Number)
+				assert.Equal(t, tt.Header.Epoch, clonedBlock.Header.Epoch)
+				assert.Equal(t, tt.Header.GasPrice, clonedBlock.Header.GasPrice)
+				assert.Equal(t, tt.Header.GasUsed, clonedBlock.Header.GasUsed)
+				assert.Equal(t, tt.Header.Timestamp, clonedBlock.Header.Timestamp)
+				assert.Equal(t, tt.Header.ProposerAccount, clonedBlock.Header.ProposerAccount)
+				assert.Equal(t, tt.Header.ProposerNodeID, clonedBlock.Header.ProposerNodeID)
 			}
 		})
 	}

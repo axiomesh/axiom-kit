@@ -5,22 +5,32 @@ package pb;
 option go_package = "../pb";
 
 message Block {
-  BlockHeader block_header = 1;
-  repeated bytes transactions = 2;
-  bytes extra = 4;
+    BlockHeader header = 1;
+    repeated bytes transactions = 2;
+    BlockExtra extra = 3;
+}
+
+message BlockExtra {
 }
 
 message BlockHeader {
-  uint64 number = 1;
-  bytes state_root = 2;
-  bytes tx_root = 3;
-  bytes receipt_root = 4;
-  bytes parent_hash = 5;
-  int64 timestamp = 7;
-  uint64 epoch = 8;
-  bytes bloom = 9;
-  int64 gas_price = 10;
-  string proposer_account = 11;
-  uint64 gas_used = 12;
-  uint64 proposer_node_id = 13;
+    uint64 number = 1;
+    bytes state_root = 2;
+    bytes tx_root = 3;
+    bytes receipt_root = 4;
+    bytes parent_hash = 5;
+    int64 timestamp = 7;
+    uint64 epoch = 8;
+    bytes bloom = 9;
+    int64 gas_price = 10;
+    string proposer_account = 11;
+    uint64 gas_used = 12;
+    uint64 proposer_node_id = 13;
+    bytes extra = 14;
+}
+
+
+message BlockBody {
+    repeated bytes transactions = 1;
+    BlockExtra extra = 2;
 }

@@ -18,13 +18,13 @@ import (
 func TestEthTransaction_GetSignHash(t *testing.T) {
 	rawTx := "0xf86c8085147d35700082520894f927bb571eaab8c9a361ab405c9e4891c5024380880de0b6b3a76400008025a00b8e3b66c1e7ae870802e3ef75f1ec741f19501774bd5083920ce181c2140b99a0040c122b7ebfb3d33813927246cbbad1c6bf210474f5d28053990abff0fd4f53"
 	tx := &Transaction{}
-	tx.Unmarshal(hexutil.Decode(rawTx))
-
+	err := tx.Unmarshal(hexutil.Decode(rawTx))
+	assert.Nil(t, err)
 	addr := "0xC63573cB77ec56e0A1cb40199bb85838D71e4dce"
 
 	InitEIP155Signer(big.NewInt(1))
 
-	err := tx.VerifySignature()
+	err = tx.VerifySignature()
 	assert.Nil(t, err)
 
 	sender, err := tx.sender()
@@ -72,11 +72,12 @@ func TestWrongSinger(t *testing.T) {
 func TestEthTransaction_GetDynamicFeeSignHash(t *testing.T) {
 	rawTx := "0x02f86d827a691e843b9aca08843b9aca088378d99c94450c8a57bae0aa50fa5122c84419d2b2924f205d0180c080a0b8fb5999b8ff73fd82b0b099dc3df62dbf3b9005115ee6122ff97acc01c9d39fa03e63ec1a91ae72246fd746a7e3a191d6c679f34c3358c6a01875a793f70d77bb"
 	tx := &Transaction{}
-	tx.Unmarshal(hexutil.Decode(rawTx))
+	err := tx.Unmarshal(hexutil.Decode(rawTx))
+	assert.Nil(t, err)
 
 	addr := "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 	InitEIP155Signer(big.NewInt(31337))
-	err := tx.VerifySignature()
+	err = tx.VerifySignature()
 	assert.Nil(t, err)
 
 	sender, err := tx.sender()

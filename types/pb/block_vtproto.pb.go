@@ -25,7 +25,7 @@ func (this *Block) EqualVT(that *Block) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if !this.BlockHeader.EqualVT(that.BlockHeader) {
+	if !this.Header.EqualVT(that.Header) {
 		return false
 	}
 	if len(this.Transactions) != len(that.Transactions) {
@@ -37,7 +37,7 @@ func (this *Block) EqualVT(that *Block) bool {
 			return false
 		}
 	}
-	if string(this.Extra) != string(that.Extra) {
+	if !this.Extra.EqualVT(that.Extra) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -45,6 +45,22 @@ func (this *Block) EqualVT(that *Block) bool {
 
 func (this *Block) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*Block)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *BlockExtra) EqualVT(that *BlockExtra) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *BlockExtra) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*BlockExtra)
 	if !ok {
 		return false
 	}
@@ -92,11 +108,42 @@ func (this *BlockHeader) EqualVT(that *BlockHeader) bool {
 	if this.ProposerNodeId != that.ProposerNodeId {
 		return false
 	}
+	if string(this.Extra) != string(that.Extra) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
 func (this *BlockHeader) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*BlockHeader)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *BlockBody) EqualVT(that *BlockBody) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if len(this.Transactions) != len(that.Transactions) {
+		return false
+	}
+	for i, vx := range this.Transactions {
+		vy := that.Transactions[i]
+		if string(vx) != string(vy) {
+			return false
+		}
+	}
+	if !this.Extra.EqualVT(that.Extra) {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *BlockBody) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*BlockBody)
 	if !ok {
 		return false
 	}
@@ -132,12 +179,15 @@ func (m *Block) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Extra) > 0 {
-		i -= len(m.Extra)
-		copy(dAtA[i:], m.Extra)
-		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
+	if m.Extra != nil {
+		size, err := m.Extra.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	if len(m.Transactions) > 0 {
 		for iNdEx := len(m.Transactions) - 1; iNdEx >= 0; iNdEx-- {
@@ -148,8 +198,8 @@ func (m *Block) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if m.BlockHeader != nil {
-		size, err := m.BlockHeader.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Header != nil {
+		size, err := m.Header.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -157,6 +207,39 @@ func (m *Block) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i = encodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BlockExtra) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BlockExtra) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BlockExtra) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
 	}
 	return len(dAtA) - i, nil
 }
@@ -191,6 +274,13 @@ func (m *BlockHeader) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Extra) > 0 {
+		i -= len(m.Extra)
+		copy(dAtA[i:], m.Extra)
+		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
+		i--
+		dAtA[i] = 0x72
+	}
 	if m.ProposerNodeId != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.ProposerNodeId))
 		i--
@@ -262,6 +352,58 @@ func (m *BlockHeader) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i = encodeVarint(dAtA, i, uint64(m.Number))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BlockBody) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BlockBody) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BlockBody) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Extra != nil {
+		size, err := m.Extra.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Transactions) > 0 {
+		for iNdEx := len(m.Transactions) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Transactions[iNdEx])
+			copy(dAtA[i:], m.Transactions[iNdEx])
+			i = encodeVarint(dAtA, i, uint64(len(m.Transactions[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -296,12 +438,15 @@ func (m *Block) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Extra) > 0 {
-		i -= len(m.Extra)
-		copy(dAtA[i:], m.Extra)
-		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
+	if m.Extra != nil {
+		size, err := m.Extra.MarshalToSizedBufferVTStrict(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	if len(m.Transactions) > 0 {
 		for iNdEx := len(m.Transactions) - 1; iNdEx >= 0; iNdEx-- {
@@ -312,8 +457,8 @@ func (m *Block) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if m.BlockHeader != nil {
-		size, err := m.BlockHeader.MarshalToSizedBufferVTStrict(dAtA[:i])
+	if m.Header != nil {
+		size, err := m.Header.MarshalToSizedBufferVTStrict(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -321,6 +466,39 @@ func (m *Block) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i = encodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BlockExtra) MarshalVTStrict() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BlockExtra) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *BlockExtra) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
 	}
 	return len(dAtA) - i, nil
 }
@@ -354,6 +532,13 @@ func (m *BlockHeader) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Extra) > 0 {
+		i -= len(m.Extra)
+		copy(dAtA[i:], m.Extra)
+		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
+		i--
+		dAtA[i] = 0x72
 	}
 	if m.ProposerNodeId != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.ProposerNodeId))
@@ -430,6 +615,58 @@ func (m *BlockHeader) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *BlockBody) MarshalVTStrict() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BlockBody) MarshalToVTStrict(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
+}
+
+func (m *BlockBody) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Extra != nil {
+		size, err := m.Extra.MarshalToSizedBufferVTStrict(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Transactions) > 0 {
+		for iNdEx := len(m.Transactions) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Transactions[iNdEx])
+			copy(dAtA[i:], m.Transactions[iNdEx])
+			i = encodeVarint(dAtA, i, uint64(len(m.Transactions[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 var vtprotoPool_Block = sync.Pool{
 	New: func() interface{} {
 		return &Block{}
@@ -437,12 +674,11 @@ var vtprotoPool_Block = sync.Pool{
 }
 
 func (m *Block) ResetVT() {
-	m.BlockHeader.ReturnToVTPool()
+	m.Header.ReturnToVTPool()
 	f0 := m.Transactions[:0]
-	f1 := m.Extra[:0]
+	m.Extra.ReturnToVTPool()
 	m.Reset()
 	m.Transactions = f0
-	m.Extra = f1
 }
 func (m *Block) ReturnToVTPool() {
 	if m != nil {
@@ -452,6 +688,25 @@ func (m *Block) ReturnToVTPool() {
 }
 func BlockFromVTPool() *Block {
 	return vtprotoPool_Block.Get().(*Block)
+}
+
+var vtprotoPool_BlockExtra = sync.Pool{
+	New: func() interface{} {
+		return &BlockExtra{}
+	},
+}
+
+func (m *BlockExtra) ResetVT() {
+	m.Reset()
+}
+func (m *BlockExtra) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BlockExtra.Put(m)
+	}
+}
+func BlockExtraFromVTPool() *BlockExtra {
+	return vtprotoPool_BlockExtra.Get().(*BlockExtra)
 }
 
 var vtprotoPool_BlockHeader = sync.Pool{
@@ -466,12 +721,14 @@ func (m *BlockHeader) ResetVT() {
 	f2 := m.ReceiptRoot[:0]
 	f3 := m.ParentHash[:0]
 	f4 := m.Bloom[:0]
+	f5 := m.Extra[:0]
 	m.Reset()
 	m.StateRoot = f0
 	m.TxRoot = f1
 	m.ReceiptRoot = f2
 	m.ParentHash = f3
 	m.Bloom = f4
+	m.Extra = f5
 }
 func (m *BlockHeader) ReturnToVTPool() {
 	if m != nil {
@@ -482,14 +739,36 @@ func (m *BlockHeader) ReturnToVTPool() {
 func BlockHeaderFromVTPool() *BlockHeader {
 	return vtprotoPool_BlockHeader.Get().(*BlockHeader)
 }
+
+var vtprotoPool_BlockBody = sync.Pool{
+	New: func() interface{} {
+		return &BlockBody{}
+	},
+}
+
+func (m *BlockBody) ResetVT() {
+	f0 := m.Transactions[:0]
+	m.Extra.ReturnToVTPool()
+	m.Reset()
+	m.Transactions = f0
+}
+func (m *BlockBody) ReturnToVTPool() {
+	if m != nil {
+		m.ResetVT()
+		vtprotoPool_BlockBody.Put(m)
+	}
+}
+func BlockBodyFromVTPool() *BlockBody {
+	return vtprotoPool_BlockBody.Get().(*BlockBody)
+}
 func (m *Block) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.BlockHeader != nil {
-		l = m.BlockHeader.SizeVT()
+	if m.Header != nil {
+		l = m.Header.SizeVT()
 		n += 1 + l + sov(uint64(l))
 	}
 	if len(m.Transactions) > 0 {
@@ -498,10 +777,20 @@ func (m *Block) SizeVT() (n int) {
 			n += 1 + l + sov(uint64(l))
 		}
 	}
-	l = len(m.Extra)
-	if l > 0 {
+	if m.Extra != nil {
+		l = m.Extra.SizeVT()
 		n += 1 + l + sov(uint64(l))
 	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BlockExtra) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	n += len(m.unknownFields)
 	return n
 }
@@ -554,6 +843,30 @@ func (m *BlockHeader) SizeVT() (n int) {
 	if m.ProposerNodeId != 0 {
 		n += 1 + sov(uint64(m.ProposerNodeId))
 	}
+	l = len(m.Extra)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *BlockBody) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Transactions) > 0 {
+		for _, b := range m.Transactions {
+			l = len(b)
+			n += 1 + l + sov(uint64(l))
+		}
+	}
+	if m.Extra != nil {
+		l = m.Extra.SizeVT()
+		n += 1 + l + sov(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -589,7 +902,7 @@ func (m *Block) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeader", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Header", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -616,10 +929,10 @@ func (m *Block) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.BlockHeader == nil {
-				m.BlockHeader = BlockHeaderFromVTPool()
+			if m.Header == nil {
+				m.Header = BlockHeaderFromVTPool()
 			}
-			if err := m.BlockHeader.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Header.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -655,11 +968,11 @@ func (m *Block) UnmarshalVT(dAtA []byte) error {
 			m.Transactions = append(m.Transactions, make([]byte, postIndex-iNdEx))
 			copy(m.Transactions[len(m.Transactions)-1], dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Extra", wireType)
 			}
-			var byteLen int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflow
@@ -669,26 +982,79 @@ func (m *Block) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLength
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLength
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Extra = append(m.Extra[:0], dAtA[iNdEx:postIndex]...)
 			if m.Extra == nil {
-				m.Extra = []byte{}
+				m.Extra = BlockExtraFromVTPool()
+			}
+			if err := m.Extra.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BlockExtra) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BlockExtra: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BlockExtra: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -1056,6 +1422,159 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Extra", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Extra = append(m.Extra[:0], dAtA[iNdEx:postIndex]...)
+			if m.Extra == nil {
+				m.Extra = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BlockBody) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BlockBody: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BlockBody: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Transactions", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Transactions = append(m.Transactions, make([]byte, postIndex-iNdEx))
+			copy(m.Transactions[len(m.Transactions)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Extra", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Extra == nil {
+				m.Extra = BlockExtraFromVTPool()
+			}
+			if err := m.Extra.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
