@@ -79,53 +79,46 @@ func (bf *BlockFile) Get(kind string, number uint64) ([]byte, error) {
 	return nil, errors.New("unknown table")
 }
 
-func (bf *BlockFile) AppendBlock(number uint64, hash, body, receipts, transactions []byte) (err error) {
+func (bf *BlockFile) AppendBlock(number uint64, hash, header, extra, receipts, transactions []byte) (err error) {
 	bf.appendLock.Lock()
 	defer bf.appendLock.Unlock()
 
-	err = bf.doBatchAppendBlock(number, [][]byte{hash}, [][]byte{body}, [][]byte{receipts}, [][]byte{transactions})
+	err = bf.doBatchAppendBlock(number, [][]byte{header}, [][]byte{extra}, [][]byte{receipts}, [][]byte{transactions})
 	if err != nil {
 		bf.logger.WithFields(logrus.Fields{
-			"block_number": bf.blocks,
-			"hash":         hash,
-			"err":          err,
+			"number": bf.blocks,
+			"hash":   hash,
+			"err":    err,
 		}).Error("Failed to append block")
 	}
 	return err
 }
 
-func (bf *BlockFile) BatchAppendBlock(number uint64, listOfHash, listOfBody, listOfReceipts, listOfTransactions [][]byte) (err error) {
+func (bf *BlockFile) BatchAppendBlock(number uint64, listOfHash, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) (err error) {
 	bf.appendLock.Lock()
 	defer bf.appendLock.Unlock()
-	batchNum := len(listOfHash)
-	if batchNum == 0 {
-		return errors.New("empty batch append block data")
-	}
-	if !(batchNum == len(listOfBody) && batchNum == len(listOfReceipts) && batchNum == len(listOfTransactions)) {
-		return errors.New("batch append block data param's length not match")
-	}
-	err = bf.doBatchAppendBlock(number, listOfHash, listOfBody, listOfReceipts, listOfTransactions)
+	err = bf.doBatchAppendBlock(number, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions)
 	if err != nil {
 		bf.logger.WithFields(logrus.Fields{
-			"block_number":        bf.blocks,
+			"number":              bf.blocks,
 			"first_hash":          listOfHash[0],
-			"batch_append_number": batchNum,
+			"batch_append_number": len(listOfHash),
 			"err":                 err,
 		}).Error("Failed to batch append block")
 	}
 	return err
 }
 
-func (bf *BlockFile) doBatchAppendBlock(number uint64, listOfHash, listOfBody, listOfReceipts, listOfTransactions [][]byte) error {
+func (bf *BlockFile) doBatchAppendBlock(number uint64, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) error {
 	if atomic.LoadUint64(&bf.blocks) != number {
 		return errors.New("the append operation is out-order")
 	}
 
-	batchNum := len(listOfHash)
+	batchNum := len(listOfHeader)
 	if batchNum == 0 {
 		return errors.New("empty doBatch append block data")
 	}
-	if !(batchNum == len(listOfBody) && batchNum == len(listOfReceipts) && batchNum == len(listOfTransactions)) {
+	if !(batchNum == len(listOfExtra) && batchNum == len(listOfReceipts) && batchNum == len(listOfTransactions)) {
 		return errors.New("doBatch append block data param's length not match")
 	}
 
@@ -142,17 +135,17 @@ func (bf *BlockFile) doBatchAppendBlock(number uint64, listOfHash, listOfBody, l
 			}).Info("Append block failed")
 		}
 	}()
-	if err = bf.tables[BlockFileHashTable].BatchAppend(bf.blocks, listOfHash); err != nil {
-		return pkgerr.Wrap(err, "failed to append block hash")
-	}
-	if err = bf.tables[BlockFileBodiesTable].BatchAppend(bf.blocks, listOfBody); err != nil {
-		return pkgerr.Wrap(err, "failed to append block body")
+	if err = bf.tables[BlockFileHeaderTable].BatchAppend(bf.blocks, listOfHeader); err != nil {
+		return pkgerr.Wrap(err, "failed to append block header")
 	}
 	if err = bf.tables[BlockFileTXsTable].BatchAppend(bf.blocks, listOfTransactions); err != nil {
 		return pkgerr.Wrap(err, "failed to append block transactions")
 	}
-	if err = bf.tables[BlockFileReceiptTable].BatchAppend(bf.blocks, listOfReceipts); err != nil {
-		return pkgerr.Wrap(err, "failed to append block receipt")
+	if err = bf.tables[BlockFileExtraTable].BatchAppend(bf.blocks, listOfExtra); err != nil {
+		return pkgerr.Wrap(err, "failed to append block extra")
+	}
+	if err = bf.tables[BlockFileReceiptsTable].BatchAppend(bf.blocks, listOfReceipts); err != nil {
+		return pkgerr.Wrap(err, "failed to append block receipts")
 	}
 	atomic.AddUint64(&bf.blocks, uint64(batchNum)) // Only modify atomically
 	return nil
