@@ -36,6 +36,8 @@ compile-pb: clean-pb
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).BytesSlice \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Block \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).BlockHeader \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).BlockExtra \
+		--go-vtproto_opt=pool=$(PB_PKG_PATH).BlockBody \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).ChainMeta \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).TransactionMeta \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Message \

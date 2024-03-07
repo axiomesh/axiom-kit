@@ -134,17 +134,17 @@ func (c *writeCounter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (e *Transaction) GetVersion() []byte {
+func (tx *Transaction) GetVersion() []byte {
 	return nil
 }
 
-func (e *Transaction) GetInner() TxData {
-	return e.Inner
+func (tx *Transaction) GetInner() TxData {
+	return tx.Inner
 }
 
 // Protected says whether the transaction is replay-protected.
-func (e *Transaction) Protected() bool {
-	switch tx := e.Inner.(type) {
+func (tx *Transaction) Protected() bool {
+	switch tx := tx.Inner.(type) {
 	case *LegacyTx:
 		return tx.V != nil && isProtectedV(tx.V)
 	default:
@@ -169,32 +169,32 @@ func recoverPlain(sighash *Hash, R, S, Vb *big.Int, homestead bool) (*Address, e
 	return NewAddress(addr), nil
 }
 
-func (e *Transaction) GetFrom() *Address {
-	if addr := e.from.Load(); addr != nil {
+func (tx *Transaction) GetFrom() *Address {
+	if addr := tx.from.Load(); addr != nil {
 		return addr.(*Address)
 	}
 
-	addr, err := e.sender()
+	addr, err := tx.sender()
 	if err != nil {
 		return nil
 	}
-	e.from.Store(addr)
+	tx.from.Store(addr)
 
 	return addr
 }
 
-func (e *Transaction) sender() (*Address, error) {
-	V, R, S := e.GetRawSignature()
-	switch e.GetType() {
+func (tx *Transaction) sender() (*Address, error) {
+	V, R, S := tx.GetRawSignature()
+	switch tx.GetType() {
 	case LegacyTxType:
-		if !e.Protected() {
+		if !tx.Protected() {
 			hash := RlpHash([]any{
-				e.GetNonce(),
-				e.GetGasPrice(),
-				e.GetGas(),
-				e.Inner.GetTo(),
-				e.Inner.GetValue(),
-				e.GetPayload(),
+				tx.GetNonce(),
+				tx.GetGasPrice(),
+				tx.GetGas(),
+				tx.Inner.GetTo(),
+				tx.Inner.GetValue(),
+				tx.GetPayload(),
 			})
 			addr, err := recoverPlain(NewHash(hash.Bytes()), R, S, V, true)
 			if err != nil {
@@ -211,98 +211,98 @@ func (e *Transaction) sender() (*Address, error) {
 	default:
 		return nil, errors.New("unknown tx type")
 	}
-	if e.GetChainID().Cmp(signer.chainId) != 0 {
-		return nil, fmt.Errorf("invalid chain id: have %d want %d", e.GetChainID(), signer.chainId)
+	if tx.GetChainID().Cmp(signer.chainId) != 0 {
+		return nil, fmt.Errorf("invalid chain id: have %d want %d", tx.GetChainID(), signer.chainId)
 	}
-	return recoverPlain(e.GetSignHash(), R, S, V, true)
+	return recoverPlain(tx.GetSignHash(), R, S, V, true)
 }
 
-func (e *Transaction) GetTo() *Address {
-	if e.Inner.GetTo() == nil {
+func (tx *Transaction) GetTo() *Address {
+	if tx.Inner.GetTo() == nil {
 		return nil
 	}
-	return NewAddress(e.Inner.GetTo().Bytes())
+	return NewAddress(tx.Inner.GetTo().Bytes())
 }
 
-func (e *Transaction) GetPayload() []byte {
-	return e.Inner.GetData()
+func (tx *Transaction) GetPayload() []byte {
+	return tx.Inner.GetData()
 }
 
-func (e *Transaction) GetAccessList() types.AccessList {
-	return e.Inner.GetAccessList()
+func (tx *Transaction) GetAccessList() types.AccessList {
+	return tx.Inner.GetAccessList()
 }
 
-func (e *Transaction) GetNonce() uint64 {
-	return e.Inner.GetNonce()
+func (tx *Transaction) GetNonce() uint64 {
+	return tx.Inner.GetNonce()
 }
 
-func (e *Transaction) GetValue() *big.Int {
-	return e.Inner.GetValue()
+func (tx *Transaction) GetValue() *big.Int {
+	return tx.Inner.GetValue()
 }
 
-func (e *Transaction) GetTimeStamp() int64 {
-	return e.Time.Unix()
+func (tx *Transaction) GetTimeStamp() int64 {
+	return tx.Time.Unix()
 }
 
-func (e *Transaction) GetHash() *Hash {
-	if hash := e.hash.Load(); hash != nil {
+func (tx *Transaction) GetHash() *Hash {
+	if hash := tx.hash.Load(); hash != nil {
 		return hash.(*Hash)
 	}
 
 	var h *Hash
-	if e.GetType() == LegacyTxType {
-		hash := RlpHash(e.Inner)
+	if tx.GetType() == LegacyTxType {
+		hash := RlpHash(tx.Inner)
 		h = NewHash(hash.Bytes())
 	} else {
-		hash := PrefixedRlpHash(e.GetType(), e.Inner)
+		hash := PrefixedRlpHash(tx.GetType(), tx.Inner)
 		h = NewHash(hash.Bytes())
 	}
-	e.hash.Store(h)
+	tx.hash.Store(h)
 	return h
 }
 
-func (e *Transaction) GetExtra() []byte {
+func (tx *Transaction) GetExtra() []byte {
 	return nil
 }
 
-func (e *Transaction) GetGas() uint64 {
-	return e.Inner.GetGas()
+func (tx *Transaction) GetGas() uint64 {
+	return tx.Inner.GetGas()
 }
 
-func (e *Transaction) GetGasPrice() *big.Int {
-	return e.Inner.GetGasPrice()
+func (tx *Transaction) GetGasPrice() *big.Int {
+	return tx.Inner.GetGasPrice()
 }
 
-func (e *Transaction) GetGasFeeCap() *big.Int {
-	return e.Inner.GetGasFeeCap()
+func (tx *Transaction) GetGasFeeCap() *big.Int {
+	return tx.Inner.GetGasFeeCap()
 }
 
-func (e *Transaction) GetGasTipCap() *big.Int {
-	return e.Inner.GetGasTipCap()
+func (tx *Transaction) GetGasTipCap() *big.Int {
+	return tx.Inner.GetGasTipCap()
 }
 
-func (e *Transaction) GetChainID() *big.Int {
-	return e.Inner.GetChainID()
+func (tx *Transaction) GetChainID() *big.Int {
+	return tx.Inner.GetChainID()
 }
 
-func (e *Transaction) Size() int {
-	if size := e.size.Load(); size != nil {
+func (tx *Transaction) Size() int {
+	if size := tx.size.Load(); size != nil {
 		return size.(int)
 	}
 	c := writeCounter(0)
-	rlp.Encode(&c, &e.Inner)
-	e.size.Store(int(c))
+	rlp.Encode(&c, &tx.Inner)
+	tx.size.Store(int(c))
 	return int(c)
 }
 
 // Type returns the transaction type.
-func (e *Transaction) GetType() byte {
-	return e.Inner.TxType()
+func (tx *Transaction) GetType() byte {
+	return tx.Inner.TxType()
 }
 
-func (e *Transaction) GetSignature() []byte {
+func (tx *Transaction) GetSignature() []byte {
 	var sig []byte
-	v, r, s := e.Inner.RawSignatureValues()
+	v, r, s := tx.Inner.RawSignatureValues()
 	sig = append(sig, r.Bytes()...)
 	sig = append(sig, s.Bytes()...)
 	sig = append(sig, v.Bytes()...)
@@ -310,64 +310,64 @@ func (e *Transaction) GetSignature() []byte {
 	return sig
 }
 
-func (e *Transaction) GetSignHash() *Hash {
-	switch e.GetType() {
+func (tx *Transaction) GetSignHash() *Hash {
+	switch tx.GetType() {
 	case LegacyTxType:
 		hash := RlpHash([]any{
-			e.GetNonce(),
-			e.GetGasPrice(),
-			e.GetGas(),
-			e.Inner.GetTo(),
-			e.Inner.GetValue(),
-			e.GetPayload(),
+			tx.GetNonce(),
+			tx.GetGasPrice(),
+			tx.GetGas(),
+			tx.Inner.GetTo(),
+			tx.Inner.GetValue(),
+			tx.GetPayload(),
 			signer.chainId, uint(0), uint(0),
 		})
 
 		return NewHash(hash.Bytes())
 	case AccessListTxType:
 		hash := PrefixedRlpHash(
-			e.GetType(),
+			tx.GetType(),
 			[]any{
 				signer.chainId,
-				e.GetNonce(),
-				e.GetGasPrice(),
-				e.GetGas(),
-				e.Inner.GetTo(),
-				e.Inner.GetValue(),
-				e.GetPayload(),
-				e.Inner.GetAccessList(),
+				tx.GetNonce(),
+				tx.GetGasPrice(),
+				tx.GetGas(),
+				tx.Inner.GetTo(),
+				tx.Inner.GetValue(),
+				tx.GetPayload(),
+				tx.Inner.GetAccessList(),
 			})
 
 		return NewHash(hash.Bytes())
 	case DynamicFeeTxType:
 		hash := PrefixedRlpHash(
-			e.GetType(),
+			tx.GetType(),
 			[]any{
 				signer.chainId,
-				e.GetNonce(),
-				e.GetGasTipCap(),
-				e.GetGasFeeCap(),
-				e.GetGas(),
-				e.Inner.GetTo(),
-				e.GetValue(),
-				e.Inner.GetData(),
-				e.Inner.GetAccessList(),
+				tx.GetNonce(),
+				tx.GetGasTipCap(),
+				tx.GetGasFeeCap(),
+				tx.GetGas(),
+				tx.Inner.GetTo(),
+				tx.GetValue(),
+				tx.Inner.GetData(),
+				tx.Inner.GetAccessList(),
 			})
 		return NewHash(hash.Bytes())
 	case IncentiveTxType:
 		hash := PrefixedRlpHash(
-			e.GetType(),
+			tx.GetType(),
 			[]any{
 				signer.chainId,
-				e.GetNonce(),
-				e.GetGasTipCap(),
-				e.GetGasFeeCap(),
-				e.GetGas(),
-				e.Inner.GetTo(),
-				e.GetValue(),
-				e.Inner.GetData(),
-				e.Inner.GetAccessList(),
-				e.Inner.GetIncentiveAddress(),
+				tx.GetNonce(),
+				tx.GetGasTipCap(),
+				tx.GetGasFeeCap(),
+				tx.GetGas(),
+				tx.Inner.GetTo(),
+				tx.GetValue(),
+				tx.Inner.GetData(),
+				tx.Inner.GetAccessList(),
+				tx.Inner.GetIncentiveAddress(),
 			})
 		return NewHash(hash.Bytes())
 	default:
@@ -381,12 +381,12 @@ func (e *Transaction) GetSignHash() *Hash {
 
 // RawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
-func (e *Transaction) GetRawSignature() (v, r, s *big.Int) {
-	return e.Inner.RawSignatureValues()
+func (tx *Transaction) GetRawSignature() (v, r, s *big.Int) {
+	return tx.Inner.RawSignatureValues()
 }
 
-func (e *Transaction) VerifySignature() error {
-	if e.GetFrom() == nil {
+func (tx *Transaction) VerifySignature() error {
+	if tx.GetFrom() == nil {
 		return errors.New("verify signature failed")
 	}
 
@@ -515,11 +515,11 @@ func (tx *Transaction) setDecoded(inner TxData, size int) {
 	}
 }
 
-func (e *Transaction) FromCallArgs(callArgs CallArgs) {
+func (tx *Transaction) FromCallArgs(callArgs CallArgs) {
 	if callArgs.From == nil {
 		callArgs.From = &common.Address{}
 	}
-	e.from.Store(NewAddress(callArgs.From.Bytes()))
+	tx.from.Store(NewAddress(callArgs.From.Bytes()))
 
 	inner := &AccessListTx{
 		GasPrice: (*big.Int)(callArgs.GasPrice),
@@ -547,7 +547,7 @@ func (e *Transaction) FromCallArgs(callArgs CallArgs) {
 		inner.AccessList = *callArgs.AccessList
 	}
 
-	e.Inner = inner
+	tx.Inner = inner
 }
 
 func (tx *Transaction) MarshalJSON() ([]byte, error) {
@@ -646,6 +646,16 @@ func (tx *Transaction) Unmarshal(buf []byte) error {
 
 func (tx *Transaction) Marshal() ([]byte, error) {
 	return tx.MarshalBinary()
+}
+
+func (tx *Transaction) Clone() *Transaction {
+	return &Transaction{
+		Inner: tx.Inner.copy(),
+		Time:  tx.Time,
+		hash:  atomic.Value{},
+		size:  atomic.Value{},
+		from:  atomic.Value{},
+	}
 }
 
 func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {

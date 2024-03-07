@@ -82,6 +82,17 @@ func (h *Hash) CalculateHash() ([]byte, error) {
 	return h.Bytes(), nil
 }
 
+func (h *Hash) Clone() *Hash {
+	if h == nil {
+		return nil
+	}
+	var rawHash common.Hash
+	rawHash.SetBytes(h.rawHash.Bytes())
+	return &Hash{
+		rawHash: rawHash,
+	}
+}
+
 // Equals tests for equality of two Contents
 func (h *Hash) Equals(other mt.Content) (bool, error) {
 	tOther, ok := other.(*Hash)
