@@ -56,6 +56,9 @@ func (this *BlockExtra) EqualVT(that *BlockExtra) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
+	if this.Size != that.Size {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -240,6 +243,11 @@ func (m *BlockExtra) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Size != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Size))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -499,6 +507,11 @@ func (m *BlockExtra) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Size != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Size))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -791,6 +804,9 @@ func (m *BlockExtra) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Size != 0 {
+		n += 1 + sov(uint64(m.Size))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1055,6 +1071,25 @@ func (m *BlockExtra) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: BlockExtra: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Size", wireType)
+			}
+			m.Size = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Size |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
