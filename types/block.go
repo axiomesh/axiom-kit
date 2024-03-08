@@ -146,7 +146,9 @@ func (h *BlockHeader) CalculateHash() *Hash {
 
 	data := sha256.Sum256(raw)
 
-	return NewHash(data[:])
+	res := NewHash(data[:])
+	h.hashCache.Store(res)
+	return res
 }
 
 func (h *BlockHeader) Hash() *Hash {
