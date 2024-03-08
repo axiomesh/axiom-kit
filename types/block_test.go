@@ -21,7 +21,9 @@ func TestBlock_Marshal(t *testing.T) {
 		{
 			Header:       &BlockHeader{},
 			Transactions: []*Transaction{},
-			Extra:        &BlockExtra{},
+			Extra: &BlockExtra{
+				Size: 1,
+			},
 		},
 		{
 			Header: &BlockHeader{
@@ -65,7 +67,9 @@ func TestBlockBody_Marshal(t *testing.T) {
 		{},
 		{
 			Transactions: []*Transaction{},
-			Extra:        &BlockExtra{},
+			Extra: &BlockExtra{
+				Size: 1,
+			},
 		},
 		{
 			Transactions: []*Transaction{

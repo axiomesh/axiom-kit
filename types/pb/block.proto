@@ -11,6 +11,7 @@ message Block {
 }
 
 message BlockExtra {
+    int64 size = 1;
 }
 
 message BlockHeader {
@@ -28,7 +29,6 @@ message BlockHeader {
     uint64 proposer_node_id = 13;
     bytes extra = 14;
 }
-
 
 message BlockBody {
     repeated bytes transactions = 1;

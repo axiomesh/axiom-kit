@@ -192,16 +192,21 @@ func (h *BlockHeader) Clone() *BlockHeader {
 
 // For TIMC and system contract
 type BlockExtra struct {
+	// full block size
+	Size int64
 }
 
 func (b *BlockExtra) toPB() (*pb.BlockExtra, error) {
 	if b == nil {
 		return nil, nil
 	}
-	return &pb.BlockExtra{}, nil
+	return &pb.BlockExtra{
+		Size: b.Size,
+	}, nil
 }
 
 func (b *BlockExtra) fromPB(m *pb.BlockExtra) error {
+	b.Size = m.Size
 	return nil
 }
 
@@ -231,7 +236,9 @@ func (b *BlockExtra) Clone() *BlockExtra {
 	if b == nil {
 		return nil
 	}
-	return &BlockExtra{}
+	return &BlockExtra{
+		Size: b.Size,
+	}
 }
 
 type Block struct {
@@ -330,12 +337,19 @@ func (b *Block) Height() uint64 {
 	return b.Header.Number
 }
 
-func (b *Block) Size() int {
+func (b *Block) Size() int64 {
+	if b == nil || b.Extra == nil {
+		return 0
+	}
+	return b.Extra.Size
+}
+
+func (b *Block) CalculateSize() int64 {
 	helper, err := b.toPB()
 	if err != nil {
 		return 0
 	}
-	return helper.SizeVT()
+	return int64(helper.SizeVT())
 }
 
 func (b *Block) Clone() *Block {
