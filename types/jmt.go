@@ -28,7 +28,7 @@ type (
 	TrieJournal struct {
 		Type     byte
 		Version  uint64              `json:"version"`
-		DirtySet map[string][]byte   `json:"dirty_set"`
+		DirtySet map[string]Node     `json:"dirty_set"`
 		PruneSet map[string]struct{} `json:"prune_set"`
 	}
 
@@ -436,7 +436,7 @@ func (j *TrieJournal) Encode() []byte {
 
 	dirtySet := make(map[string][]byte)
 	for k, v := range j.DirtySet {
-		dirtySet[k] = v
+		dirtySet[k] = v.EncodePb()
 	}
 
 	blob := &pb.TrieJournal{
@@ -472,9 +472,12 @@ func DecodeTrieJournal(data []byte) (*TrieJournal, error) {
 		pruneSet[k] = struct{}{}
 	}
 
-	dirtySet := make(map[string][]byte)
+	dirtySet := make(map[string]Node)
 	for k, v := range helper.DirtySet {
-		dirtySet[k] = v
+		dirtySet[k], err = UnmarshalJMTNodeFromPb(v)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	res := &TrieJournal{
@@ -500,7 +503,7 @@ func (batch *TrieJournalBatch) Encode() []byte {
 
 		dirtySet := make(map[string][]byte)
 		for k, v := range journal.DirtySet {
-			dirtySet[k] = v
+			dirtySet[k] = v.EncodePb()
 		}
 
 		journals[i] = &pb.TrieJournal{
@@ -543,9 +546,12 @@ func DecodeTrieJournalBatch(data []byte) (TrieJournalBatch, error) {
 			pruneSet[k] = struct{}{}
 		}
 
-		dirtySet := make(map[string][]byte)
+		dirtySet := make(map[string]Node)
 		for k, v := range helper.Journals[i].DirtySet {
-			dirtySet[k] = v
+			dirtySet[k], err = UnmarshalJMTNodeFromPb(v)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		res[i] = &TrieJournal{

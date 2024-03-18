@@ -21,7 +21,7 @@ var (
 type Iterator struct {
 	rootHash common.Hash
 	backend  storage.Storage
-	cache    TrieCache
+	cache    PruneCache
 
 	bufferC chan *RawNode // use buffer to balance between read and write
 	errC    chan error
@@ -31,7 +31,7 @@ type Iterator struct {
 	nodeKeyHeap *types.NodeKeyHeap // max heap, store NodeKeys that are waiting to be visited
 }
 
-func NewIterator(rootHash common.Hash, backend storage.Storage, cache TrieCache, bufSize int, timeout time.Duration) *Iterator {
+func NewIterator(rootHash common.Hash, backend storage.Storage, cache PruneCache, bufSize int, timeout time.Duration) *Iterator {
 	nodeKeyHeap := &types.NodeKeyHeap{}
 	heap.Init(nodeKeyHeap)
 	return &Iterator{
@@ -200,14 +200,10 @@ func (it *Iterator) getNode(nk *types.NodeKey) (types.Node, []byte, error) {
 	var nextRawNode []byte
 	k := nk.Encode()
 
-	// try in trie cache
+	// try in trie pruneCache
 	if it.cache != nil {
 		if v, ok := it.cache.Get(nk.Version, k); ok {
-			nextRawNode = v
-			nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
-			if err != nil {
-				return nil, nil, err
-			}
+			nextNode = v
 			return nextNode, nextRawNode, err
 		}
 	}

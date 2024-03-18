@@ -521,7 +521,7 @@ func Test_GetAfterCommit(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, n)
 	require.Equal(t, n, []byte("v4"))
-	// get from cache
+	// get from pruneCache
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
 	require.NotNil(t, n)
@@ -1144,7 +1144,7 @@ func Test_Case_Random_3(t *testing.T) {
 func printJMT(jmt *JMT, version uint64) {
 	fmt.Printf("======Start Print JMT %v========\n", version)
 	// iterate version 0 jmt trie
-	iter := NewIterator(jmt.root.GetHash(), jmt.backend, jmt.cache, 2, time.Second)
+	iter := NewIterator(jmt.root.GetHash(), jmt.backend, jmt.pruneCache, 2, time.Second)
 	go iter.Iterate()
 	var res []*RawNode
 

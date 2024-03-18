@@ -69,10 +69,10 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 }
 
 // VerifyTrie verifies a whole trie
-func VerifyTrie(rootHash common.Hash, backend storage.Storage, cache TrieCache) (bool, error) {
+func VerifyTrie(rootHash common.Hash, backend storage.Storage, cache PruneCache) (bool, error) {
 	logger := log.NewWithModule("JMT-VerifyTrie")
 
-	trie, err := New(rootHash, backend, cache, logger)
+	trie, err := New(rootHash, backend, nil, cache, logger)
 	if err != nil {
 		return false, err
 	}

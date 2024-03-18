@@ -20,11 +20,12 @@ type JMT struct {
 	rootNodeKey *types.NodeKey
 	typ         []byte
 
-	backend  storage.Storage
-	cache    TrieCache
-	dirtySet map[string]types.Node
-	pruneSet map[string]struct{}
-	logger   logrus.FieldLogger
+	backend    storage.Storage
+	pruneCache PruneCache
+	trieCache  TrieCache
+	dirtySet   map[string]types.Node
+	pruneSet   map[string]struct{}
+	logger     logrus.FieldLogger
 }
 
 type PruneArgs struct {
@@ -35,15 +36,16 @@ type PruneArgs struct {
 
 // New load and init jmt from kv.
 // Before New, there must be a mapping <rootHash, rootNodeKey> in kv.
-func New(rootHash common.Hash, backend storage.Storage, cache TrieCache, logger logrus.FieldLogger) (*JMT, error) {
+func New(rootHash common.Hash, backend storage.Storage, trieCache TrieCache, pruneCache PruneCache, logger logrus.FieldLogger) (*JMT, error) {
 	var root types.Node
 	var err error
 	jmt := &JMT{
-		backend:  backend,
-		cache:    cache,
-		dirtySet: make(map[string]types.Node),
-		pruneSet: make(map[string]struct{}),
-		logger:   logger,
+		backend:    backend,
+		pruneCache: pruneCache,
+		trieCache:  trieCache,
+		dirtySet:   make(map[string]types.Node),
+		pruneSet:   make(map[string]struct{}),
+		logger:     logger,
 	}
 	rawRootNodeKey := backend.Get(rootHash[:])
 	if rawRootNodeKey == nil {
@@ -130,7 +132,7 @@ func (jmt *JMT) Update(version uint64, key, value []byte) error {
 
 // insert generate new node or update old node.
 // insert will generate a new tree, and return its root.
-// nodes in the updated path will be traced in cache to be flushed later.
+// nodes in the updated path will be traced in pruneCache to be flushed later.
 // parameter "next" means the position tha has not been addressed in current node.
 func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *types.NodeKey, version uint64, key, value []byte, next int) (newRoot types.Node, newRootNodeKey *types.NodeKey, isLeaf bool, err error) {
 	switch n := (currentNode).(type) {
@@ -244,9 +246,9 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *types.NodeKey, ve
 				if err != nil {
 					return nil, nil, false, err
 				}
-				// remove current node and old leaf node in cache
+				// remove current node and old leaf node in pruneCache
 				jmt.tracePruningNode(leafNk)
-				// trace new leaf node in cache
+				// trace new leaf node in pruneCache
 				leafNk = jmt.traceDirtyNode(version, key[:next], leaf)
 				return leaf, leafNk, true, nil
 			}
@@ -295,7 +297,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *types.NodeKey, ve
 	}
 }
 
-// Commit flush dirty nodes in current tree, clear cache, return root hash
+// Commit flush dirty nodes in current tree, clear pruneCache, return root hash
 func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 	// persist <rootHash -> rootNodeKey>
 	if jmt.root == nil {
@@ -318,9 +320,9 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 	}
 
 	pruneArgs.Batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
-	dirtySet := make(map[string][]byte)
+	dirtySet := make(map[string]types.Node)
 	for k, v := range jmt.dirtySet {
-		dirtySet[k] = v.EncodePb()
+		dirtySet[k] = v
 	}
 	pruneArgs.Journal = &types.TrieJournal{
 		PruneSet: jmt.pruneSet,
@@ -344,15 +346,23 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 		return dirty, err
 	}
 
-	// try in trie cache
-	if jmt.cache != nil {
-		if v, ok := jmt.cache.Get(jmt.rootNodeKey.Version, k); ok {
-			nextRawNode = v
-			nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
+	// try in pruneCache
+	if jmt.pruneCache != nil {
+		if v, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
+			nextNode = v
+			jmt.logger.Debugf("[JMT-getNode] get from pruneCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+			return nextNode, err
+		}
+	}
+
+	// try in trieCache
+	if jmt.trieCache != nil {
+		if v, ok := jmt.trieCache.Get(k); ok {
+			nextNode, err = types.UnmarshalJMTNodeFromPb(v)
 			if err != nil {
 				return nil, err
 			}
-			jmt.logger.Debugf("[JMT-getNode] get from cache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+			jmt.logger.Debugf("[JMT-getNode] get from trieCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 			return nextNode, err
 		}
 	}
@@ -363,6 +373,11 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if jmt.trieCache != nil {
+		jmt.trieCache.Set(k, nextRawNode)
+	}
+
 	jmt.logger.Debugf("[JMT-getNode] get from kv, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 
 	return nextNode, err
@@ -401,7 +416,7 @@ func (jmt *JMT) splitLeafNode(origin *types.LeafNode, originNodeKey *types.NodeK
 	return root, nk
 }
 
-// tracePruningNode clear dirty node in memory cache, then record its key.
+// tracePruningNode clear dirty node in memory pruneCache, then record its key.
 func (jmt *JMT) tracePruningNode(nk *types.NodeKey) {
 	k := string(nk.Encode())
 	if _, ok := jmt.dirtySet[k]; ok {
@@ -411,7 +426,7 @@ func (jmt *JMT) tracePruningNode(nk *types.NodeKey) {
 	}
 }
 
-// traceDirtyNode records new node in memory cache.
+// traceDirtyNode records new node in memory pruneCache.
 func (jmt *JMT) traceDirtyNode(version uint64, path []byte, newNode types.Node) *types.NodeKey {
 	nk := &types.NodeKey{
 		Version: version,
