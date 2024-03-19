@@ -38,7 +38,7 @@ func (jmt *JMT) Prove(key []byte) (*ProofResult, error) {
 func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult) error {
 	switch n := (root).(type) {
 	case *types.InternalNode:
-		proof.Proof = append(proof.Proof, n.EncodePb())
+		proof.Proof = append(proof.Proof, n.Encode())
 		if n.Children[key[next]] == nil {
 			return ErrorInvalidPath
 		}
@@ -59,7 +59,7 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 		if !bytes.Equal(n.Key, key) {
 			return ErrorInvalidPath
 		}
-		proof.Proof = append(proof.Proof, n.EncodePb())
+		proof.Proof = append(proof.Proof, n.Encode())
 		proof.Key = n.Key
 		proof.Value = n.Val
 		return nil

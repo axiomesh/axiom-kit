@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -17,8 +16,7 @@ import (
 )
 
 type Node interface {
-	EncodePb() []byte
-	EncodeJson() []byte
+	Encode() []byte
 	GetHash() common.Hash
 	Copy() Node
 	String() string // just for debug
@@ -26,13 +24,16 @@ type Node interface {
 
 type (
 	TrieJournal struct {
-		Type     byte
-		Version  uint64              `json:"version"`
-		DirtySet map[string]Node     `json:"dirty_set"`
-		PruneSet map[string]struct{} `json:"prune_set"`
+		Type        byte
+		DirtySet    map[string]Node
+		PruneSet    map[string]struct{}
+		RootHash    common.Hash
+		RootNodeKey *NodeKey
 	}
 
-	TrieJournalBatch []*TrieJournal
+	StateDelta struct {
+		Journal []*TrieJournal
+	}
 )
 
 type (
@@ -99,22 +100,6 @@ func DecodeNodeKey(raw []byte) *NodeKey {
 	return nk
 }
 
-func (n *InternalNode) EncodeJson() []byte {
-	blob, err := json.Marshal(n)
-	if err != nil {
-		return nil
-	}
-	return blob
-}
-
-func (n *LeafNode) EncodeJson() []byte {
-	blob, err := json.Marshal(n)
-	if err != nil {
-		return nil
-	}
-	return blob
-}
-
 // just for debug
 func (n *InternalNode) String() string {
 	res := strings.Builder{}
@@ -153,7 +138,7 @@ func (n *LeafNode) String() string {
 func (j *TrieJournal) String() string {
 	res := strings.Builder{}
 	res.WriteString("Version[")
-	res.WriteString(strconv.Itoa(int(j.Version)))
+	res.WriteString(strconv.Itoa(int(j.RootNodeKey.Version)))
 	res.WriteString("], ")
 
 	res.WriteString(fmt.Sprintf("{DirtySet[\n"))
@@ -183,7 +168,7 @@ func (j *TrieJournal) String() string {
 }
 
 func (n *InternalNode) GetHash() common.Hash {
-	data := sha256.Sum256(n.EncodePb())
+	data := sha256.Sum256(n.Encode())
 	return data
 }
 
@@ -194,7 +179,7 @@ func (n *LeafNode) GetHash() common.Hash {
 		Key:  n.Key,
 		Val:  n.Val,
 	}
-	data := sha256.Sum256(tmp.EncodePb())
+	data := sha256.Sum256(tmp.Encode())
 	return data
 }
 
@@ -213,7 +198,7 @@ func (n *LeafNode) Copy() Node {
 	return nn
 }
 
-func (n *InternalNode) EncodePb() []byte {
+func (n *InternalNode) Encode() []byte {
 	if n == nil {
 		return nil
 	}
@@ -275,7 +260,7 @@ func (n *InternalNode) unmarshalInternalFromPb(data []byte) error {
 	return nil
 }
 
-func (n *LeafNode) EncodePb() []byte {
+func (n *LeafNode) Encode() []byte {
 	if n == nil {
 		return nil
 	}
@@ -353,40 +338,6 @@ func UnmarshalJMTNodeFromPb(data []byte) (Node, error) {
 	return nil, nil
 }
 
-func UnmarshalJMTNodeFromJson(rawNode []byte) (n Node, err error) {
-	if len(rawNode) == 0 {
-		return nil, nil
-	}
-	m := make(map[string]any)
-	if err := json.Unmarshal(rawNode, &m); err != nil {
-		return nil, err
-	}
-	if m["children"] != nil {
-		return unmarshalInternalFromJson(rawNode)
-	} else if m["key"] != nil {
-		return unmarshalLeafFromJson(rawNode)
-	}
-	return nil, nil
-}
-
-func unmarshalInternalFromJson(rawNode []byte) (Node, error) {
-	n := &InternalNode{}
-	err := json.Unmarshal(rawNode, n)
-	if err != nil {
-		return nil, err
-	}
-	return n, nil
-}
-
-func unmarshalLeafFromJson(rawNode []byte) (Node, error) {
-	n := &LeafNode{}
-	err := json.Unmarshal(rawNode, n)
-	if err != nil {
-		return nil, err
-	}
-	return n, nil
-}
-
 // BytesToHex expand normal bytes to hex bytes (nibbles)
 func BytesToHex(h []byte) []byte {
 	if len(h) == 0 {
@@ -424,78 +375,13 @@ func HexToBytes(src []byte) []byte {
 	return res
 }
 
-func (j *TrieJournal) Encode() []byte {
-	if j == nil {
+func (delta *StateDelta) Encode() []byte {
+	if delta == nil {
 		return nil
 	}
 
-	pruneSet := make(map[string][]byte)
-	for k := range j.PruneSet {
-		pruneSet[k] = []byte{}
-	}
-
-	dirtySet := make(map[string][]byte)
-	for k, v := range j.DirtySet {
-		dirtySet[k] = v.EncodePb()
-	}
-
-	blob := &pb.TrieJournal{
-		Version:  j.Version,
-		PruneSet: pruneSet,
-		DirtySet: dirtySet,
-	}
-
-	content, err := blob.MarshalVTStrict()
-	if err != nil {
-		return nil
-	}
-
-	return content
-}
-
-func DecodeTrieJournal(data []byte) (*TrieJournal, error) {
-	if len(data) == 0 {
-		return nil, nil
-	}
-	helper := pb.TrieJournalFromVTPool()
-	defer func() {
-		helper.Reset()
-		helper.ReturnToVTPool()
-	}()
-	err := helper.UnmarshalVT(data)
-	if err != nil {
-		return nil, err
-	}
-
-	pruneSet := make(map[string]struct{})
-	for k := range helper.PruneSet {
-		pruneSet[k] = struct{}{}
-	}
-
-	dirtySet := make(map[string]Node)
-	for k, v := range helper.DirtySet {
-		dirtySet[k], err = UnmarshalJMTNodeFromPb(v)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	res := &TrieJournal{
-		Version:  helper.Version,
-		PruneSet: pruneSet,
-		DirtySet: dirtySet,
-	}
-
-	return res, nil
-}
-
-func (batch *TrieJournalBatch) Encode() []byte {
-	if batch == nil {
-		return nil
-	}
-
-	journals := make([]*pb.TrieJournal, len(*batch))
-	for i, journal := range *batch {
+	journals := make([]*pb.TrieJournal, len(delta.Journal))
+	for i, journal := range delta.Journal {
 		pruneSet := make(map[string][]byte)
 		for k := range journal.PruneSet {
 			pruneSet[k] = []byte{}
@@ -503,18 +389,20 @@ func (batch *TrieJournalBatch) Encode() []byte {
 
 		dirtySet := make(map[string][]byte)
 		for k, v := range journal.DirtySet {
-			dirtySet[k] = v.EncodePb()
+			dirtySet[k] = v.Encode()
 		}
 
 		journals[i] = &pb.TrieJournal{
-			Version:  journal.Version,
-			PruneSet: pruneSet,
-			DirtySet: dirtySet,
+			Type:        uint64(journal.Type),
+			RootHash:    journal.RootHash[:],
+			RootNodeKey: journal.RootNodeKey.Encode(),
+			PruneSet:    pruneSet,
+			DirtySet:    dirtySet,
 		}
 	}
 
-	blob := &pb.TrieJournalBatch{
-		Journals: journals,
+	blob := &pb.StateDelta{
+		Journal: journals,
 	}
 
 	content, err := blob.MarshalVTStrict()
@@ -525,11 +413,11 @@ func (batch *TrieJournalBatch) Encode() []byte {
 	return content
 }
 
-func DecodeTrieJournalBatch(data []byte) (TrieJournalBatch, error) {
+func DecodeStateDelta(data []byte) (*StateDelta, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
-	helper := pb.TrieJournalBatchFromVTPool()
+	helper := pb.StateDeltaFromVTPool()
 	defer func() {
 		helper.Reset()
 		helper.ReturnToVTPool()
@@ -539,25 +427,29 @@ func DecodeTrieJournalBatch(data []byte) (TrieJournalBatch, error) {
 		return nil, err
 	}
 
-	res := make(TrieJournalBatch, len(helper.Journals))
-	for i := 0; i < len(res); i++ {
+	res := &StateDelta{
+		Journal: make([]*TrieJournal, len(helper.Journal)),
+	}
+	for i := 0; i < len(helper.Journal); i++ {
 		pruneSet := make(map[string]struct{})
-		for k := range helper.Journals[i].PruneSet {
+		for k := range helper.Journal[i].PruneSet {
 			pruneSet[k] = struct{}{}
 		}
 
 		dirtySet := make(map[string]Node)
-		for k, v := range helper.Journals[i].DirtySet {
+		for k, v := range helper.Journal[i].DirtySet {
 			dirtySet[k], err = UnmarshalJMTNodeFromPb(v)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		res[i] = &TrieJournal{
-			Version:  helper.Journals[i].Version,
-			PruneSet: pruneSet,
-			DirtySet: dirtySet,
+		res.Journal[i] = &TrieJournal{
+			Type:        byte(helper.Journal[i].Type),
+			RootHash:    common.BytesToHash(helper.Journal[i].RootHash),
+			RootNodeKey: DecodeNodeKey(helper.Journal[i].RootNodeKey),
+			PruneSet:    pruneSet,
+			DirtySet:    dirtySet,
 		}
 	}
 

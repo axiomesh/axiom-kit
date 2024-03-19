@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "../pb";
+
+
+message SnapshotJournal{
+  repeated SnapshotJournalEntry journals = 1;
+}
+
+message SnapshotJournalEntry{
+  bytes address = 1;
+  bytes prev_account = 2;
+  bool account_changed = 3;
+  map<string, bytes>  prev_states = 4;
+}

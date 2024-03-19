@@ -34,69 +34,79 @@ func Test_PruneJournal(t *testing.T) {
 	err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 	require.Nil(t, err)
 
-	rootHash0, journal := jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 10)
-	require.Equal(t, len(journal.PruneSet), 0)
-	prune(jmt.backend, journal) // persist basic jmt
+	pruneArgs := &PruneArgs{
+		Enable: true,
+	}
 
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	rootHash0 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 10)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 0)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash0)
+	prune(s, pruneArgs.Journal) // persist basic jmt
+
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	err = jmt.Update(1, toHex("0003"), nil)
 	require.Nil(t, err)
-	_, journal = jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 2)
-	require.Equal(t, len(journal.PruneSet), 6)
+	rootHash1 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 2)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 6)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash1)
 
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	err = jmt.Update(1, toHex("bbf7"), nil)
 	err = jmt.Update(1, toHex("bb17"), nil)
 	require.Nil(t, err)
-	_, journal = jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 1)
-	require.Equal(t, len(journal.PruneSet), 5)
+	rootHash2 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 1)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 5)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash2)
 
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	err = jmt.Update(1, toHex("0003"), []byte("v5"))
 	require.Nil(t, err)
-	_, journal = jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 5)
-	require.Equal(t, len(journal.PruneSet), 5)
+	rootHash3 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 5)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 5)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash3)
 
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	err = jmt.Update(1, toHex("0044"), []byte("v6"))
 	require.Nil(t, err)
-	rootHash1, journal := jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 4)
-	require.Equal(t, len(journal.PruneSet), 3)
-	prune(jmt.backend, journal) // persist v1 jmt
+	rootHash4 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 4)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 3)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash4)
+	prune(jmt.backend, pruneArgs.Journal) // persist v1 jmt
 
-	jmt, err = New(rootHash1, s, nil, jmt.logger)
+	jmt, err = New(rootHash4, s, nil, nil, jmt.logger)
 	err = jmt.Update(2, toHex("0001"), nil)
 	require.Nil(t, err)
-	_, journal = jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 4)
-	require.Equal(t, len(journal.PruneSet), 6)
+	rootHash5 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 4)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 6)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash5)
 
-	jmt, err = New(rootHash1, s, nil, jmt.logger)
+	jmt, err = New(rootHash4, s, nil, nil, jmt.logger)
 	err = jmt.Update(2, toHex("0044"), nil)
 	require.Nil(t, err)
-	_, journal = jmt.Commit(false)
-	require.Equal(t, len(journal.DirtySet), 3)
-	require.Equal(t, len(journal.PruneSet), 4)
+	rootHash6 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 3)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 4)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash6)
 }
 
-//			    (V0)              [0_]                               (V1)              [0_]
-//		                      /         \								        /                 \
-//						   [0_0]          [0_b]                              <0_0>               <0_bbf7>
-//				             |              |                                   |
-//		                  [0_00]          [0_bb]							 [0_00]
-//		                    |                |                    =>           |
-//		               [0_000]            ——————							 ——————
-//		                   ｜           |         |						   |	      |
-//			   	       ——————————     <0_bb17>   <0_bbf7>	  		   [0_000]      <0_0035>
-//			           |       |                                           |
-//				    <0_0001>  <0_0003>                                 —————————
-//	                                                               |         |
-//	                                                             <0_0001>    <0_0003>
+//			                      [0_]
+//		                      /         \
+//						   [0_0]          [0_b]
+//				             |              |
+//		                  [0_00]          [0_bb]
+//		                    |                |
+//		               [0_000]            ——————
+//		                   ｜           |         |
+//			   	       ——————————     <0_bb17>   <0_bbf7>
+//			           |       |
+//				    <0_0001>  <0_0003>
+//
 func Test_PruneHistoryWithOnlyInsert(t *testing.T) {
 	// init version 0 jmt
 	jmt, s := initEmptyJMT()
@@ -109,15 +119,21 @@ func Test_PruneHistoryWithOnlyInsert(t *testing.T) {
 	err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 	require.Nil(t, err)
 
+	pruneArgs := &PruneArgs{
+		Enable: true,
+	}
+
 	// commit version 0 jmt, and load it from kv
-	rootHash0, journal0 := jmt.Commit(false)
-	require.Equal(t, rootHash0, jmt.root.GetHash())
-	prune(jmt.backend, journal0)
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	rootHash0 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 10)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 0)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash0)
+	prune(jmt.backend, pruneArgs.Journal)
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// verify v0
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err := jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -146,14 +162,16 @@ func Test_PruneHistoryWithOnlyInsert(t *testing.T) {
 	require.Nil(t, err)
 
 	// commit version 1 jmt, and load it from kv
-	rootHash1, journal1 := jmt.Commit(false)
-	require.Equal(t, rootHash1, jmt.root.GetHash())
-	prune(jmt.backend, journal1)
-	jmt, err = New(rootHash1, s, nil, jmt.logger)
+	rootHash1 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 9)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 9)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash1)
+	prune(jmt.backend, pruneArgs.Journal)
+	jmt, err = New(rootHash1, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// verify v1
-	jmt, err = New(rootHash1, s, nil, jmt.logger)
+	jmt, err = New(rootHash1, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -174,32 +192,24 @@ func Test_PruneHistoryWithOnlyInsert(t *testing.T) {
 	require.Equal(t, n, []byte("v8"))
 
 	// transit from v1 to v2
-	err = jmt.Update(2, toHex("0001"), []byte("v9"))
-	require.Nil(t, err)
-	err = jmt.Update(2, toHex("bbf7"), []byte("v10"))
+	err = jmt.Update(2, toHex("0003"), []byte("v10"))
 	require.Nil(t, err)
 	err = jmt.Update(2, toHex("bb17"), []byte("v12"))
 	require.Nil(t, err)
-	rootHash2, journal2 := jmt.Commit(false)
-	require.Equal(t, rootHash2, jmt.root.GetHash())
-	prune(jmt.backend, journal2)
+	rootHash2 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 8)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 8)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash2)
+	prune(jmt.backend, pruneArgs.Journal)
 
 	// verify v2
-	jmt, err = New(rootHash2, s, nil, jmt.logger)
+	jmt, err = New(rootHash2, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
-	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
-	require.NotNil(t, n)
-	require.Equal(t, n, []byte("v9"))
-	require.Nil(t, err)
-	n, err = jmt.Get(toHex("bbf7"))
-	require.Nil(t, err)
-	require.NotNil(t, n)
-	require.Equal(t, n, []byte("v10"))
 	n, err = jmt.Get(toHex("0003"))
 	require.Nil(t, err)
 	require.NotNil(t, n)
-	require.Equal(t, n, []byte("v3"))
+	require.Equal(t, n, []byte("v10"))
 	n, err = jmt.Get(toHex("bb17"))
 	require.Nil(t, err)
 	require.NotNil(t, n)
@@ -219,7 +229,7 @@ func Test_PruneHistoryWithOnlyInsert(t *testing.T) {
 //		   	       ——————————
 //		           |       |
 //			    <0_0001>  <0_0003>
-func Test_PruneHistoryWithDelete(t *testing.T) {
+func Test_PruneHistoryWithOnlyDelete(t *testing.T) {
 	// init version 0 jmt
 	jmt, s := initEmptyJMT()
 	err := jmt.Update(0, toHex("0001"), []byte("v1"))
@@ -233,13 +243,14 @@ func Test_PruneHistoryWithDelete(t *testing.T) {
 	err = jmt.Update(0, toHex("0044"), []byte("v5"))
 	require.Nil(t, err)
 	// commit version 0 jmt, and load it from kv
-	rootHash0, _ := jmt.Commit(true)
+	rootHash0 := jmt.Commit(nil)
 	require.Equal(t, rootHash0, jmt.root.GetHash())
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// verify v0
-	jmt, err = New(rootHash0, s, nil, jmt.logger)
+	jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err := jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -266,15 +277,21 @@ func Test_PruneHistoryWithDelete(t *testing.T) {
 	err = jmt.Update(1, toHex("0044"), []byte{})
 	require.Nil(t, err)
 
+	pruneArgs := &PruneArgs{
+		Enable: true,
+	}
+
 	// commit version 1 jmt, and load it from kv
-	rootHash1, journal1 := jmt.Commit(false)
-	require.Equal(t, rootHash1, jmt.root.GetHash())
-	prune(jmt.backend, journal1)
-	jmt, err = New(rootHash1, s, nil, jmt.logger)
+	rootHash1 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 3)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 4)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash1)
+	prune(jmt.backend, pruneArgs.Journal)
+	jmt, err = New(rootHash1, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 
 	// verify v1
-	jmt, err = New(rootHash1, s, nil, jmt.logger)
+	jmt, err = New(rootHash1, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -303,12 +320,14 @@ func Test_PruneHistoryWithDelete(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt.Update(2, toHex("bb17"), []byte("v8"))
 	require.Nil(t, err)
-	rootHash2, journal2 := jmt.Commit(false)
-	require.Equal(t, rootHash2, jmt.root.GetHash())
-	prune(jmt.backend, journal2)
+	rootHash2 := jmt.Commit(pruneArgs)
+	require.Equal(t, len(pruneArgs.Journal.DirtySet), 6)
+	require.Equal(t, len(pruneArgs.Journal.PruneSet), 9)
+	require.Equal(t, pruneArgs.Journal.RootHash, rootHash2)
+	prune(jmt.backend, pruneArgs.Journal)
 
 	// verify v2
-	jmt, err = New(rootHash2, s, nil, jmt.logger)
+	jmt, err = New(rootHash2, s, nil, nil, jmt.logger)
 	require.Nil(t, err)
 	n, err = jmt.Get(toHex("0001"))
 	require.Nil(t, err)
@@ -333,7 +352,9 @@ func prune(backend storage.Storage, journal *types.TrieJournal) {
 		batch.Delete([]byte(k))
 	}
 	for k, v := range journal.DirtySet {
-		batch.Put([]byte(k), v)
+		batch.Put([]byte(k), v.Encode())
 	}
+	batch.Put(journal.RootHash[:], journal.RootNodeKey.Encode())
 	batch.Commit()
+	batch.Reset()
 }

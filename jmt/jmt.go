@@ -29,9 +29,8 @@ type JMT struct {
 }
 
 type PruneArgs struct {
-	Enable  bool
-	Batch   storage.Batch
-	Journal *types.TrieJournal
+	Enable  bool               // whether enable pruning or not
+	Journal *types.TrieJournal // if Enable is true, jmt.Commit will set Journal
 }
 
 // New load and init jmt from kv.
@@ -309,7 +308,7 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 		// flush dirty nodes into kv
 		batch := jmt.backend.NewBatch()
 		for k, v := range jmt.dirtySet {
-			batch.Put([]byte(k), v.EncodePb())
+			batch.Put([]byte(k), v.Encode())
 		}
 		batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
 		batch.Commit()
@@ -319,15 +318,15 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 		return rootHash
 	}
 
-	pruneArgs.Batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
 	dirtySet := make(map[string]types.Node)
 	for k, v := range jmt.dirtySet {
 		dirtySet[k] = v
 	}
 	pruneArgs.Journal = &types.TrieJournal{
-		PruneSet: jmt.pruneSet,
-		DirtySet: dirtySet,
-		Version:  jmt.rootNodeKey.Version,
+		RootHash:    rootHash,
+		RootNodeKey: jmt.rootNodeKey,
+		PruneSet:    jmt.pruneSet,
+		DirtySet:    dirtySet,
 	}
 	// gc
 	jmt.dirtySet = make(map[string]types.Node)
@@ -343,6 +342,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 
 	// try in dirtySet first
 	if dirty, ok := jmt.dirtySet[string(k)]; ok {
+		jmt.logger.Debugf("[JMT-getNode] get from dirty, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 		return dirty, err
 	}
 
@@ -372,10 +372,6 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
 	if err != nil {
 		return nil, err
-	}
-
-	if jmt.trieCache != nil {
-		jmt.trieCache.Set(k, nextRawNode)
 	}
 
 	jmt.logger.Debugf("[JMT-getNode] get from kv, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
