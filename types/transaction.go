@@ -612,6 +612,7 @@ func (tx *Transaction) RbftUnmarshal(raw []byte) error {
 		return err
 	}
 	tx.fromPB(pbTx)
+	tx.Time = time.Now()
 	return nil
 }
 
@@ -794,7 +795,7 @@ func (tx *Transaction) toPB() *pb.Transaction {
 
 	return &pb.Transaction{
 		Inner: &txData,
-		Time:  toPBTime(tx.Time),
+		// ignore time
 	}
 }
 
@@ -822,14 +823,6 @@ func (tx *Transaction) fromPB(PBTx *pb.Transaction) {
 		tx.Inner = TxData
 	}
 	// ignore time
-}
-
-func toPBTime(t time.Time) int64 {
-	return t.UnixNano()
-}
-
-func fromPBTime(timestamp int64) time.Time {
-	return time.Unix(0, timestamp)
 }
 
 type Signer struct {

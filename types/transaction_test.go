@@ -142,6 +142,7 @@ func TestTransaction_PB(t *testing.T) {
 		assert.Equal(t, legacyTx.Inner.GetTo().String(), legacyTx2.Inner.GetTo().String())
 	}
 
+	assert.True(t, legacyTx2.Time.Before(legacyTx.Time))
 	/** test case 2 AccessListTx */
 	accessListTx := &Transaction{
 		Inner: &AccessListTx{
@@ -175,6 +176,7 @@ func TestTransaction_PB(t *testing.T) {
 	assert.Equal(t, accessListTx.Inner.GetTo().String(), accessListTx2.Inner.GetTo().String())
 	assert.Equal(t, accessListTx.Inner.GetAccessList()[0].Address.String(), accessListTx2.Inner.GetAccessList()[0].Address.String())
 	assert.Equal(t, accessListTx.Inner.GetAccessList()[0].StorageKeys[0].String(), accessListTx2.Inner.GetAccessList()[0].StorageKeys[0].String())
+	assert.True(t, accessListTx2.Time.Before(accessListTx.Time))
 
 	/** test case 3 DynamicFeeTx */
 	dynamicFeeTx := &Transaction{
@@ -203,4 +205,5 @@ func TestTransaction_PB(t *testing.T) {
 	assert.Equal(t, dynamicFeeTx.Inner.GetGasTipCap(), dynamicFeeTx2.Inner.GetGasTipCap())
 	assert.Equal(t, dynamicFeeTx.Inner.GetGasFeeCap(), dynamicFeeTx2.Inner.GetGasFeeCap())
 	assert.Equal(t, dynamicFeeTx.Inner.GetTo().String(), dynamicFeeTx2.Inner.GetTo().String())
+	assert.True(t, dynamicFeeTx2.Time.Before(dynamicFeeTx.Time))
 }
