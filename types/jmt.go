@@ -1,8 +1,11 @@
 package types
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"encoding/json"
+	"encoding/binary"
+	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -13,12 +16,25 @@ import (
 )
 
 type Node interface {
-	EncodePb() []byte
-	EncodeJson() []byte
+	Encode() []byte
 	GetHash() common.Hash
 	Copy() Node
 	String() string // just for debug
 }
+
+type (
+	TrieJournal struct {
+		Type        byte
+		DirtySet    map[string]Node
+		PruneSet    map[string]struct{}
+		RootHash    common.Hash
+		RootNodeKey *NodeKey
+	}
+
+	StateDelta struct {
+		Journal []*TrieJournal
+	}
+)
 
 type (
 	InternalNode struct {
@@ -38,20 +54,50 @@ type (
 	}
 )
 
-func (n *InternalNode) EncodeJson() []byte {
-	blob, err := json.Marshal(n)
-	if err != nil {
-		return nil
+type (
+	NodeKey struct {
+		Version uint64 // version of current tree node.
+		Path    []byte // addressing path from root to current node. Path is part of LeafNode.Key.
+		Type    []byte // additional field for identify a tree uniquely together with Version and Path.
 	}
-	return blob
+
+	NodeKeyHeap []*NodeKey // max heap to store NodeKey
+)
+
+// just for debug
+func (nk *NodeKey) String() string {
+	res := strings.Builder{}
+	res.WriteString("Version[")
+	res.WriteString(strconv.Itoa(int(nk.Version)))
+	res.WriteString("], Type[")
+	res.WriteString(strconv.Itoa(len(nk.Type)))
+	res.WriteString("], Path[")
+	res.WriteString(hexutil.DecodeFromNibbles(nk.Path))
+	res.WriteString("]")
+	return res.String()
 }
 
-func (n *LeafNode) EncodeJson() []byte {
-	blob, err := json.Marshal(n)
-	if err != nil {
-		return nil
+func (nk *NodeKey) Encode() []byte {
+	var length byte
+	for i := 0; i < len(nk.Type); i++ {
+		length++
 	}
-	return blob
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, nk.Version)
+	buf = append(buf, length)
+	buf = append(buf, nk.Type...)
+	buf = append(buf, nk.Path...)
+	return buf
+}
+
+// DecodeNodeKey decode from bytes in physical storage to NodeKey
+func DecodeNodeKey(raw []byte) *NodeKey {
+	nk := &NodeKey{}
+	nk.Version = binary.BigEndian.Uint64(raw[:8])
+	length := raw[8]
+	nk.Type = raw[9 : 9+length]
+	nk.Path = raw[9+length:]
+	return nk
 }
 
 // just for debug
@@ -88,8 +134,41 @@ func (n *LeafNode) String() string {
 	return res.String()
 }
 
+// just for debug
+func (j *TrieJournal) String() string {
+	res := strings.Builder{}
+	res.WriteString("Version[")
+	res.WriteString(strconv.Itoa(int(j.RootNodeKey.Version)))
+	res.WriteString("], ")
+
+	res.WriteString(fmt.Sprintf("{DirtySet[\n"))
+	dirtyKeys := make([]string, 0, len(j.DirtySet))
+	for k := range j.DirtySet {
+		dirtyKeys = append(dirtyKeys, k)
+	}
+	sort.Strings(dirtyKeys)
+	for _, k := range dirtyKeys {
+		//res.WriteString(fmt.Sprintf("%v\n", DecodeNodeKey([]byte(k)).String()))
+		res.WriteString(fmt.Sprintf("%v\n", []byte(k)))
+	}
+
+	res.WriteString("], PruneSet[\n")
+	pruneKeys := make([]string, 0, len(j.PruneSet))
+	for k := range j.PruneSet {
+		pruneKeys = append(pruneKeys, k)
+	}
+	sort.Strings(pruneKeys)
+	for _, k := range pruneKeys {
+		//res.WriteString(fmt.Sprintf("%v\n", DecodeNodeKey([]byte(k)).String()))
+		res.WriteString(fmt.Sprintf("%v\n", []byte(k)))
+	}
+	res.WriteString("]}\n")
+
+	return res.String()
+}
+
 func (n *InternalNode) GetHash() common.Hash {
-	data := sha256.Sum256(n.EncodePb())
+	data := sha256.Sum256(n.Encode())
 	return data
 }
 
@@ -100,7 +179,7 @@ func (n *LeafNode) GetHash() common.Hash {
 		Key:  n.Key,
 		Val:  n.Val,
 	}
-	data := sha256.Sum256(tmp.EncodePb())
+	data := sha256.Sum256(tmp.Encode())
 	return data
 }
 
@@ -119,7 +198,7 @@ func (n *LeafNode) Copy() Node {
 	return nn
 }
 
-func (n *InternalNode) EncodePb() []byte {
+func (n *InternalNode) Encode() []byte {
 	if n == nil {
 		return nil
 	}
@@ -181,7 +260,7 @@ func (n *InternalNode) unmarshalInternalFromPb(data []byte) error {
 	return nil
 }
 
-func (n *LeafNode) EncodePb() []byte {
+func (n *LeafNode) Encode() []byte {
 	if n == nil {
 		return nil
 	}
@@ -259,40 +338,6 @@ func UnmarshalJMTNodeFromPb(data []byte) (Node, error) {
 	return nil, nil
 }
 
-func UnmarshalJMTNodeFromJson(rawNode []byte) (n Node, err error) {
-	if len(rawNode) == 0 {
-		return nil, nil
-	}
-	m := make(map[string]any)
-	if err := json.Unmarshal(rawNode, &m); err != nil {
-		return nil, err
-	}
-	if m["children"] != nil {
-		return unmarshalInternalFromJson(rawNode)
-	} else if m["key"] != nil {
-		return unmarshalLeafFromJson(rawNode)
-	}
-	return nil, nil
-}
-
-func unmarshalInternalFromJson(rawNode []byte) (Node, error) {
-	n := &InternalNode{}
-	err := json.Unmarshal(rawNode, n)
-	if err != nil {
-		return nil, err
-	}
-	return n, nil
-}
-
-func unmarshalLeafFromJson(rawNode []byte) (Node, error) {
-	n := &LeafNode{}
-	err := json.Unmarshal(rawNode, n)
-	if err != nil {
-		return nil, err
-	}
-	return n, nil
-}
-
 // BytesToHex expand normal bytes to hex bytes (nibbles)
 func BytesToHex(h []byte) []byte {
 	if len(h) == 0 {
@@ -328,4 +373,117 @@ func HexToBytes(src []byte) []byte {
 		res[i] = (src[2*i] << 4) | src[2*i+1]
 	}
 	return res
+}
+
+func (delta *StateDelta) Encode() []byte {
+	if delta == nil {
+		return nil
+	}
+
+	journals := make([]*pb.TrieJournal, len(delta.Journal))
+	for i, journal := range delta.Journal {
+		pruneSet := make(map[string][]byte)
+		for k := range journal.PruneSet {
+			pruneSet[k] = []byte{}
+		}
+
+		dirtySet := make(map[string][]byte)
+		for k, v := range journal.DirtySet {
+			dirtySet[k] = v.Encode()
+		}
+
+		journals[i] = &pb.TrieJournal{
+			Type:        uint64(journal.Type),
+			RootHash:    journal.RootHash[:],
+			RootNodeKey: journal.RootNodeKey.Encode(),
+			PruneSet:    pruneSet,
+			DirtySet:    dirtySet,
+		}
+	}
+
+	blob := &pb.StateDelta{
+		Journal: journals,
+	}
+
+	content, err := blob.MarshalVTStrict()
+	if err != nil {
+		return nil
+	}
+
+	return content
+}
+
+func DecodeStateDelta(data []byte) (*StateDelta, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+	helper := pb.StateDeltaFromVTPool()
+	defer func() {
+		helper.Reset()
+		helper.ReturnToVTPool()
+	}()
+	err := helper.UnmarshalVT(data)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &StateDelta{
+		Journal: make([]*TrieJournal, len(helper.Journal)),
+	}
+	for i := 0; i < len(helper.Journal); i++ {
+		pruneSet := make(map[string]struct{})
+		for k := range helper.Journal[i].PruneSet {
+			pruneSet[k] = struct{}{}
+		}
+
+		dirtySet := make(map[string]Node)
+		for k, v := range helper.Journal[i].DirtySet {
+			dirtySet[k], err = UnmarshalJMTNodeFromPb(v)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		res.Journal[i] = &TrieJournal{
+			Type:        byte(helper.Journal[i].Type),
+			RootHash:    common.BytesToHash(helper.Journal[i].RootHash),
+			RootNodeKey: DecodeNodeKey(helper.Journal[i].RootNodeKey),
+			PruneSet:    pruneSet,
+			DirtySet:    dirtySet,
+		}
+	}
+
+	return res, nil
+}
+
+func (h NodeKeyHeap) Len() int {
+	return len(h)
+}
+
+func (h NodeKeyHeap) Less(i, j int) bool {
+	if h[i].Version != h[j].Version {
+		return h[i].Version > h[j].Version
+	}
+
+	if !bytes.Equal(h[i].Type, h[j].Type) {
+		return bytes.Compare(h[i].Type, h[j].Type) > 0
+	}
+
+	return bytes.Compare(h[i].Path, h[j].Path) < 0
+}
+
+func (h NodeKeyHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h *NodeKeyHeap) Push(x interface{}) {
+	*h = append(*h, x.(*NodeKey))
+}
+
+func (h *NodeKeyHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
 }

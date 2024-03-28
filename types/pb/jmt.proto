@@ -24,3 +24,15 @@ message  Child{
   uint64 version = 2;
   bool leaf = 3;
 }
+
+message StateDelta{
+  repeated TrieJournal journal = 1;
+}
+
+message TrieJournal{
+  map<string, bytes> dirty_set = 1;
+  map<string, bytes>  prune_set = 2;
+  uint64 type = 3;
+  bytes root_hash = 4;
+  bytes root_node_key = 5;
+}

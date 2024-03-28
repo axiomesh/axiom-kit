@@ -16,9 +16,9 @@ func Test_IterateEmptyTree(t *testing.T) {
 	jmt, s := initEmptyJMT()
 	err := jmt.Update(0, toHex("0001"), []byte("v1"))
 	require.Nil(t, err)
-	jmt.Commit()
+	jmt.Commit(nil)
 
-	iter := NewIterator(jmt.root.GetHash(), s, 100, time.Second)
+	iter := NewIterator(jmt.root.GetHash(), s, nil, 100, time.Second)
 	go iter.Iterate()
 	var res []*RawNode
 
@@ -44,10 +44,10 @@ func Test_IterateStop(t *testing.T) {
 		require.Nil(t, err)
 		err = jmt.Update(0, toHex("bbf7"), []byte("v2"))
 		require.Nil(t, err)
-		rootHash0 := jmt.Commit()
+		rootHash0 := jmt.Commit(nil)
 
 		var res []*RawNode
-		iter := NewIterator(rootHash0, s, 1, 1000*time.Millisecond)
+		iter := NewIterator(rootHash0, s, nil, 1, 1000*time.Millisecond)
 		go iter.Iterate()
 
 		time.Sleep(100 * time.Millisecond)
@@ -77,10 +77,10 @@ func Test_IterateTimeout(t *testing.T) {
 		require.Nil(t, err)
 		err = jmt.Update(0, toHex("bbf7"), []byte("v2"))
 		require.Nil(t, err)
-		rootHash0 := jmt.Commit()
+		rootHash0 := jmt.Commit(nil)
 
 		var res []*RawNode
-		iter := NewIterator(rootHash0, s, 1, 100*time.Millisecond)
+		iter := NewIterator(rootHash0, s, nil, 1, 100*time.Millisecond)
 		go iter.Iterate()
 
 		time.Sleep(500 * time.Millisecond)
@@ -127,9 +127,9 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		err = jmt.Update(0, toHex("bb17"), []byte("v4"))
 		require.Nil(t, err)
 		// commit version 0 jmt, and load it from kv
-		rootHash0 := jmt.Commit()
+		rootHash0 := jmt.Commit(nil)
 		require.Equal(t, rootHash0, jmt.root.GetHash())
-		jmt, err = New(rootHash0, s, jmt.logger)
+		jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 		require.Nil(t, err)
 		// transit from v0 to v1
 		err = jmt.Update(1, toHex("0001"), []byte("v5"))
@@ -141,9 +141,9 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		err = jmt.Update(1, toHex("0011"), []byte("v11"))
 		require.Nil(t, err)
 		// commit version 1 jmt, and load it from kv
-		rootHash1 := jmt.Commit()
+		rootHash1 := jmt.Commit(nil)
 		require.Equal(t, rootHash1, jmt.root.GetHash())
-		jmt, err = New(rootHash1, s, jmt.logger)
+		jmt, err = New(rootHash1, s, nil, nil, jmt.logger)
 		require.Nil(t, err)
 		// transit from v1 to v2
 		err = jmt.Update(2, toHex("0001"), []byte("v9"))
@@ -152,11 +152,11 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		require.Nil(t, err)
 		err = jmt.Update(2, toHex("bb17"), []byte("v12"))
 		require.Nil(t, err)
-		rootHash2 := jmt.Commit()
+		rootHash2 := jmt.Commit(nil)
 		require.Equal(t, rootHash2, jmt.root.GetHash())
 
 		// iterate version 0 jmt trie
-		iter := NewIterator(rootHash0, s, 2, time.Second)
+		iter := NewIterator(rootHash0, s, nil, 2, time.Second)
 		go iter.Iterate()
 		var res []*RawNode
 
@@ -184,12 +184,12 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		batch.Commit()
 
 		// verify v0 trie
-		verified, err := VerifyTrie(rootHash0, s0)
+		verified, err := VerifyTrie(rootHash0, s0, nil)
 		require.Nil(t, err)
 		require.True(t, verified)
 
 		// verify v0 state
-		jmt, err = New(rootHash0, s0, jmt.logger)
+		jmt, err = New(rootHash0, s0, nil, nil, jmt.logger)
 		require.Nil(t, err)
 		n, err := jmt.Get(toHex("0001"))
 		require.Nil(t, err)
@@ -210,7 +210,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		require.Equal(t, n, []byte("v4"))
 
 		// iterate version 1 jmt trie
-		iter = NewIterator(rootHash1, s, 1, time.Second)
+		iter = NewIterator(rootHash1, s, nil, 1, time.Second)
 		go iter.Iterate()
 		res = []*RawNode{}
 		for {
@@ -237,12 +237,12 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		batch.Commit()
 
 		// verify v1 trie
-		verified, err = VerifyTrie(rootHash1, s1)
+		verified, err = VerifyTrie(rootHash1, s1, nil)
 		require.Nil(t, err)
 		require.True(t, verified)
 
 		// verify v1 state
-		jmt, err = New(rootHash1, s1, jmt.logger)
+		jmt, err = New(rootHash1, s1, nil, nil, jmt.logger)
 		require.Nil(t, err)
 		n, err = jmt.Get(toHex("0001"))
 		require.Nil(t, err)
@@ -267,7 +267,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		require.Equal(t, n, []byte("v11"))
 
 		// iterate version 2 jmt trie
-		iter = NewIterator(rootHash2, s, 10, time.Second)
+		iter = NewIterator(rootHash2, s, nil, 10, time.Second)
 		go iter.Iterate()
 		res = []*RawNode{}
 		for {
@@ -293,12 +293,12 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		batch.Commit()
 
 		// verify v2 trie
-		verified, err = VerifyTrie(rootHash2, s2)
+		verified, err = VerifyTrie(rootHash2, s2, nil)
 		require.Nil(t, err)
 		require.True(t, verified)
 
 		// verify v2 state
-		jmt, err = New(rootHash2, s2, jmt.logger)
+		jmt, err = New(rootHash2, s2, nil, nil, jmt.logger)
 		require.Nil(t, err)
 		n, err = jmt.Get(toHex("0001"))
 		require.Nil(t, err)
@@ -342,9 +342,9 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 		leafSet1[string(toHex("0003"))] = []byte("v3")
 		leafSet1[string(toHex("bb17"))] = []byte("v4")
 		// commit version 0 jmt, and load it from kv
-		rootHash0 := jmt.Commit()
+		rootHash0 := jmt.Commit(nil)
 		require.Equal(t, rootHash0, jmt.root.GetHash())
-		jmt, err = New(rootHash0, s, jmt.logger)
+		jmt, err = New(rootHash0, s, nil, nil, jmt.logger)
 		require.Nil(t, err)
 
 		// transit from v0 to v1
@@ -366,9 +366,9 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 		leafSet2[string(toHex("0003"))] = []byte("v3")
 		leafSet2[string(toHex("abcd"))] = []byte("v1")
 		// commit version 1 jmt, and load it from kv
-		rootHash1 := jmt.Commit()
+		rootHash1 := jmt.Commit(nil)
 		require.Equal(t, rootHash1, jmt.root.GetHash())
-		jmt, err = New(rootHash1, s, jmt.logger)
+		jmt, err = New(rootHash1, s, nil, nil, jmt.logger)
 		require.Nil(t, err)
 
 		// transit from v1 to v2
@@ -388,11 +388,11 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 		leafSet3[string(toHex("0003"))] = []byte("v3")
 		leafSet3[string(toHex("abcd"))] = []byte("v1")
 		leafSet3[string(toHex("ac00"))] = []byte("v13")
-		rootHash2 := jmt.Commit()
+		rootHash2 := jmt.Commit(nil)
 		require.Equal(t, rootHash2, jmt.root.GetHash())
 
 		// iterate version 0 jmt trie leaf
-		iter := NewIterator(rootHash0, s, 2, time.Second)
+		iter := NewIterator(rootHash0, s, nil, 2, time.Second)
 		go iter.IterateLeaf()
 		var res []*RawNode
 
@@ -415,7 +415,7 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 		}
 
 		// iterate version 1 jmt trie
-		iter = NewIterator(rootHash1, s, 1, time.Second)
+		iter = NewIterator(rootHash1, s, nil, 1, time.Second)
 		go iter.IterateLeaf()
 		res = []*RawNode{}
 		for {
@@ -437,7 +437,7 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 		}
 
 		// iterate version 2 jmt trie
-		iter = NewIterator(rootHash2, s, 10, time.Second)
+		iter = NewIterator(rootHash2, s, nil, 10, time.Second)
 		go iter.IterateLeaf()
 		res = []*RawNode{}
 		for {

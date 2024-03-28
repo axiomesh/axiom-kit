@@ -21,21 +21,23 @@ var (
 type Iterator struct {
 	rootHash common.Hash
 	backend  storage.Storage
+	cache    PruneCache
 
 	bufferC chan *RawNode // use buffer to balance between read and write
 	errC    chan error
 	stopC   chan struct{}
 	timeout time.Duration
 
-	nodeKeyHeap *NodeKeyHeap // max heap, store NodeKeys that are waiting to be visited
+	nodeKeyHeap *types.NodeKeyHeap // max heap, store NodeKeys that are waiting to be visited
 }
 
-func NewIterator(rootHash common.Hash, backend storage.Storage, bufSize int, timeout time.Duration) *Iterator {
-	nodeKeyHeap := &NodeKeyHeap{}
+func NewIterator(rootHash common.Hash, backend storage.Storage, cache PruneCache, bufSize int, timeout time.Duration) *Iterator {
+	nodeKeyHeap := &types.NodeKeyHeap{}
 	heap.Init(nodeKeyHeap)
 	return &Iterator{
 		rootHash:    rootHash,
 		backend:     backend,
+		cache:       cache,
 		bufferC:     make(chan *RawNode, bufSize),
 		errC:        make(chan error, 1),
 		stopC:       make(chan struct{}),
@@ -57,18 +59,16 @@ func (it *Iterator) Iterate() {
 		it.errC <- ErrorNotFound
 		return
 	}
-	rootNodeKey := decodeNodeKey(rawRootNodeKey)
+	rootNodeKey := types.DecodeNodeKey(rawRootNodeKey)
 	heap.Push(it.nodeKeyHeap, rootNodeKey)
 
 	for it.nodeKeyHeap.Len() != 0 {
 		// pop current node from heap
-		currentNodeKey := heap.Pop(it.nodeKeyHeap).(*NodeKey)
+		currentNodeKey := heap.Pop(it.nodeKeyHeap).(*types.NodeKey)
 
 		// get current node from kv
 		var currentNode types.Node
-		nk := currentNodeKey.encode()
-		currentNodeBlob := it.backend.Get(nk)
-		currentNode, err := types.UnmarshalJMTNodeFromPb(currentNodeBlob)
+		currentNode, currentNodeBlob, err := it.getNode(currentNodeKey)
 		if err != nil {
 			it.errC <- err
 			return
@@ -90,7 +90,7 @@ func (it *Iterator) Iterate() {
 			it.errC <- ErrorTimeout
 			return
 		case it.bufferC <- &RawNode{
-			RawKey:    nk,
+			RawKey:    currentNodeKey.Encode(),
 			RawValue:  currentNodeBlob,
 			LeafKey:   leafKey,
 			LeafValue: leafValue,
@@ -108,7 +108,7 @@ func (it *Iterator) Iterate() {
 				continue
 			}
 			child := n.Children[hex]
-			childNodeKey := &NodeKey{
+			childNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Type:    rootNodeKey.Type,
 				Path:    make([]byte, len(currentNodeKey.Path)),
@@ -135,18 +135,16 @@ func (it *Iterator) IterateLeaf() {
 		it.errC <- ErrorNotFound
 		return
 	}
-	rootNodeKey := decodeNodeKey(rawRootNodeKey)
+	rootNodeKey := types.DecodeNodeKey(rawRootNodeKey)
 	heap.Push(it.nodeKeyHeap, rootNodeKey)
 
 	for it.nodeKeyHeap.Len() != 0 {
 		// pop current node from heap
-		currentNodeKey := heap.Pop(it.nodeKeyHeap).(*NodeKey)
+		currentNodeKey := heap.Pop(it.nodeKeyHeap).(*types.NodeKey)
 
 		// get current node from kv
 		var currentNode types.Node
-		nk := currentNodeKey.encode()
-		currentNodeBlob := it.backend.Get(nk)
-		currentNode, err := types.UnmarshalJMTNodeFromPb(currentNodeBlob)
+		currentNode, _, err := it.getNode(currentNodeKey)
 		if err != nil {
 			it.errC <- err
 			return
@@ -182,7 +180,7 @@ func (it *Iterator) IterateLeaf() {
 				continue
 			}
 			child := n.Children[hex]
-			childNodeKey := &NodeKey{
+			childNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Type:    rootNodeKey.Type,
 				Path:    make([]byte, len(currentNodeKey.Path)),
@@ -194,6 +192,29 @@ func (it *Iterator) IterateLeaf() {
 			heap.Push(it.nodeKeyHeap, childNodeKey)
 		}
 	}
+}
+
+func (it *Iterator) getNode(nk *types.NodeKey) (types.Node, []byte, error) {
+	var nextNode types.Node
+	var err error
+	var nextRawNode []byte
+	k := nk.Encode()
+
+	// try in trie pruneCache
+	if it.cache != nil {
+		if v, ok := it.cache.Get(nk.Version, k); ok {
+			nextNode = v
+			return nextNode, nextRawNode, err
+		}
+	}
+
+	// try in kv at last
+	nextRawNode = it.backend.Get(k)
+	nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nextNode, nextRawNode, nil
 }
 
 func (it *Iterator) Stop() {
@@ -225,7 +246,7 @@ type RawNode struct {
 
 // just for debug
 func (n *RawNode) String() string {
-	nk := decodeNodeKey(n.RawKey)
+	nk := types.DecodeNodeKey(n.RawKey)
 	node, _ := types.UnmarshalJMTNodeFromPb(n.RawValue)
-	return fmt.Sprintf("[RawNode]: nodeKey={%v}, nodeValue={%v}", nk.print(), node.String())
+	return fmt.Sprintf("[RawNode]: nodeKey={%v}, nodeValue={%v}", nk.String(), node.String())
 }

@@ -38,13 +38,13 @@ func (jmt *JMT) Prove(key []byte) (*ProofResult, error) {
 func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult) error {
 	switch n := (root).(type) {
 	case *types.InternalNode:
-		proof.Proof = append(proof.Proof, n.EncodePb())
+		proof.Proof = append(proof.Proof, n.Encode())
 		if n.Children[key[next]] == nil {
 			return ErrorInvalidPath
 		}
 		child := n.Children[key[next]]
 		nextBlkNum := child.Version
-		nextNodeKey := &NodeKey{
+		nextNodeKey := &types.NodeKey{
 			Version: nextBlkNum,
 			Path:    key[:next+1],
 			Type:    jmt.typ,
@@ -59,7 +59,7 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 		if !bytes.Equal(n.Key, key) {
 			return ErrorInvalidPath
 		}
-		proof.Proof = append(proof.Proof, n.EncodePb())
+		proof.Proof = append(proof.Proof, n.Encode())
 		proof.Key = n.Key
 		proof.Value = n.Val
 		return nil
@@ -69,10 +69,10 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 }
 
 // VerifyTrie verifies a whole trie
-func VerifyTrie(rootHash common.Hash, backend storage.Storage) (bool, error) {
+func VerifyTrie(rootHash common.Hash, backend storage.Storage, cache PruneCache) (bool, error) {
 	logger := log.NewWithModule("JMT-VerifyTrie")
 
-	trie, err := New(rootHash, backend, logger)
+	trie, err := New(rootHash, backend, nil, cache, logger)
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +94,7 @@ func VerifyTrie(rootHash common.Hash, backend storage.Storage) (bool, error) {
 			}
 
 			nextPath := []byte{i}
-			nextNodeKey := &NodeKey{
+			nextNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Path:    nextPath,
 				Type:    trie.typ,
@@ -152,7 +152,7 @@ func (jmt *JMT) verifySubTrie(root types.Node, rootHash common.Hash, path []byte
 			nextPath := make([]byte, len(path))
 			copy(nextPath, path)
 			nextPath = append(nextPath, i)
-			nextNodeKey := &NodeKey{
+			nextNodeKey := &types.NodeKey{
 				Version: n.Children[i].Version,
 				Path:    nextPath,
 				Type:    jmt.typ,
