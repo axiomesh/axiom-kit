@@ -24,6 +24,7 @@ type MockMinimalTxPool[T any, Constraint types.TXConstraint[T]] struct {
 	notifyGenerateBatch   bool
 	notifyGenerateBatchFn func(typ int)
 	notifyFindNextBatchFn func(completionMissingBatchHashes ...string) // notify consensus that it can find next batch
+	started               atomic.Bool
 }
 
 // NewMockMinimalTxPool returns a minimal implement of MockTxPool which accepts
@@ -55,6 +56,21 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 			if mock.noBatchSize.Load() == 0 {
 				return nil, errors.New("there is no pending tx, ignore generate batch")
 			}
+
+		case txpool.GenBatchNoTxTimeoutEvent:
+			if mock.noBatchSize.Load() != 0 {
+				return nil, errors.New("there is pending tx, ignore generate empty batch")
+			}
+			newBatch := &txpool.RequestHashBatch[T, Constraint]{
+				TxList:     make([]*T, 0),
+				TxHashList: make([]string, 0),
+				LocalList:  make([]bool, 0),
+				Timestamp:  time.Now().UnixNano(),
+			}
+			batchHash := newBatch.GenerateBatchHash()
+			newBatch.BatchHash = batchHash
+			mock.batchCache[batchHash] = newBatch
+			return newBatch, nil
 		}
 		for _, m := range mock.allTxs {
 			for _, tx := range m {
@@ -142,7 +158,22 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 			return txList, localList, nil, nil
 		}).AnyTimes()
 
-	mock.EXPECT().RemoveBatches(gomock.Any()).Return().AnyTimes()
+	mock.EXPECT().RemoveBatches(gomock.Any()).Do(func(digests []string) {
+		lo.ForEach(digests, func(digest string, _ int) {
+			batch, ok := mock.batchCache[digest]
+			if ok {
+				lo.ForEach(batch.TxList, func(tx *T, _ int) {
+					delete(mock.batchedTxs, Constraint(tx).RbftGetTxHash())
+					if mock.allTxs != nil {
+						delete(mock.allTxs[Constraint(tx).RbftGetFrom()], Constraint(tx).RbftGetTxHash())
+						if len(mock.allTxs[Constraint(tx).RbftGetFrom()]) == 0 {
+							delete(mock.allTxs, Constraint(tx).RbftGetFrom())
+						}
+					}
+				})
+			}
+		})
+	}).AnyTimes()
 	mock.EXPECT().IsPoolFull().Return(false).AnyTimes()
 	mock.EXPECT().HasPendingRequestInPool().DoAndReturn(func() bool {
 		return len(mock.allTxs) > 0
@@ -204,7 +235,13 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 	}).AnyTimes()
 	mock.EXPECT().ReConstructBatchByOrder(gomock.Any()).Return(nil, nil).AnyTimes()
 	mock.EXPECT().Stop().AnyTimes()
-	mock.EXPECT().Start().Return(nil).AnyTimes()
+	mock.EXPECT().Start().DoAndReturn(func() error {
+		if mock.started.Load() {
+			return errors.New("txpool already started")
+		}
+		mock.started.Store(true)
+		return nil
+	}).AnyTimes()
 	mock.EXPECT().Init(gomock.Any()).Do(func(config txpool.ConsensusConfig) {
 		mock.notifyGenerateBatchFn = config.NotifyGenerateBatchFn
 		mock.notifyFindNextBatchFn = config.NotifyFindNextBatchFn
@@ -219,6 +256,19 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 		}
 		return res
 	}).AnyTimes()
+	mock.EXPECT().GetPendingTxByHash(gomock.Any()).DoAndReturn(func(hash string) *T {
+		for _, txs := range mock.allTxs {
+			for _, tx := range txs {
+				if Constraint(tx).RbftGetTxHash() == hash {
+					return tx
+				}
+			}
+		}
+		return nil
+	}).AnyTimes()
+	mock.EXPECT().IsStarted().DoAndReturn(func() bool {
+		return mock.started.Load()
+	}).AnyTimes()
 	return mock
 }
 
@@ -231,7 +281,7 @@ func (m *MockMinimalTxPool[T, Constraint]) addTx(tx *T) {
 	m.allTxs[account][txHash] = tx
 	m.noBatchSize.Add(1)
 
-	if !m.notifyGenerateBatch && int(m.noBatchSize.Load()) > m.batchSize {
+	if !m.notifyGenerateBatch && int(m.noBatchSize.Load()) >= m.batchSize {
 		m.notifyGenerateBatchFn(txpool.GenBatchSizeEvent)
 		m.notifyGenerateBatch = true
 	}
