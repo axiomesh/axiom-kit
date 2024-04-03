@@ -40,6 +40,11 @@ func (m *MockTxPool[T, Constraint]) EXPECT() *MockTxPoolMockRecorder[T, Constrai
 	return m.recorder
 }
 
+// ISGOMOCK indicates that this struct is a gomock mock.
+func (m *MockTxPool[T, Constraint]) ISGOMOCK() struct{} {
+	return struct{}{}
+}
+
 // AddLocalTx mocks base method.
 func (m *MockTxPool[T, Constraint]) AddLocalTx(tx *T) error {
 	m.ctrl.T.Helper()
@@ -49,31 +54,31 @@ func (m *MockTxPool[T, Constraint]) AddLocalTx(tx *T) error {
 }
 
 // AddLocalTx indicates an expected call of AddLocalTx.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) AddLocalTx(tx any) *TxPoolAddLocalTxCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) AddLocalTx(tx any) *MockTxPoolAddLocalTxCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLocalTx", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).AddLocalTx), tx)
-	return &TxPoolAddLocalTxCall[T, Constraint]{Call: call}
+	return &MockTxPoolAddLocalTxCall[T, Constraint]{Call: call}
 }
 
-// TxPoolAddLocalTxCall wrap *gomock.Call
-type TxPoolAddLocalTxCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolAddLocalTxCall wrap *gomock.Call
+type MockTxPoolAddLocalTxCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolAddLocalTxCall[T, Constraint]) Return(arg0 error) *TxPoolAddLocalTxCall[T, Constraint] {
+func (c *MockTxPoolAddLocalTxCall[T, Constraint]) Return(arg0 error) *MockTxPoolAddLocalTxCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolAddLocalTxCall[T, Constraint]) Do(f func(*T) error) *TxPoolAddLocalTxCall[T, Constraint] {
+func (c *MockTxPoolAddLocalTxCall[T, Constraint]) Do(f func(*T) error) *MockTxPoolAddLocalTxCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolAddLocalTxCall[T, Constraint]) DoAndReturn(f func(*T) error) *TxPoolAddLocalTxCall[T, Constraint] {
+func (c *MockTxPoolAddLocalTxCall[T, Constraint]) DoAndReturn(f func(*T) error) *MockTxPoolAddLocalTxCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -85,31 +90,31 @@ func (m *MockTxPool[T, Constraint]) AddRebroadcastTxs(txs []*T) {
 }
 
 // AddRebroadcastTxs indicates an expected call of AddRebroadcastTxs.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) AddRebroadcastTxs(txs any) *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) AddRebroadcastTxs(txs any) *MockTxPoolAddRebroadcastTxsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRebroadcastTxs", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).AddRebroadcastTxs), txs)
-	return &TxPoolAddRebroadcastTxsCall[T, Constraint]{Call: call}
+	return &MockTxPoolAddRebroadcastTxsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolAddRebroadcastTxsCall wrap *gomock.Call
-type TxPoolAddRebroadcastTxsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolAddRebroadcastTxsCall wrap *gomock.Call
+type MockTxPoolAddRebroadcastTxsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolAddRebroadcastTxsCall[T, Constraint]) Return() *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+func (c *MockTxPoolAddRebroadcastTxsCall[T, Constraint]) Return() *MockTxPoolAddRebroadcastTxsCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolAddRebroadcastTxsCall[T, Constraint]) Do(f func([]*T)) *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+func (c *MockTxPoolAddRebroadcastTxsCall[T, Constraint]) Do(f func([]*T)) *MockTxPoolAddRebroadcastTxsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolAddRebroadcastTxsCall[T, Constraint]) DoAndReturn(f func([]*T)) *TxPoolAddRebroadcastTxsCall[T, Constraint] {
+func (c *MockTxPoolAddRebroadcastTxsCall[T, Constraint]) DoAndReturn(f func([]*T)) *MockTxPoolAddRebroadcastTxsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -121,31 +126,31 @@ func (m *MockTxPool[T, Constraint]) AddRemoteTxs(txs []*T) {
 }
 
 // AddRemoteTxs indicates an expected call of AddRemoteTxs.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) AddRemoteTxs(txs any) *TxPoolAddRemoteTxsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) AddRemoteTxs(txs any) *MockTxPoolAddRemoteTxsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRemoteTxs", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).AddRemoteTxs), txs)
-	return &TxPoolAddRemoteTxsCall[T, Constraint]{Call: call}
+	return &MockTxPoolAddRemoteTxsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolAddRemoteTxsCall wrap *gomock.Call
-type TxPoolAddRemoteTxsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolAddRemoteTxsCall wrap *gomock.Call
+type MockTxPoolAddRemoteTxsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolAddRemoteTxsCall[T, Constraint]) Return() *TxPoolAddRemoteTxsCall[T, Constraint] {
+func (c *MockTxPoolAddRemoteTxsCall[T, Constraint]) Return() *MockTxPoolAddRemoteTxsCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolAddRemoteTxsCall[T, Constraint]) Do(f func([]*T)) *TxPoolAddRemoteTxsCall[T, Constraint] {
+func (c *MockTxPoolAddRemoteTxsCall[T, Constraint]) Do(f func([]*T)) *MockTxPoolAddRemoteTxsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolAddRemoteTxsCall[T, Constraint]) DoAndReturn(f func([]*T)) *TxPoolAddRemoteTxsCall[T, Constraint] {
+func (c *MockTxPoolAddRemoteTxsCall[T, Constraint]) DoAndReturn(f func([]*T)) *MockTxPoolAddRemoteTxsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -159,31 +164,31 @@ func (m *MockTxPool[T, Constraint]) FilterOutOfDateRequests(timeout bool) []*T {
 }
 
 // FilterOutOfDateRequests indicates an expected call of FilterOutOfDateRequests.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) FilterOutOfDateRequests(timeout any) *TxPoolFilterOutOfDateRequestsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) FilterOutOfDateRequests(timeout any) *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterOutOfDateRequests", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).FilterOutOfDateRequests), timeout)
-	return &TxPoolFilterOutOfDateRequestsCall[T, Constraint]{Call: call}
+	return &MockTxPoolFilterOutOfDateRequestsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolFilterOutOfDateRequestsCall wrap *gomock.Call
-type TxPoolFilterOutOfDateRequestsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolFilterOutOfDateRequestsCall wrap *gomock.Call
+type MockTxPoolFilterOutOfDateRequestsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolFilterOutOfDateRequestsCall[T, Constraint]) Return(arg0 []*T) *TxPoolFilterOutOfDateRequestsCall[T, Constraint] {
+func (c *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint]) Return(arg0 []*T) *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolFilterOutOfDateRequestsCall[T, Constraint]) Do(f func(bool) []*T) *TxPoolFilterOutOfDateRequestsCall[T, Constraint] {
+func (c *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint]) Do(f func(bool) []*T) *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolFilterOutOfDateRequestsCall[T, Constraint]) DoAndReturn(f func(bool) []*T) *TxPoolFilterOutOfDateRequestsCall[T, Constraint] {
+func (c *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint]) DoAndReturn(f func(bool) []*T) *MockTxPoolFilterOutOfDateRequestsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -198,31 +203,31 @@ func (m *MockTxPool[T, Constraint]) GenerateRequestBatch(typ int) (*txpool.Reque
 }
 
 // GenerateRequestBatch indicates an expected call of GenerateRequestBatch.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GenerateRequestBatch(typ any) *TxPoolGenerateRequestBatchCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GenerateRequestBatch(typ any) *MockTxPoolGenerateRequestBatchCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateRequestBatch", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GenerateRequestBatch), typ)
-	return &TxPoolGenerateRequestBatchCall[T, Constraint]{Call: call}
+	return &MockTxPoolGenerateRequestBatchCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGenerateRequestBatchCall wrap *gomock.Call
-type TxPoolGenerateRequestBatchCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGenerateRequestBatchCall wrap *gomock.Call
+type MockTxPoolGenerateRequestBatchCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGenerateRequestBatchCall[T, Constraint]) Return(arg0 *txpool.RequestHashBatch[T, Constraint], arg1 error) *TxPoolGenerateRequestBatchCall[T, Constraint] {
+func (c *MockTxPoolGenerateRequestBatchCall[T, Constraint]) Return(arg0 *txpool.RequestHashBatch[T, Constraint], arg1 error) *MockTxPoolGenerateRequestBatchCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0, arg1)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGenerateRequestBatchCall[T, Constraint]) Do(f func(int) (*txpool.RequestHashBatch[T, Constraint], error)) *TxPoolGenerateRequestBatchCall[T, Constraint] {
+func (c *MockTxPoolGenerateRequestBatchCall[T, Constraint]) Do(f func(int) (*txpool.RequestHashBatch[T, Constraint], error)) *MockTxPoolGenerateRequestBatchCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGenerateRequestBatchCall[T, Constraint]) DoAndReturn(f func(int) (*txpool.RequestHashBatch[T, Constraint], error)) *TxPoolGenerateRequestBatchCall[T, Constraint] {
+func (c *MockTxPoolGenerateRequestBatchCall[T, Constraint]) DoAndReturn(f func(int) (*txpool.RequestHashBatch[T, Constraint], error)) *MockTxPoolGenerateRequestBatchCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -236,31 +241,31 @@ func (m *MockTxPool[T, Constraint]) GetAccountMeta(account string, full bool) *t
 }
 
 // GetAccountMeta indicates an expected call of GetAccountMeta.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetAccountMeta(account, full any) *TxPoolGetAccountMetaCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetAccountMeta(account, full any) *MockTxPoolGetAccountMetaCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountMeta", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetAccountMeta), account, full)
-	return &TxPoolGetAccountMetaCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetAccountMetaCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetAccountMetaCall wrap *gomock.Call
-type TxPoolGetAccountMetaCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetAccountMetaCall wrap *gomock.Call
+type MockTxPoolGetAccountMetaCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetAccountMetaCall[T, Constraint]) Return(arg0 *txpool.AccountMeta[T, Constraint]) *TxPoolGetAccountMetaCall[T, Constraint] {
+func (c *MockTxPoolGetAccountMetaCall[T, Constraint]) Return(arg0 *txpool.AccountMeta[T, Constraint]) *MockTxPoolGetAccountMetaCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetAccountMetaCall[T, Constraint]) Do(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *TxPoolGetAccountMetaCall[T, Constraint] {
+func (c *MockTxPoolGetAccountMetaCall[T, Constraint]) Do(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *MockTxPoolGetAccountMetaCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *TxPoolGetAccountMetaCall[T, Constraint] {
+func (c *MockTxPoolGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *MockTxPoolGetAccountMetaCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -274,31 +279,31 @@ func (m *MockTxPool[T, Constraint]) GetChainInfo() *txpool.ChainInfo {
 }
 
 // GetChainInfo indicates an expected call of GetChainInfo.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetChainInfo() *TxPoolGetChainInfoCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetChainInfo() *MockTxPoolGetChainInfoCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainInfo", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetChainInfo))
-	return &TxPoolGetChainInfoCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetChainInfoCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetChainInfoCall wrap *gomock.Call
-type TxPoolGetChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetChainInfoCall wrap *gomock.Call
+type MockTxPoolGetChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetChainInfoCall[T, Constraint]) Return(arg0 *txpool.ChainInfo) *TxPoolGetChainInfoCall[T, Constraint] {
+func (c *MockTxPoolGetChainInfoCall[T, Constraint]) Return(arg0 *txpool.ChainInfo) *MockTxPoolGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetChainInfoCall[T, Constraint]) Do(f func() *txpool.ChainInfo) *TxPoolGetChainInfoCall[T, Constraint] {
+func (c *MockTxPoolGetChainInfoCall[T, Constraint]) Do(f func() *txpool.ChainInfo) *MockTxPoolGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetChainInfoCall[T, Constraint]) DoAndReturn(f func() *txpool.ChainInfo) *TxPoolGetChainInfoCall[T, Constraint] {
+func (c *MockTxPoolGetChainInfoCall[T, Constraint]) DoAndReturn(f func() *txpool.ChainInfo) *MockTxPoolGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -312,31 +317,31 @@ func (m *MockTxPool[T, Constraint]) GetLocalTxs() [][]byte {
 }
 
 // GetLocalTxs indicates an expected call of GetLocalTxs.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetLocalTxs() *TxPoolGetLocalTxsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetLocalTxs() *MockTxPoolGetLocalTxsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLocalTxs", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetLocalTxs))
-	return &TxPoolGetLocalTxsCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetLocalTxsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetLocalTxsCall wrap *gomock.Call
-type TxPoolGetLocalTxsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetLocalTxsCall wrap *gomock.Call
+type MockTxPoolGetLocalTxsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetLocalTxsCall[T, Constraint]) Return(arg0 [][]byte) *TxPoolGetLocalTxsCall[T, Constraint] {
+func (c *MockTxPoolGetLocalTxsCall[T, Constraint]) Return(arg0 [][]byte) *MockTxPoolGetLocalTxsCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetLocalTxsCall[T, Constraint]) Do(f func() [][]byte) *TxPoolGetLocalTxsCall[T, Constraint] {
+func (c *MockTxPoolGetLocalTxsCall[T, Constraint]) Do(f func() [][]byte) *MockTxPoolGetLocalTxsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetLocalTxsCall[T, Constraint]) DoAndReturn(f func() [][]byte) *TxPoolGetLocalTxsCall[T, Constraint] {
+func (c *MockTxPoolGetLocalTxsCall[T, Constraint]) DoAndReturn(f func() [][]byte) *MockTxPoolGetLocalTxsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -350,31 +355,31 @@ func (m *MockTxPool[T, Constraint]) GetMeta(full bool) *txpool.Meta[T, Constrain
 }
 
 // GetMeta indicates an expected call of GetMeta.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetMeta(full any) *TxPoolGetMetaCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetMeta(full any) *MockTxPoolGetMetaCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMeta", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetMeta), full)
-	return &TxPoolGetMetaCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetMetaCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetMetaCall wrap *gomock.Call
-type TxPoolGetMetaCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetMetaCall wrap *gomock.Call
+type MockTxPoolGetMetaCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetMetaCall[T, Constraint]) Return(arg0 *txpool.Meta[T, Constraint]) *TxPoolGetMetaCall[T, Constraint] {
+func (c *MockTxPoolGetMetaCall[T, Constraint]) Return(arg0 *txpool.Meta[T, Constraint]) *MockTxPoolGetMetaCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetMetaCall[T, Constraint]) Do(f func(bool) *txpool.Meta[T, Constraint]) *TxPoolGetMetaCall[T, Constraint] {
+func (c *MockTxPoolGetMetaCall[T, Constraint]) Do(f func(bool) *txpool.Meta[T, Constraint]) *MockTxPoolGetMetaCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetMetaCall[T, Constraint]) DoAndReturn(f func(bool) *txpool.Meta[T, Constraint]) *TxPoolGetMetaCall[T, Constraint] {
+func (c *MockTxPoolGetMetaCall[T, Constraint]) DoAndReturn(f func(bool) *txpool.Meta[T, Constraint]) *MockTxPoolGetMetaCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -388,31 +393,31 @@ func (m *MockTxPool[T, Constraint]) GetPendingTxByHash(txHash string) *T {
 }
 
 // GetPendingTxByHash indicates an expected call of GetPendingTxByHash.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetPendingTxByHash(txHash any) *TxPoolGetPendingTxByHashCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetPendingTxByHash(txHash any) *MockTxPoolGetPendingTxByHashCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingTxByHash", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetPendingTxByHash), txHash)
-	return &TxPoolGetPendingTxByHashCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetPendingTxByHashCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetPendingTxByHashCall wrap *gomock.Call
-type TxPoolGetPendingTxByHashCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetPendingTxByHashCall wrap *gomock.Call
+type MockTxPoolGetPendingTxByHashCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetPendingTxByHashCall[T, Constraint]) Return(arg0 *T) *TxPoolGetPendingTxByHashCall[T, Constraint] {
+func (c *MockTxPoolGetPendingTxByHashCall[T, Constraint]) Return(arg0 *T) *MockTxPoolGetPendingTxByHashCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetPendingTxByHashCall[T, Constraint]) Do(f func(string) *T) *TxPoolGetPendingTxByHashCall[T, Constraint] {
+func (c *MockTxPoolGetPendingTxByHashCall[T, Constraint]) Do(f func(string) *T) *MockTxPoolGetPendingTxByHashCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetPendingTxByHashCall[T, Constraint]) DoAndReturn(f func(string) *T) *TxPoolGetPendingTxByHashCall[T, Constraint] {
+func (c *MockTxPoolGetPendingTxByHashCall[T, Constraint]) DoAndReturn(f func(string) *T) *MockTxPoolGetPendingTxByHashCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -426,31 +431,31 @@ func (m *MockTxPool[T, Constraint]) GetPendingTxCountByAccount(account string) u
 }
 
 // GetPendingTxCountByAccount indicates an expected call of GetPendingTxCountByAccount.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetPendingTxCountByAccount(account any) *TxPoolGetPendingTxCountByAccountCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetPendingTxCountByAccount(account any) *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingTxCountByAccount", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetPendingTxCountByAccount), account)
-	return &TxPoolGetPendingTxCountByAccountCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetPendingTxCountByAccountCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetPendingTxCountByAccountCall wrap *gomock.Call
-type TxPoolGetPendingTxCountByAccountCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetPendingTxCountByAccountCall wrap *gomock.Call
+type MockTxPoolGetPendingTxCountByAccountCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetPendingTxCountByAccountCall[T, Constraint]) Return(arg0 uint64) *TxPoolGetPendingTxCountByAccountCall[T, Constraint] {
+func (c *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint]) Return(arg0 uint64) *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetPendingTxCountByAccountCall[T, Constraint]) Do(f func(string) uint64) *TxPoolGetPendingTxCountByAccountCall[T, Constraint] {
+func (c *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint]) Do(f func(string) uint64) *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetPendingTxCountByAccountCall[T, Constraint]) DoAndReturn(f func(string) uint64) *TxPoolGetPendingTxCountByAccountCall[T, Constraint] {
+func (c *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint]) DoAndReturn(f func(string) uint64) *MockTxPoolGetPendingTxCountByAccountCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -467,31 +472,31 @@ func (m *MockTxPool[T, Constraint]) GetRequestsByHashList(batchHash string, time
 }
 
 // GetRequestsByHashList indicates an expected call of GetRequestsByHashList.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetRequestsByHashList(batchHash, timestamp, hashList, deDuplicateTxHashes any) *TxPoolGetRequestsByHashListCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetRequestsByHashList(batchHash, timestamp, hashList, deDuplicateTxHashes any) *MockTxPoolGetRequestsByHashListCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequestsByHashList", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetRequestsByHashList), batchHash, timestamp, hashList, deDuplicateTxHashes)
-	return &TxPoolGetRequestsByHashListCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetRequestsByHashListCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetRequestsByHashListCall wrap *gomock.Call
-type TxPoolGetRequestsByHashListCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetRequestsByHashListCall wrap *gomock.Call
+type MockTxPoolGetRequestsByHashListCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetRequestsByHashListCall[T, Constraint]) Return(txs []*T, list []bool, missingTxsHash map[uint64]string, err error) *TxPoolGetRequestsByHashListCall[T, Constraint] {
+func (c *MockTxPoolGetRequestsByHashListCall[T, Constraint]) Return(txs []*T, list []bool, missingTxsHash map[uint64]string, err error) *MockTxPoolGetRequestsByHashListCall[T, Constraint] {
 	c.Call = c.Call.Return(txs, list, missingTxsHash, err)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetRequestsByHashListCall[T, Constraint]) Do(f func(string, int64, []string, []string) ([]*T, []bool, map[uint64]string, error)) *TxPoolGetRequestsByHashListCall[T, Constraint] {
+func (c *MockTxPoolGetRequestsByHashListCall[T, Constraint]) Do(f func(string, int64, []string, []string) ([]*T, []bool, map[uint64]string, error)) *MockTxPoolGetRequestsByHashListCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetRequestsByHashListCall[T, Constraint]) DoAndReturn(f func(string, int64, []string, []string) ([]*T, []bool, map[uint64]string, error)) *TxPoolGetRequestsByHashListCall[T, Constraint] {
+func (c *MockTxPoolGetRequestsByHashListCall[T, Constraint]) DoAndReturn(f func(string, int64, []string, []string) ([]*T, []bool, map[uint64]string, error)) *MockTxPoolGetRequestsByHashListCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -505,31 +510,31 @@ func (m *MockTxPool[T, Constraint]) GetTotalPendingTxCount() uint64 {
 }
 
 // GetTotalPendingTxCount indicates an expected call of GetTotalPendingTxCount.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) GetTotalPendingTxCount() *TxPoolGetTotalPendingTxCountCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) GetTotalPendingTxCount() *MockTxPoolGetTotalPendingTxCountCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalPendingTxCount", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).GetTotalPendingTxCount))
-	return &TxPoolGetTotalPendingTxCountCall[T, Constraint]{Call: call}
+	return &MockTxPoolGetTotalPendingTxCountCall[T, Constraint]{Call: call}
 }
 
-// TxPoolGetTotalPendingTxCountCall wrap *gomock.Call
-type TxPoolGetTotalPendingTxCountCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolGetTotalPendingTxCountCall wrap *gomock.Call
+type MockTxPoolGetTotalPendingTxCountCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolGetTotalPendingTxCountCall[T, Constraint]) Return(arg0 uint64) *TxPoolGetTotalPendingTxCountCall[T, Constraint] {
+func (c *MockTxPoolGetTotalPendingTxCountCall[T, Constraint]) Return(arg0 uint64) *MockTxPoolGetTotalPendingTxCountCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolGetTotalPendingTxCountCall[T, Constraint]) Do(f func() uint64) *TxPoolGetTotalPendingTxCountCall[T, Constraint] {
+func (c *MockTxPoolGetTotalPendingTxCountCall[T, Constraint]) Do(f func() uint64) *MockTxPoolGetTotalPendingTxCountCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolGetTotalPendingTxCountCall[T, Constraint]) DoAndReturn(f func() uint64) *TxPoolGetTotalPendingTxCountCall[T, Constraint] {
+func (c *MockTxPoolGetTotalPendingTxCountCall[T, Constraint]) DoAndReturn(f func() uint64) *MockTxPoolGetTotalPendingTxCountCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -543,31 +548,31 @@ func (m *MockTxPool[T, Constraint]) HasPendingRequestInPool() bool {
 }
 
 // HasPendingRequestInPool indicates an expected call of HasPendingRequestInPool.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) HasPendingRequestInPool() *TxPoolHasPendingRequestInPoolCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) HasPendingRequestInPool() *MockTxPoolHasPendingRequestInPoolCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPendingRequestInPool", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).HasPendingRequestInPool))
-	return &TxPoolHasPendingRequestInPoolCall[T, Constraint]{Call: call}
+	return &MockTxPoolHasPendingRequestInPoolCall[T, Constraint]{Call: call}
 }
 
-// TxPoolHasPendingRequestInPoolCall wrap *gomock.Call
-type TxPoolHasPendingRequestInPoolCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolHasPendingRequestInPoolCall wrap *gomock.Call
+type MockTxPoolHasPendingRequestInPoolCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolHasPendingRequestInPoolCall[T, Constraint]) Return(arg0 bool) *TxPoolHasPendingRequestInPoolCall[T, Constraint] {
+func (c *MockTxPoolHasPendingRequestInPoolCall[T, Constraint]) Return(arg0 bool) *MockTxPoolHasPendingRequestInPoolCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolHasPendingRequestInPoolCall[T, Constraint]) Do(f func() bool) *TxPoolHasPendingRequestInPoolCall[T, Constraint] {
+func (c *MockTxPoolHasPendingRequestInPoolCall[T, Constraint]) Do(f func() bool) *MockTxPoolHasPendingRequestInPoolCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolHasPendingRequestInPoolCall[T, Constraint]) DoAndReturn(f func() bool) *TxPoolHasPendingRequestInPoolCall[T, Constraint] {
+func (c *MockTxPoolHasPendingRequestInPoolCall[T, Constraint]) DoAndReturn(f func() bool) *MockTxPoolHasPendingRequestInPoolCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -579,31 +584,31 @@ func (m *MockTxPool[T, Constraint]) Init(config txpool.ConsensusConfig) {
 }
 
 // Init indicates an expected call of Init.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) Init(config any) *TxPoolInitCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) Init(config any) *MockTxPoolInitCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).Init), config)
-	return &TxPoolInitCall[T, Constraint]{Call: call}
+	return &MockTxPoolInitCall[T, Constraint]{Call: call}
 }
 
-// TxPoolInitCall wrap *gomock.Call
-type TxPoolInitCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolInitCall wrap *gomock.Call
+type MockTxPoolInitCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolInitCall[T, Constraint]) Return() *TxPoolInitCall[T, Constraint] {
+func (c *MockTxPoolInitCall[T, Constraint]) Return() *MockTxPoolInitCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolInitCall[T, Constraint]) Do(f func(txpool.ConsensusConfig)) *TxPoolInitCall[T, Constraint] {
+func (c *MockTxPoolInitCall[T, Constraint]) Do(f func(txpool.ConsensusConfig)) *MockTxPoolInitCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolInitCall[T, Constraint]) DoAndReturn(f func(txpool.ConsensusConfig)) *TxPoolInitCall[T, Constraint] {
+func (c *MockTxPoolInitCall[T, Constraint]) DoAndReturn(f func(txpool.ConsensusConfig)) *MockTxPoolInitCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -617,31 +622,69 @@ func (m *MockTxPool[T, Constraint]) IsPoolFull() bool {
 }
 
 // IsPoolFull indicates an expected call of IsPoolFull.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) IsPoolFull() *TxPoolIsPoolFullCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) IsPoolFull() *MockTxPoolIsPoolFullCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPoolFull", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).IsPoolFull))
-	return &TxPoolIsPoolFullCall[T, Constraint]{Call: call}
+	return &MockTxPoolIsPoolFullCall[T, Constraint]{Call: call}
 }
 
-// TxPoolIsPoolFullCall wrap *gomock.Call
-type TxPoolIsPoolFullCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolIsPoolFullCall wrap *gomock.Call
+type MockTxPoolIsPoolFullCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolIsPoolFullCall[T, Constraint]) Return(arg0 bool) *TxPoolIsPoolFullCall[T, Constraint] {
+func (c *MockTxPoolIsPoolFullCall[T, Constraint]) Return(arg0 bool) *MockTxPoolIsPoolFullCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolIsPoolFullCall[T, Constraint]) Do(f func() bool) *TxPoolIsPoolFullCall[T, Constraint] {
+func (c *MockTxPoolIsPoolFullCall[T, Constraint]) Do(f func() bool) *MockTxPoolIsPoolFullCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolIsPoolFullCall[T, Constraint]) DoAndReturn(f func() bool) *TxPoolIsPoolFullCall[T, Constraint] {
+func (c *MockTxPoolIsPoolFullCall[T, Constraint]) DoAndReturn(f func() bool) *MockTxPoolIsPoolFullCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// IsStarted mocks base method.
+func (m *MockTxPool[T, Constraint]) IsStarted() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsStarted")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsStarted indicates an expected call of IsStarted.
+func (mr *MockTxPoolMockRecorder[T, Constraint]) IsStarted() *MockTxPoolIsStartedCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsStarted", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).IsStarted))
+	return &MockTxPoolIsStartedCall[T, Constraint]{Call: call}
+}
+
+// MockTxPoolIsStartedCall wrap *gomock.Call
+type MockTxPoolIsStartedCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockTxPoolIsStartedCall[T, Constraint]) Return(arg0 bool) *MockTxPoolIsStartedCall[T, Constraint] {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockTxPoolIsStartedCall[T, Constraint]) Do(f func() bool) *MockTxPoolIsStartedCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockTxPoolIsStartedCall[T, Constraint]) DoAndReturn(f func() bool) *MockTxPoolIsStartedCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -655,31 +698,31 @@ func (m *MockTxPool[T, Constraint]) PendingRequestsNumberIsReady() bool {
 }
 
 // PendingRequestsNumberIsReady indicates an expected call of PendingRequestsNumberIsReady.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) PendingRequestsNumberIsReady() *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) PendingRequestsNumberIsReady() *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PendingRequestsNumberIsReady", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).PendingRequestsNumberIsReady))
-	return &TxPoolPendingRequestsNumberIsReadyCall[T, Constraint]{Call: call}
+	return &MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint]{Call: call}
 }
 
-// TxPoolPendingRequestsNumberIsReadyCall wrap *gomock.Call
-type TxPoolPendingRequestsNumberIsReadyCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolPendingRequestsNumberIsReadyCall wrap *gomock.Call
+type MockTxPoolPendingRequestsNumberIsReadyCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint]) Return(arg0 bool) *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (c *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint]) Return(arg0 bool) *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint]) Do(f func() bool) *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (c *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint]) Do(f func() bool) *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint]) DoAndReturn(f func() bool) *TxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (c *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint]) DoAndReturn(f func() bool) *MockTxPoolPendingRequestsNumberIsReadyCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -694,31 +737,31 @@ func (m *MockTxPool[T, Constraint]) ReConstructBatchByOrder(oldBatch *txpool.Req
 }
 
 // ReConstructBatchByOrder indicates an expected call of ReConstructBatchByOrder.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) ReConstructBatchByOrder(oldBatch any) *TxPoolReConstructBatchByOrderCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) ReConstructBatchByOrder(oldBatch any) *MockTxPoolReConstructBatchByOrderCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReConstructBatchByOrder", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).ReConstructBatchByOrder), oldBatch)
-	return &TxPoolReConstructBatchByOrderCall[T, Constraint]{Call: call}
+	return &MockTxPoolReConstructBatchByOrderCall[T, Constraint]{Call: call}
 }
 
-// TxPoolReConstructBatchByOrderCall wrap *gomock.Call
-type TxPoolReConstructBatchByOrderCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolReConstructBatchByOrderCall wrap *gomock.Call
+type MockTxPoolReConstructBatchByOrderCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolReConstructBatchByOrderCall[T, Constraint]) Return(deDuplicateTxHashes []string, err error) *TxPoolReConstructBatchByOrderCall[T, Constraint] {
+func (c *MockTxPoolReConstructBatchByOrderCall[T, Constraint]) Return(deDuplicateTxHashes []string, err error) *MockTxPoolReConstructBatchByOrderCall[T, Constraint] {
 	c.Call = c.Call.Return(deDuplicateTxHashes, err)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolReConstructBatchByOrderCall[T, Constraint]) Do(f func(*txpool.RequestHashBatch[T, Constraint]) ([]string, error)) *TxPoolReConstructBatchByOrderCall[T, Constraint] {
+func (c *MockTxPoolReConstructBatchByOrderCall[T, Constraint]) Do(f func(*txpool.RequestHashBatch[T, Constraint]) ([]string, error)) *MockTxPoolReConstructBatchByOrderCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolReConstructBatchByOrderCall[T, Constraint]) DoAndReturn(f func(*txpool.RequestHashBatch[T, Constraint]) ([]string, error)) *TxPoolReConstructBatchByOrderCall[T, Constraint] {
+func (c *MockTxPoolReConstructBatchByOrderCall[T, Constraint]) DoAndReturn(f func(*txpool.RequestHashBatch[T, Constraint]) ([]string, error)) *MockTxPoolReConstructBatchByOrderCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -732,31 +775,31 @@ func (m *MockTxPool[T, Constraint]) ReceiveMissingRequests(batchHash string, txs
 }
 
 // ReceiveMissingRequests indicates an expected call of ReceiveMissingRequests.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) ReceiveMissingRequests(batchHash, txs any) *TxPoolReceiveMissingRequestsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) ReceiveMissingRequests(batchHash, txs any) *MockTxPoolReceiveMissingRequestsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceiveMissingRequests", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).ReceiveMissingRequests), batchHash, txs)
-	return &TxPoolReceiveMissingRequestsCall[T, Constraint]{Call: call}
+	return &MockTxPoolReceiveMissingRequestsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolReceiveMissingRequestsCall wrap *gomock.Call
-type TxPoolReceiveMissingRequestsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolReceiveMissingRequestsCall wrap *gomock.Call
+type MockTxPoolReceiveMissingRequestsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolReceiveMissingRequestsCall[T, Constraint]) Return(arg0 error) *TxPoolReceiveMissingRequestsCall[T, Constraint] {
+func (c *MockTxPoolReceiveMissingRequestsCall[T, Constraint]) Return(arg0 error) *MockTxPoolReceiveMissingRequestsCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolReceiveMissingRequestsCall[T, Constraint]) Do(f func(string, map[uint64]*T) error) *TxPoolReceiveMissingRequestsCall[T, Constraint] {
+func (c *MockTxPoolReceiveMissingRequestsCall[T, Constraint]) Do(f func(string, map[uint64]*T) error) *MockTxPoolReceiveMissingRequestsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolReceiveMissingRequestsCall[T, Constraint]) DoAndReturn(f func(string, map[uint64]*T) error) *TxPoolReceiveMissingRequestsCall[T, Constraint] {
+func (c *MockTxPoolReceiveMissingRequestsCall[T, Constraint]) DoAndReturn(f func(string, map[uint64]*T) error) *MockTxPoolReceiveMissingRequestsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -768,31 +811,31 @@ func (m *MockTxPool[T, Constraint]) RemoveBatches(batchHashList []string) {
 }
 
 // RemoveBatches indicates an expected call of RemoveBatches.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) RemoveBatches(batchHashList any) *TxPoolRemoveBatchesCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) RemoveBatches(batchHashList any) *MockTxPoolRemoveBatchesCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveBatches", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).RemoveBatches), batchHashList)
-	return &TxPoolRemoveBatchesCall[T, Constraint]{Call: call}
+	return &MockTxPoolRemoveBatchesCall[T, Constraint]{Call: call}
 }
 
-// TxPoolRemoveBatchesCall wrap *gomock.Call
-type TxPoolRemoveBatchesCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolRemoveBatchesCall wrap *gomock.Call
+type MockTxPoolRemoveBatchesCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolRemoveBatchesCall[T, Constraint]) Return() *TxPoolRemoveBatchesCall[T, Constraint] {
+func (c *MockTxPoolRemoveBatchesCall[T, Constraint]) Return() *MockTxPoolRemoveBatchesCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolRemoveBatchesCall[T, Constraint]) Do(f func([]string)) *TxPoolRemoveBatchesCall[T, Constraint] {
+func (c *MockTxPoolRemoveBatchesCall[T, Constraint]) Do(f func([]string)) *MockTxPoolRemoveBatchesCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolRemoveBatchesCall[T, Constraint]) DoAndReturn(f func([]string)) *TxPoolRemoveBatchesCall[T, Constraint] {
+func (c *MockTxPoolRemoveBatchesCall[T, Constraint]) DoAndReturn(f func([]string)) *MockTxPoolRemoveBatchesCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -804,31 +847,31 @@ func (m *MockTxPool[T, Constraint]) RemoveStateUpdatingTxs(txPointerList []*txpo
 }
 
 // RemoveStateUpdatingTxs indicates an expected call of RemoveStateUpdatingTxs.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) RemoveStateUpdatingTxs(txPointerList any) *TxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) RemoveStateUpdatingTxs(txPointerList any) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStateUpdatingTxs", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).RemoveStateUpdatingTxs), txPointerList)
-	return &TxPoolRemoveStateUpdatingTxsCall[T, Constraint]{Call: call}
+	return &MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolRemoveStateUpdatingTxsCall wrap *gomock.Call
-type TxPoolRemoveStateUpdatingTxsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolRemoveStateUpdatingTxsCall wrap *gomock.Call
+type MockTxPoolRemoveStateUpdatingTxsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Return() *TxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
+func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Return() *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Do(f func([]*txpool.WrapperTxPointer)) *TxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
+func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Do(f func([]*txpool.WrapperTxPointer)) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolRemoveStateUpdatingTxsCall[T, Constraint]) DoAndReturn(f func([]*txpool.WrapperTxPointer)) *TxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
+func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) DoAndReturn(f func([]*txpool.WrapperTxPointer)) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -842,31 +885,31 @@ func (m *MockTxPool[T, Constraint]) RestoreOneBatch(hash string) error {
 }
 
 // RestoreOneBatch indicates an expected call of RestoreOneBatch.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) RestoreOneBatch(hash any) *TxPoolRestoreOneBatchCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) RestoreOneBatch(hash any) *MockTxPoolRestoreOneBatchCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreOneBatch", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).RestoreOneBatch), hash)
-	return &TxPoolRestoreOneBatchCall[T, Constraint]{Call: call}
+	return &MockTxPoolRestoreOneBatchCall[T, Constraint]{Call: call}
 }
 
-// TxPoolRestoreOneBatchCall wrap *gomock.Call
-type TxPoolRestoreOneBatchCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolRestoreOneBatchCall wrap *gomock.Call
+type MockTxPoolRestoreOneBatchCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolRestoreOneBatchCall[T, Constraint]) Return(arg0 error) *TxPoolRestoreOneBatchCall[T, Constraint] {
+func (c *MockTxPoolRestoreOneBatchCall[T, Constraint]) Return(arg0 error) *MockTxPoolRestoreOneBatchCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolRestoreOneBatchCall[T, Constraint]) Do(f func(string) error) *TxPoolRestoreOneBatchCall[T, Constraint] {
+func (c *MockTxPoolRestoreOneBatchCall[T, Constraint]) Do(f func(string) error) *MockTxPoolRestoreOneBatchCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolRestoreOneBatchCall[T, Constraint]) DoAndReturn(f func(string) error) *TxPoolRestoreOneBatchCall[T, Constraint] {
+func (c *MockTxPoolRestoreOneBatchCall[T, Constraint]) DoAndReturn(f func(string) error) *MockTxPoolRestoreOneBatchCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -878,31 +921,31 @@ func (m *MockTxPool[T, Constraint]) RestorePool() {
 }
 
 // RestorePool indicates an expected call of RestorePool.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) RestorePool() *TxPoolRestorePoolCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) RestorePool() *MockTxPoolRestorePoolCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestorePool", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).RestorePool))
-	return &TxPoolRestorePoolCall[T, Constraint]{Call: call}
+	return &MockTxPoolRestorePoolCall[T, Constraint]{Call: call}
 }
 
-// TxPoolRestorePoolCall wrap *gomock.Call
-type TxPoolRestorePoolCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolRestorePoolCall wrap *gomock.Call
+type MockTxPoolRestorePoolCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolRestorePoolCall[T, Constraint]) Return() *TxPoolRestorePoolCall[T, Constraint] {
+func (c *MockTxPoolRestorePoolCall[T, Constraint]) Return() *MockTxPoolRestorePoolCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolRestorePoolCall[T, Constraint]) Do(f func()) *TxPoolRestorePoolCall[T, Constraint] {
+func (c *MockTxPoolRestorePoolCall[T, Constraint]) Do(f func()) *MockTxPoolRestorePoolCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolRestorePoolCall[T, Constraint]) DoAndReturn(f func()) *TxPoolRestorePoolCall[T, Constraint] {
+func (c *MockTxPoolRestorePoolCall[T, Constraint]) DoAndReturn(f func()) *MockTxPoolRestorePoolCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -917,31 +960,31 @@ func (m *MockTxPool[T, Constraint]) SendMissingRequests(batchHash string, missin
 }
 
 // SendMissingRequests indicates an expected call of SendMissingRequests.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) SendMissingRequests(batchHash, missingHashList any) *TxPoolSendMissingRequestsCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) SendMissingRequests(batchHash, missingHashList any) *MockTxPoolSendMissingRequestsCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMissingRequests", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).SendMissingRequests), batchHash, missingHashList)
-	return &TxPoolSendMissingRequestsCall[T, Constraint]{Call: call}
+	return &MockTxPoolSendMissingRequestsCall[T, Constraint]{Call: call}
 }
 
-// TxPoolSendMissingRequestsCall wrap *gomock.Call
-type TxPoolSendMissingRequestsCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolSendMissingRequestsCall wrap *gomock.Call
+type MockTxPoolSendMissingRequestsCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolSendMissingRequestsCall[T, Constraint]) Return(txs map[uint64]*T, err error) *TxPoolSendMissingRequestsCall[T, Constraint] {
+func (c *MockTxPoolSendMissingRequestsCall[T, Constraint]) Return(txs map[uint64]*T, err error) *MockTxPoolSendMissingRequestsCall[T, Constraint] {
 	c.Call = c.Call.Return(txs, err)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolSendMissingRequestsCall[T, Constraint]) Do(f func(string, map[uint64]string) (map[uint64]*T, error)) *TxPoolSendMissingRequestsCall[T, Constraint] {
+func (c *MockTxPoolSendMissingRequestsCall[T, Constraint]) Do(f func(string, map[uint64]string) (map[uint64]*T, error)) *MockTxPoolSendMissingRequestsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolSendMissingRequestsCall[T, Constraint]) DoAndReturn(f func(string, map[uint64]string) (map[uint64]*T, error)) *TxPoolSendMissingRequestsCall[T, Constraint] {
+func (c *MockTxPoolSendMissingRequestsCall[T, Constraint]) DoAndReturn(f func(string, map[uint64]string) (map[uint64]*T, error)) *MockTxPoolSendMissingRequestsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -955,31 +998,31 @@ func (m *MockTxPool[T, Constraint]) Start() error {
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) Start() *TxPoolStartCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) Start() *MockTxPoolStartCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).Start))
-	return &TxPoolStartCall[T, Constraint]{Call: call}
+	return &MockTxPoolStartCall[T, Constraint]{Call: call}
 }
 
-// TxPoolStartCall wrap *gomock.Call
-type TxPoolStartCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolStartCall wrap *gomock.Call
+type MockTxPoolStartCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolStartCall[T, Constraint]) Return(arg0 error) *TxPoolStartCall[T, Constraint] {
+func (c *MockTxPoolStartCall[T, Constraint]) Return(arg0 error) *MockTxPoolStartCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolStartCall[T, Constraint]) Do(f func() error) *TxPoolStartCall[T, Constraint] {
+func (c *MockTxPoolStartCall[T, Constraint]) Do(f func() error) *MockTxPoolStartCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolStartCall[T, Constraint]) DoAndReturn(f func() error) *TxPoolStartCall[T, Constraint] {
+func (c *MockTxPoolStartCall[T, Constraint]) DoAndReturn(f func() error) *MockTxPoolStartCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -991,31 +1034,31 @@ func (m *MockTxPool[T, Constraint]) Stop() {
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) Stop() *TxPoolStopCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) Stop() *MockTxPoolStopCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).Stop))
-	return &TxPoolStopCall[T, Constraint]{Call: call}
+	return &MockTxPoolStopCall[T, Constraint]{Call: call}
 }
 
-// TxPoolStopCall wrap *gomock.Call
-type TxPoolStopCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolStopCall wrap *gomock.Call
+type MockTxPoolStopCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolStopCall[T, Constraint]) Return() *TxPoolStopCall[T, Constraint] {
+func (c *MockTxPoolStopCall[T, Constraint]) Return() *MockTxPoolStopCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolStopCall[T, Constraint]) Do(f func()) *TxPoolStopCall[T, Constraint] {
+func (c *MockTxPoolStopCall[T, Constraint]) Do(f func()) *MockTxPoolStopCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolStopCall[T, Constraint]) DoAndReturn(f func()) *TxPoolStopCall[T, Constraint] {
+func (c *MockTxPoolStopCall[T, Constraint]) DoAndReturn(f func()) *MockTxPoolStopCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1027,31 +1070,31 @@ func (m *MockTxPool[T, Constraint]) UpdateChainInfo(info *txpool.ChainInfo) {
 }
 
 // UpdateChainInfo indicates an expected call of UpdateChainInfo.
-func (mr *MockTxPoolMockRecorder[T, Constraint]) UpdateChainInfo(info any) *TxPoolUpdateChainInfoCall[T, Constraint] {
+func (mr *MockTxPoolMockRecorder[T, Constraint]) UpdateChainInfo(info any) *MockTxPoolUpdateChainInfoCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChainInfo", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).UpdateChainInfo), info)
-	return &TxPoolUpdateChainInfoCall[T, Constraint]{Call: call}
+	return &MockTxPoolUpdateChainInfoCall[T, Constraint]{Call: call}
 }
 
-// TxPoolUpdateChainInfoCall wrap *gomock.Call
-type TxPoolUpdateChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
+// MockTxPoolUpdateChainInfoCall wrap *gomock.Call
+type MockTxPoolUpdateChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TxPoolUpdateChainInfoCall[T, Constraint]) Return() *TxPoolUpdateChainInfoCall[T, Constraint] {
+func (c *MockTxPoolUpdateChainInfoCall[T, Constraint]) Return() *MockTxPoolUpdateChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TxPoolUpdateChainInfoCall[T, Constraint]) Do(f func(*txpool.ChainInfo)) *TxPoolUpdateChainInfoCall[T, Constraint] {
+func (c *MockTxPoolUpdateChainInfoCall[T, Constraint]) Do(f func(*txpool.ChainInfo)) *MockTxPoolUpdateChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TxPoolUpdateChainInfoCall[T, Constraint]) DoAndReturn(f func(*txpool.ChainInfo)) *TxPoolUpdateChainInfoCall[T, Constraint] {
+func (c *MockTxPoolUpdateChainInfoCall[T, Constraint]) DoAndReturn(f func(*txpool.ChainInfo)) *MockTxPoolUpdateChainInfoCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1079,6 +1122,11 @@ func (m *MocktxPoolInfo[T, Constraint]) EXPECT() *MocktxPoolInfoMockRecorder[T, 
 	return m.recorder
 }
 
+// ISGOMOCK indicates that this struct is a gomock mock.
+func (m *MocktxPoolInfo[T, Constraint]) ISGOMOCK() struct{} {
+	return struct{}{}
+}
+
 // GetAccountMeta mocks base method.
 func (m *MocktxPoolInfo[T, Constraint]) GetAccountMeta(account string, full bool) *txpool.AccountMeta[T, Constraint] {
 	m.ctrl.T.Helper()
@@ -1088,31 +1136,31 @@ func (m *MocktxPoolInfo[T, Constraint]) GetAccountMeta(account string, full bool
 }
 
 // GetAccountMeta indicates an expected call of GetAccountMeta.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetAccountMeta(account, full any) *txPoolInfoGetAccountMetaCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetAccountMeta(account, full any) *MocktxPoolInfoGetAccountMetaCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountMeta", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetAccountMeta), account, full)
-	return &txPoolInfoGetAccountMetaCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoGetAccountMetaCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoGetAccountMetaCall wrap *gomock.Call
-type txPoolInfoGetAccountMetaCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoGetAccountMetaCall wrap *gomock.Call
+type MocktxPoolInfoGetAccountMetaCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoGetAccountMetaCall[T, Constraint]) Return(arg0 *txpool.AccountMeta[T, Constraint]) *txPoolInfoGetAccountMetaCall[T, Constraint] {
+func (c *MocktxPoolInfoGetAccountMetaCall[T, Constraint]) Return(arg0 *txpool.AccountMeta[T, Constraint]) *MocktxPoolInfoGetAccountMetaCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoGetAccountMetaCall[T, Constraint]) Do(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *txPoolInfoGetAccountMetaCall[T, Constraint] {
+func (c *MocktxPoolInfoGetAccountMetaCall[T, Constraint]) Do(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *MocktxPoolInfoGetAccountMetaCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *txPoolInfoGetAccountMetaCall[T, Constraint] {
+func (c *MocktxPoolInfoGetAccountMetaCall[T, Constraint]) DoAndReturn(f func(string, bool) *txpool.AccountMeta[T, Constraint]) *MocktxPoolInfoGetAccountMetaCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1126,31 +1174,31 @@ func (m *MocktxPoolInfo[T, Constraint]) GetChainInfo() *txpool.ChainInfo {
 }
 
 // GetChainInfo indicates an expected call of GetChainInfo.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetChainInfo() *txPoolInfoGetChainInfoCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetChainInfo() *MocktxPoolInfoGetChainInfoCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainInfo", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetChainInfo))
-	return &txPoolInfoGetChainInfoCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoGetChainInfoCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoGetChainInfoCall wrap *gomock.Call
-type txPoolInfoGetChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoGetChainInfoCall wrap *gomock.Call
+type MocktxPoolInfoGetChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoGetChainInfoCall[T, Constraint]) Return(arg0 *txpool.ChainInfo) *txPoolInfoGetChainInfoCall[T, Constraint] {
+func (c *MocktxPoolInfoGetChainInfoCall[T, Constraint]) Return(arg0 *txpool.ChainInfo) *MocktxPoolInfoGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoGetChainInfoCall[T, Constraint]) Do(f func() *txpool.ChainInfo) *txPoolInfoGetChainInfoCall[T, Constraint] {
+func (c *MocktxPoolInfoGetChainInfoCall[T, Constraint]) Do(f func() *txpool.ChainInfo) *MocktxPoolInfoGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoGetChainInfoCall[T, Constraint]) DoAndReturn(f func() *txpool.ChainInfo) *txPoolInfoGetChainInfoCall[T, Constraint] {
+func (c *MocktxPoolInfoGetChainInfoCall[T, Constraint]) DoAndReturn(f func() *txpool.ChainInfo) *MocktxPoolInfoGetChainInfoCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1164,31 +1212,31 @@ func (m *MocktxPoolInfo[T, Constraint]) GetMeta(full bool) *txpool.Meta[T, Const
 }
 
 // GetMeta indicates an expected call of GetMeta.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetMeta(full any) *txPoolInfoGetMetaCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetMeta(full any) *MocktxPoolInfoGetMetaCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMeta", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetMeta), full)
-	return &txPoolInfoGetMetaCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoGetMetaCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoGetMetaCall wrap *gomock.Call
-type txPoolInfoGetMetaCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoGetMetaCall wrap *gomock.Call
+type MocktxPoolInfoGetMetaCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoGetMetaCall[T, Constraint]) Return(arg0 *txpool.Meta[T, Constraint]) *txPoolInfoGetMetaCall[T, Constraint] {
+func (c *MocktxPoolInfoGetMetaCall[T, Constraint]) Return(arg0 *txpool.Meta[T, Constraint]) *MocktxPoolInfoGetMetaCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoGetMetaCall[T, Constraint]) Do(f func(bool) *txpool.Meta[T, Constraint]) *txPoolInfoGetMetaCall[T, Constraint] {
+func (c *MocktxPoolInfoGetMetaCall[T, Constraint]) Do(f func(bool) *txpool.Meta[T, Constraint]) *MocktxPoolInfoGetMetaCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoGetMetaCall[T, Constraint]) DoAndReturn(f func(bool) *txpool.Meta[T, Constraint]) *txPoolInfoGetMetaCall[T, Constraint] {
+func (c *MocktxPoolInfoGetMetaCall[T, Constraint]) DoAndReturn(f func(bool) *txpool.Meta[T, Constraint]) *MocktxPoolInfoGetMetaCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1202,31 +1250,31 @@ func (m *MocktxPoolInfo[T, Constraint]) GetPendingTxByHash(txHash string) *T {
 }
 
 // GetPendingTxByHash indicates an expected call of GetPendingTxByHash.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetPendingTxByHash(txHash any) *txPoolInfoGetPendingTxByHashCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetPendingTxByHash(txHash any) *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingTxByHash", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetPendingTxByHash), txHash)
-	return &txPoolInfoGetPendingTxByHashCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoGetPendingTxByHashCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoGetPendingTxByHashCall wrap *gomock.Call
-type txPoolInfoGetPendingTxByHashCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoGetPendingTxByHashCall wrap *gomock.Call
+type MocktxPoolInfoGetPendingTxByHashCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoGetPendingTxByHashCall[T, Constraint]) Return(arg0 *T) *txPoolInfoGetPendingTxByHashCall[T, Constraint] {
+func (c *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint]) Return(arg0 *T) *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoGetPendingTxByHashCall[T, Constraint]) Do(f func(string) *T) *txPoolInfoGetPendingTxByHashCall[T, Constraint] {
+func (c *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint]) Do(f func(string) *T) *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoGetPendingTxByHashCall[T, Constraint]) DoAndReturn(f func(string) *T) *txPoolInfoGetPendingTxByHashCall[T, Constraint] {
+func (c *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint]) DoAndReturn(f func(string) *T) *MocktxPoolInfoGetPendingTxByHashCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1240,31 +1288,31 @@ func (m *MocktxPoolInfo[T, Constraint]) GetPendingTxCountByAccount(account strin
 }
 
 // GetPendingTxCountByAccount indicates an expected call of GetPendingTxCountByAccount.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetPendingTxCountByAccount(account any) *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetPendingTxCountByAccount(account any) *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingTxCountByAccount", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetPendingTxCountByAccount), account)
-	return &txPoolInfoGetPendingTxCountByAccountCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoGetPendingTxCountByAccountCall wrap *gomock.Call
-type txPoolInfoGetPendingTxCountByAccountCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoGetPendingTxCountByAccountCall wrap *gomock.Call
+type MocktxPoolInfoGetPendingTxCountByAccountCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint]) Return(arg0 uint64) *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
+func (c *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint]) Return(arg0 uint64) *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint]) Do(f func(string) uint64) *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
+func (c *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint]) Do(f func(string) uint64) *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint]) DoAndReturn(f func(string) uint64) *txPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
+func (c *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint]) DoAndReturn(f func(string) uint64) *MocktxPoolInfoGetPendingTxCountByAccountCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1278,31 +1326,31 @@ func (m *MocktxPoolInfo[T, Constraint]) GetTotalPendingTxCount() uint64 {
 }
 
 // GetTotalPendingTxCount indicates an expected call of GetTotalPendingTxCount.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetTotalPendingTxCount() *txPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) GetTotalPendingTxCount() *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalPendingTxCount", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).GetTotalPendingTxCount))
-	return &txPoolInfoGetTotalPendingTxCountCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoGetTotalPendingTxCountCall wrap *gomock.Call
-type txPoolInfoGetTotalPendingTxCountCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoGetTotalPendingTxCountCall wrap *gomock.Call
+type MocktxPoolInfoGetTotalPendingTxCountCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoGetTotalPendingTxCountCall[T, Constraint]) Return(arg0 uint64) *txPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
+func (c *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint]) Return(arg0 uint64) *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoGetTotalPendingTxCountCall[T, Constraint]) Do(f func() uint64) *txPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
+func (c *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint]) Do(f func() uint64) *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoGetTotalPendingTxCountCall[T, Constraint]) DoAndReturn(f func() uint64) *txPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
+func (c *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint]) DoAndReturn(f func() uint64) *MocktxPoolInfoGetTotalPendingTxCountCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1316,31 +1364,31 @@ func (m *MocktxPoolInfo[T, Constraint]) HasPendingRequestInPool() bool {
 }
 
 // HasPendingRequestInPool indicates an expected call of HasPendingRequestInPool.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) HasPendingRequestInPool() *txPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) HasPendingRequestInPool() *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPendingRequestInPool", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).HasPendingRequestInPool))
-	return &txPoolInfoHasPendingRequestInPoolCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoHasPendingRequestInPoolCall wrap *gomock.Call
-type txPoolInfoHasPendingRequestInPoolCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoHasPendingRequestInPoolCall wrap *gomock.Call
+type MocktxPoolInfoHasPendingRequestInPoolCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoHasPendingRequestInPoolCall[T, Constraint]) Return(arg0 bool) *txPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
+func (c *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint]) Return(arg0 bool) *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoHasPendingRequestInPoolCall[T, Constraint]) Do(f func() bool) *txPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
+func (c *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint]) Do(f func() bool) *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoHasPendingRequestInPoolCall[T, Constraint]) DoAndReturn(f func() bool) *txPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
+func (c *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint]) DoAndReturn(f func() bool) *MocktxPoolInfoHasPendingRequestInPoolCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1354,31 +1402,69 @@ func (m *MocktxPoolInfo[T, Constraint]) IsPoolFull() bool {
 }
 
 // IsPoolFull indicates an expected call of IsPoolFull.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) IsPoolFull() *txPoolInfoIsPoolFullCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) IsPoolFull() *MocktxPoolInfoIsPoolFullCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPoolFull", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).IsPoolFull))
-	return &txPoolInfoIsPoolFullCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoIsPoolFullCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoIsPoolFullCall wrap *gomock.Call
-type txPoolInfoIsPoolFullCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoIsPoolFullCall wrap *gomock.Call
+type MocktxPoolInfoIsPoolFullCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoIsPoolFullCall[T, Constraint]) Return(arg0 bool) *txPoolInfoIsPoolFullCall[T, Constraint] {
+func (c *MocktxPoolInfoIsPoolFullCall[T, Constraint]) Return(arg0 bool) *MocktxPoolInfoIsPoolFullCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoIsPoolFullCall[T, Constraint]) Do(f func() bool) *txPoolInfoIsPoolFullCall[T, Constraint] {
+func (c *MocktxPoolInfoIsPoolFullCall[T, Constraint]) Do(f func() bool) *MocktxPoolInfoIsPoolFullCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoIsPoolFullCall[T, Constraint]) DoAndReturn(f func() bool) *txPoolInfoIsPoolFullCall[T, Constraint] {
+func (c *MocktxPoolInfoIsPoolFullCall[T, Constraint]) DoAndReturn(f func() bool) *MocktxPoolInfoIsPoolFullCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// IsStarted mocks base method.
+func (m *MocktxPoolInfo[T, Constraint]) IsStarted() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsStarted")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsStarted indicates an expected call of IsStarted.
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) IsStarted() *MocktxPoolInfoIsStartedCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsStarted", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).IsStarted))
+	return &MocktxPoolInfoIsStartedCall[T, Constraint]{Call: call}
+}
+
+// MocktxPoolInfoIsStartedCall wrap *gomock.Call
+type MocktxPoolInfoIsStartedCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxPoolInfoIsStartedCall[T, Constraint]) Return(arg0 bool) *MocktxPoolInfoIsStartedCall[T, Constraint] {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxPoolInfoIsStartedCall[T, Constraint]) Do(f func() bool) *MocktxPoolInfoIsStartedCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxPoolInfoIsStartedCall[T, Constraint]) DoAndReturn(f func() bool) *MocktxPoolInfoIsStartedCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1392,31 +1478,31 @@ func (m *MocktxPoolInfo[T, Constraint]) PendingRequestsNumberIsReady() bool {
 }
 
 // PendingRequestsNumberIsReady indicates an expected call of PendingRequestsNumberIsReady.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) PendingRequestsNumberIsReady() *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) PendingRequestsNumberIsReady() *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PendingRequestsNumberIsReady", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).PendingRequestsNumberIsReady))
-	return &txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoPendingRequestsNumberIsReadyCall wrap *gomock.Call
-type txPoolInfoPendingRequestsNumberIsReadyCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoPendingRequestsNumberIsReadyCall wrap *gomock.Call
+type MocktxPoolInfoPendingRequestsNumberIsReadyCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]) Return(arg0 bool) *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (c *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]) Return(arg0 bool) *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]) Do(f func() bool) *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (c *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]) Do(f func() bool) *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]) DoAndReturn(f func() bool) *txPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
+func (c *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint]) DoAndReturn(f func() bool) *MocktxPoolInfoPendingRequestsNumberIsReadyCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -1428,31 +1514,31 @@ func (m *MocktxPoolInfo[T, Constraint]) UpdateChainInfo(info *txpool.ChainInfo) 
 }
 
 // UpdateChainInfo indicates an expected call of UpdateChainInfo.
-func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) UpdateChainInfo(info any) *txPoolInfoUpdateChainInfoCall[T, Constraint] {
+func (mr *MocktxPoolInfoMockRecorder[T, Constraint]) UpdateChainInfo(info any) *MocktxPoolInfoUpdateChainInfoCall[T, Constraint] {
 	mr.mock.ctrl.T.Helper()
 	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChainInfo", reflect.TypeOf((*MocktxPoolInfo[T, Constraint])(nil).UpdateChainInfo), info)
-	return &txPoolInfoUpdateChainInfoCall[T, Constraint]{Call: call}
+	return &MocktxPoolInfoUpdateChainInfoCall[T, Constraint]{Call: call}
 }
 
-// txPoolInfoUpdateChainInfoCall wrap *gomock.Call
-type txPoolInfoUpdateChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
+// MocktxPoolInfoUpdateChainInfoCall wrap *gomock.Call
+type MocktxPoolInfoUpdateChainInfoCall[T any, Constraint types.TXConstraint[T]] struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *txPoolInfoUpdateChainInfoCall[T, Constraint]) Return() *txPoolInfoUpdateChainInfoCall[T, Constraint] {
+func (c *MocktxPoolInfoUpdateChainInfoCall[T, Constraint]) Return() *MocktxPoolInfoUpdateChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Return()
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *txPoolInfoUpdateChainInfoCall[T, Constraint]) Do(f func(*txpool.ChainInfo)) *txPoolInfoUpdateChainInfoCall[T, Constraint] {
+func (c *MocktxPoolInfoUpdateChainInfoCall[T, Constraint]) Do(f func(*txpool.ChainInfo)) *MocktxPoolInfoUpdateChainInfoCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *txPoolInfoUpdateChainInfoCall[T, Constraint]) DoAndReturn(f func(*txpool.ChainInfo)) *txPoolInfoUpdateChainInfoCall[T, Constraint] {
+func (c *MocktxPoolInfoUpdateChainInfoCall[T, Constraint]) DoAndReturn(f func(*txpool.ChainInfo)) *MocktxPoolInfoUpdateChainInfoCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
