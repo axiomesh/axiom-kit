@@ -103,4 +103,7 @@ type txPoolInfo[T any, Constraint types.TXConstraint[T]] interface {
 	UpdateChainInfo(info *ChainInfo)
 
 	GetChainInfo() *ChainInfo
+
+	// IsStarted check if txPool is started
+	IsStarted() bool
 }
