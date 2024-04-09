@@ -167,7 +167,7 @@ func (jmt *JMT) insert(currentNode types.Node, currentNodeKey *types.NodeKey, ve
 		if err != nil {
 			return nil, nil, false, err
 		}
-		newInternalNode := n.Copy().(*types.InternalNode)
+		newInternalNode := n
 		newInternalNode.Children[key[next]] = &types.Child{
 			Version: version,
 			Hash:    newChildNode.GetHash(),
@@ -226,7 +226,7 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *types.NodeKey, ve
 		}
 
 		// deletion op is executed indeed in subtree
-		tmpRoot := n.Copy().(*types.InternalNode)
+		tmpRoot := n
 		jmt.tracePruningNode(currentNodeKey)
 		switch nn := (newNextNode).(type) {
 		case nil:
@@ -342,7 +342,6 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 
 	// try in dirtySet first
 	if dirty, ok := jmt.dirtySet[string(k)]; ok {
-		jmt.logger.Debugf("[JMT-getNode] get from dirty, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 		return dirty, err
 	}
 

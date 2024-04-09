@@ -36,9 +36,11 @@ type (
 	}
 )
 
+const TrieDegree = 256
+
 type (
 	InternalNode struct {
-		Children [16]*Child `json:"children"`
+		Children [TrieDegree]*Child `json:"children"`
 	}
 
 	LeafNode struct {
@@ -103,11 +105,11 @@ func DecodeNodeKey(raw []byte) *NodeKey {
 // just for debug
 func (n *InternalNode) String() string {
 	res := strings.Builder{}
-	for i := 0; i < 16; i++ {
-		res.WriteString(strconv.Itoa(i))
+	for i := 0; i < TrieDegree; i++ {
 		if n.Children[i] == nil {
-			res.WriteString(", ")
+			continue
 		} else {
+			res.WriteString(strconv.Itoa(i))
 			child := n.Children[i]
 			res.WriteString(":<Hash[")
 			res.WriteString(child.Hash.String()[2:6])
@@ -203,7 +205,7 @@ func (n *InternalNode) Encode() []byte {
 		return nil
 	}
 
-	children := make([]*pb.Child, 16)
+	children := make([]*pb.Child, TrieDegree)
 	for i, child := range n.Children {
 		if child == nil {
 			continue
@@ -246,7 +248,7 @@ func (n *InternalNode) unmarshalInternalFromPb(data []byte) error {
 		return err
 	}
 
-	n.Children = [16]*Child{}
+	n.Children = [TrieDegree]*Child{}
 	for i, child := range helper.Children {
 		if len(child.Hash) == 0 {
 			continue
@@ -266,7 +268,7 @@ func (n *LeafNode) Encode() []byte {
 	}
 
 	blob := &pb.LeafNode{
-		Key:   HexToBytes(n.Key),
+		Key:   n.Key,
 		Value: n.Val,
 		Hash:  n.Hash[:],
 	}
@@ -298,7 +300,7 @@ func (n *LeafNode) unmarshalLeafFromPb(data []byte) error {
 		return err
 	}
 	n.Val = helper.Value
-	n.Key = BytesToHex(helper.Key)
+	n.Key = helper.Key
 	n.Hash = common.BytesToHash(helper.Hash)
 	return nil
 }

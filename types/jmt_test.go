@@ -14,7 +14,7 @@ import (
 )
 
 func TestInternalNode_Marshal(t *testing.T) {
-	children := [16]*Child{}
+	children := [TrieDegree]*Child{}
 	children[1] = &Child{
 		Version: 1,
 		Leaf:    true,
@@ -142,7 +142,7 @@ func equalInternalNode(n1, n2 *InternalNode) bool {
 		return false
 	}
 
-	for i := 0; i < 16; i++ {
+	for i := 0; i < TrieDegree; i++ {
 		if n1.Children[i] == nil && n2.Children[i] == nil {
 			continue
 		}
@@ -190,16 +190,16 @@ func mockRandomInternalNode() *InternalNode {
 	rand.Seed(uint64(time.Now().UnixNano()))
 
 	res := &InternalNode{
-		Children: [16]*Child{},
+		Children: [TrieDegree]*Child{},
 	}
 
-	res.Children[rand.Uint32()%16] = &Child{
+	res.Children[rand.Uint32()%TrieDegree] = &Child{
 		Version: rand.Uint64(),
 		Leaf:    rand.Uint32()%2 == 1,
 		Hash:    sha256.Sum256(v),
 	}
 
-	res.Children[rand.Uint32()%16] = &Child{
+	res.Children[rand.Uint32()%TrieDegree] = &Child{
 		Version: rand.Uint64(),
 		Leaf:    rand.Uint32()%2 == 1,
 		Hash:    sha256.Sum256(v),
