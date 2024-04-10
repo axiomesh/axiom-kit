@@ -114,6 +114,9 @@ func (this *Child) EqualVT(that *Child) bool {
 	if this.Leaf != that.Leaf {
 		return false
 	}
+	if this.Idx != that.Idx {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -384,6 +387,11 @@ func (m *Child) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Idx != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Idx))
+		i--
+		dAtA[i] = 0x20
 	}
 	if m.Leaf {
 		i--
@@ -723,6 +731,11 @@ func (m *Child) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Idx != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.Idx))
+		i--
+		dAtA[i] = 0x20
 	}
 	if m.Leaf {
 		i--
@@ -1070,6 +1083,9 @@ func (m *Child) SizeVT() (n int) {
 	}
 	if m.Leaf {
 		n += 2
+	}
+	if m.Idx != 0 {
+		n += 1 + sov(uint64(m.Idx))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1582,6 +1598,25 @@ func (m *Child) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Leaf = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Idx", wireType)
+			}
+			m.Idx = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Idx |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

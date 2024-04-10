@@ -231,16 +231,17 @@ func (n *InternalNode) Encode() []byte {
 		return nil
 	}
 
-	children := make([]*pb.Child, TrieDegree)
+	children := make([]*pb.Child, 0)
 	for i, child := range n.Children {
 		if child == nil {
 			continue
 		}
-		children[i] = &pb.Child{
+		children = append(children, &pb.Child{
 			Version: child.Version,
 			Leaf:    child.Leaf,
 			Hash:    child.Hash[:],
-		}
+			Idx:     uint32(i),
+		})
 	}
 
 	blob := &pb.InternalNode{
@@ -275,11 +276,11 @@ func (n *InternalNode) unmarshalInternalFromPb(data []byte) error {
 	}
 
 	n.Children = [TrieDegree]*Child{}
-	for i, child := range helper.Children {
+	for _, child := range helper.Children {
 		if len(child.Hash) == 0 {
 			continue
 		}
-		n.Children[i] = &Child{
+		n.Children[child.Idx] = &Child{
 			Hash:    common.BytesToHash(child.Hash),
 			Version: child.Version,
 			Leaf:    child.Leaf,
