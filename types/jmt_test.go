@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 )
 
 func TestInternalNode_Marshal(t *testing.T) {
-	children := [TrieDegree]*Child{}
+	children := [256]*Child{}
 	children[1] = &Child{
 		Version: 1,
 		Leaf:    true,
@@ -43,6 +44,10 @@ func TestInternalNode_Marshal(t *testing.T) {
 	assert.False(t, equalInternalNode(node1.(*InternalNode), node.(*InternalNode)))
 
 	assert.True(t, len(blob) > len(blob2))
+
+	fmt.Printf("n1.Children=%v\n", n1.Children)
+
+	fmt.Printf("len1=%v,len2=%v\n", len(blob), len(blob2))
 }
 
 func TestLeafNode_Marshal(t *testing.T) {

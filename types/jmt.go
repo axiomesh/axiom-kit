@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -19,6 +20,7 @@ type Node interface {
 	Encode() []byte
 	GetHash() common.Hash
 	Copy() Node
+	Type() int
 	String() string // just for debug
 }
 
@@ -35,8 +37,6 @@ type (
 		Journal []*TrieJournal
 	}
 )
-
-const TrieDegree = 256
 
 type (
 	InternalNode struct {
@@ -65,6 +65,18 @@ type (
 
 	NodeKeyHeap []*NodeKey // max heap to store NodeKey
 )
+
+const (
+	TrieDegree       = 256
+	TypeInternalNode = 0
+	TypeLeafNode     = 1
+)
+
+var InternalNodePool = sync.Pool{
+	New: func() any {
+		return &InternalNode{}
+	},
+}
 
 // just for debug
 func (nk *NodeKey) String() string {
@@ -100,6 +112,12 @@ func DecodeNodeKey(raw []byte) *NodeKey {
 	nk.Type = raw[9 : 9+length]
 	nk.Path = raw[9+length:]
 	return nk
+}
+
+func RecycleTrieNode(n Node) {
+	if n != nil && n.Type() == TypeInternalNode {
+		InternalNodePool.Put(n)
+	}
 }
 
 // just for debug
@@ -186,9 +204,9 @@ func (n *LeafNode) GetHash() common.Hash {
 }
 
 func (n *InternalNode) Copy() Node {
-	return &InternalNode{
-		Children: n.Children,
-	}
+	nn := InternalNodePool.Get().(*InternalNode)
+	nn.Children = n.Children
+	return nn
 }
 
 func (n *LeafNode) Copy() Node {
@@ -198,6 +216,14 @@ func (n *LeafNode) Copy() Node {
 	copy(nn.Key, n.Key)
 	copy(nn.Val, n.Val)
 	return nn
+}
+
+func (n *InternalNode) Type() int {
+	return TypeInternalNode
+}
+
+func (n *LeafNode) Type() int {
+	return TypeLeafNode
 }
 
 func (n *InternalNode) Encode() []byte {
