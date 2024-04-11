@@ -309,6 +309,9 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 		batch := jmt.backend.NewBatch()
 		for k, v := range jmt.dirtySet {
 			batch.Put([]byte(k), v.Encode())
+			if jmt.root != v {
+				types.RecycleTrieNode(v)
+			}
 		}
 		batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
 		batch.Commit()
@@ -342,7 +345,6 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 
 	// try in dirtySet first
 	if dirty, ok := jmt.dirtySet[string(k)]; ok {
-		jmt.logger.Debugf("[JMT-getNode] get from dirty, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 		return dirty, err
 	}
 
@@ -350,7 +352,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	if jmt.pruneCache != nil {
 		if v, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
 			nextNode = v
-			jmt.logger.Debugf("[JMT-getNode] get from pruneCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+			jmt.logger.Debugf("[JMT-getNode] get from pruneCache, h=%v,k=%v", jmt.rootNodeKey.Version, k)
 			return nextNode, err
 		}
 	}
@@ -362,7 +364,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			jmt.logger.Debugf("[JMT-getNode] get from trieCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+			jmt.logger.Debugf("[JMT-getNode] get from trieCache, h=%v,k=%v", jmt.rootNodeKey.Version, k)
 			return nextNode, err
 		}
 	}
@@ -374,7 +376,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 		return nil, err
 	}
 
-	jmt.logger.Debugf("[JMT-getNode] get from kv, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
+	jmt.logger.Debugf("[JMT-getNode] get from kv, h=%v,k=%v", jmt.rootNodeKey.Version, k)
 
 	return nextNode, err
 }

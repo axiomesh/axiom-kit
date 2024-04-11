@@ -79,21 +79,22 @@ func VerifyTrie(rootHash common.Hash, backend storage.Storage, cache PruneCache)
 	if trie.root == nil {
 		return false, ErrorNotFound
 	}
+	degree := types.TrieDegree
 
 	switch n := (trie.root).(type) {
 	case *types.InternalNode:
-		var i, cnt byte
-		resChan := make(chan bool, 16)
+		var i, cnt int
+		resChan := make(chan bool, types.TrieDegree)
 		defer close(resChan)
 
 		wg := sync.WaitGroup{}
-		for i, cnt = 0, 0; i < 16; i++ {
+		for i, cnt = 0, 0; i < degree; i++ {
 			child := n.Children[i]
 			if n.Children[i] == nil {
 				continue
 			}
 
-			nextPath := []byte{i}
+			nextPath := []byte{byte(i)}
 			nextNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Path:    nextPath,
@@ -139,19 +140,19 @@ func (jmt *JMT) verifySubTrie(root types.Node, rootHash common.Hash, path []byte
 		return false, ErrorNodeMissing
 	}
 	if root.GetHash() != rootHash {
-		jmt.logger.Errorf("[verifySubTrie] target node: %v, expected hash: %v", root, rootHash)
+		jmt.logger.Errorf("[verifySubTrie] target node: %v, expected hash: %v, real hash: %v", root, rootHash, root.GetHash())
 		return false, nil
 	}
+	degree := types.TrieDegree
 	switch n := (root).(type) {
 	case *types.InternalNode:
-		var i byte
-		for i = 0; i < 16; i++ {
+		for i := 0; i < degree; i++ {
 			if n.Children[i] == nil {
 				continue
 			}
 			nextPath := make([]byte, len(path))
 			copy(nextPath, path)
-			nextPath = append(nextPath, i)
+			nextPath = append(nextPath, byte(i))
 			nextNodeKey := &types.NodeKey{
 				Version: n.Children[i].Version,
 				Path:    nextPath,

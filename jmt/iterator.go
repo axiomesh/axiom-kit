@@ -62,6 +62,8 @@ func (it *Iterator) Iterate() {
 	rootNodeKey := types.DecodeNodeKey(rawRootNodeKey)
 	heap.Push(it.nodeKeyHeap, rootNodeKey)
 
+	degree := types.TrieDegree
+
 	for it.nodeKeyHeap.Len() != 0 {
 		// pop current node from heap
 		currentNodeKey := heap.Pop(it.nodeKeyHeap).(*types.NodeKey)
@@ -102,19 +104,18 @@ func (it *Iterator) Iterate() {
 			continue
 		}
 
-		var hex byte
-		for hex = 0; hex < 16; hex++ {
-			if n.Children[hex] == nil {
+		for slot := 0; slot < degree; slot++ {
+			if n.Children[slot] == nil {
 				continue
 			}
-			child := n.Children[hex]
+			child := n.Children[slot]
 			childNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Type:    rootNodeKey.Type,
 				Path:    make([]byte, len(currentNodeKey.Path)),
 			}
 			copy(childNodeKey.Path, currentNodeKey.Path)
-			childNodeKey.Path = append(childNodeKey.Path, hex)
+			childNodeKey.Path = append(childNodeKey.Path, byte(slot))
 
 			// push child node's nodeKey to heap
 			heap.Push(it.nodeKeyHeap, childNodeKey)
@@ -137,6 +138,7 @@ func (it *Iterator) IterateLeaf() {
 	}
 	rootNodeKey := types.DecodeNodeKey(rawRootNodeKey)
 	heap.Push(it.nodeKeyHeap, rootNodeKey)
+	degree := types.TrieDegree
 
 	for it.nodeKeyHeap.Len() != 0 {
 		// pop current node from heap
@@ -174,19 +176,18 @@ func (it *Iterator) IterateLeaf() {
 		}
 
 		// current node is internal node
-		var hex byte
-		for hex = 0; hex < 16; hex++ {
-			if n.Children[hex] == nil {
+		for slot := 0; slot < degree; slot++ {
+			if n.Children[slot] == nil {
 				continue
 			}
-			child := n.Children[hex]
+			child := n.Children[slot]
 			childNodeKey := &types.NodeKey{
 				Version: child.Version,
 				Type:    rootNodeKey.Type,
 				Path:    make([]byte, len(currentNodeKey.Path)),
 			}
 			copy(childNodeKey.Path, currentNodeKey.Path)
-			childNodeKey.Path = append(childNodeKey.Path, hex)
+			childNodeKey.Path = append(childNodeKey.Path, byte(slot))
 
 			// push child node's nodeKey to heap
 			heap.Push(it.nodeKeyHeap, childNodeKey)
