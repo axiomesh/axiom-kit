@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/ncw/directio"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
-
-	"github.com/sirupsen/logrus"
 )
 
 type BlockTable struct {
@@ -40,6 +40,8 @@ type indexEntry struct {
 }
 
 const indexEntrySize = 6
+
+var enableDirectIO = true
 
 // unmarshallBinary deserializes binary b into the rawIndex entry.
 func (i *indexEntry) unmarshalBinary(b []byte) error {
@@ -288,7 +290,12 @@ func (b *BlockTable) Retrieve(item uint64) ([]byte, error) {
 		b.lock.RUnlock()
 		return nil, fmt.Errorf("missing data file %d", filenum)
 	}
-	blob := make([]byte, endOffset-startOffset)
+	var blob []byte
+	if enableDirectIO && filenum != b.headId {
+		blob = directio.AlignedBlock(int(endOffset - startOffset))
+	} else {
+		blob = make([]byte, endOffset-startOffset)
+	}
 	if _, err := dataFile.ReadAt(blob, int64(startOffset)); err != nil {
 		b.lock.RUnlock()
 		return nil, err
@@ -510,5 +517,9 @@ func openBlockFileTruncated(filename string) (*os.File, error) {
 }
 
 func openBlockFileForReadOnly(filename string) (*os.File, error) {
-	return os.OpenFile(filename, os.O_RDONLY, 0644)
+	if enableDirectIO {
+		return directio.OpenFile(filename, os.O_RDONLY, 0644)
+	} else {
+		return os.OpenFile(filename, os.O_RDONLY, 0644)
+	}
 }

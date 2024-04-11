@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -107,6 +108,47 @@ func TestBatchAppendBlock(t *testing.T) {
 			t.Fatalf("test %d, got \n%x != \n%x", y, got, exp)
 		}
 	}
+	// Check that we cannot read too far
+	_, err = f.Retrieve(uint64(batchNum))
+	ast.Equal(errors.New("out of bounds"), err)
+}
+
+func Test_DirectIO(t *testing.T) {
+	enableDirectIO = false
+	ast := assert.New(t)
+	// set cutoff at 50 bytes
+	dir := t.TempDir()
+	name := fmt.Sprintf("unittest-%d", rand.Uint64())
+	f, err := newTable(dir,
+		name, 200*1000*1024, log.NewWithModule("blockfile_test"))
+	assert.Nil(t, err)
+	os.Getpagesize()
+	// test batch append
+	batchNum := 5000
+	var data = make([]byte, 4*10*1024)
+	rand.Read(data)
+	for i := 0; i < batchNum; i++ {
+		err = f.Append(uint64(i), data)
+		ast.Nil(err)
+	}
+	f.Close()
+
+	f, err = newTable(dir,
+		name, 2*1000*1024, log.NewWithModule("blockfile_test"))
+	assert.Nil(t, err)
+	defer f.Close()
+
+	now := time.Now()
+	for j := 0; j < batchNum; j++ {
+		n := rand.Intn(batchNum - 50)
+		got, err := f.Retrieve(uint64(n))
+		ast.Nil(err)
+		if !bytes.Equal(got, data) {
+			t.Fatalf("test %d, got \n%x != \n%x", j, got, data)
+		}
+
+	}
+	println(time.Since(now).Milliseconds())
 	// Check that we cannot read too far
 	_, err = f.Retrieve(uint64(batchNum))
 	ast.Equal(errors.New("out of bounds"), err)
