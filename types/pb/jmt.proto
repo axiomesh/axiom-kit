@@ -23,6 +23,7 @@ message  Child{
   bytes hash = 1;
   uint64 version = 2;
   bool leaf = 3;
+  uint32 idx = 4;
 }
 
 message StateDelta{

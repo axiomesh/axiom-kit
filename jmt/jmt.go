@@ -2,6 +2,7 @@ package jmt
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -310,6 +311,9 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 		batch := jmt.backend.NewBatch()
 		for k, v := range jmt.dirtySet {
 			batch.Put([]byte(k), v.Encode())
+			if jmt.root != v {
+				types.RecycleTrieNode(v)
+			}
 		}
 		batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
 		batch.Commit()
