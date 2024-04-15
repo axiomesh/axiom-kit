@@ -3,3 +3,5 @@
 .history
 storage/minifile/FLOCK
 *.iml
+go.work
+go.work.sum

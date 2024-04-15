@@ -100,11 +100,12 @@ func (p *pdb) Has(key []byte) bool {
 }
 
 func (p *pdb) Iterator(start, end []byte) storage.Iterator {
+	it, _ := p.db.NewIter(&pebble.IterOptions{
+		LowerBound: start,
+		UpperBound: end,
+	})
 	iter := &iter{
-		iter: p.db.NewIter(&pebble.IterOptions{
-			LowerBound: start,
-			UpperBound: end,
-		}),
+		iter:       it,
 		positioned: false,
 	}
 	iter.iter.First()
@@ -113,11 +114,12 @@ func (p *pdb) Iterator(start, end []byte) storage.Iterator {
 
 func (p *pdb) Prefix(prefix []byte) storage.Iterator {
 	ran := util.BytesPrefix(prefix)
+	it, _ := p.db.NewIter(&pebble.IterOptions{
+		LowerBound: ran.Start,
+		UpperBound: ran.Limit,
+	})
 	iter := &iter{
-		iter: p.db.NewIter(&pebble.IterOptions{
-			LowerBound: ran.Start,
-			UpperBound: ran.Limit,
-		}),
+		iter:       it,
 		positioned: false,
 	}
 	iter.iter.First()
