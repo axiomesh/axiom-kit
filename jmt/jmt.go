@@ -2,6 +2,7 @@ package jmt
 
 import (
 	"errors"
+	"reflect"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
@@ -349,7 +350,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	}
 
 	// try in pruneCache
-	if jmt.pruneCache != nil {
+	if jmt.pruneCache != nil && !reflect.ValueOf(jmt.pruneCache).IsNil() {
 		if v, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
 			nextNode = v
 			jmt.logger.Debugf("[JMT-getNode] get from pruneCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
