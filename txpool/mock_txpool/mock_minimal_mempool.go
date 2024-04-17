@@ -5,11 +5,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/axiomesh/axiom-kit/txpool"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.uber.org/mock/gomock"
 
+	"github.com/axiomesh/axiom-kit/txpool"
 	"github.com/axiomesh/axiom-kit/types"
 )
 

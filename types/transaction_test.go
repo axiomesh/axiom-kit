@@ -6,13 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/axiomesh/axiom-kit/types/pb"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 func TestEthTransaction_GetSignHash(t *testing.T) {
@@ -157,8 +156,8 @@ func TestTransaction_PB(t *testing.T) {
 			S:        big.NewInt(4),
 			AccessList: types.AccessList{
 				{
-					addr,
-					[]common.Hash{common.BytesToHash([]byte{0}), common.BytesToHash([]byte{1})},
+					Address:     addr,
+					StorageKeys: []common.Hash{common.BytesToHash([]byte{0}), common.BytesToHash([]byte{1})},
 				},
 			},
 		},

@@ -99,19 +99,19 @@ func (this *BlockHeader) EqualVT(that *BlockHeader) bool {
 	if string(this.Bloom) != string(that.Bloom) {
 		return false
 	}
-	if this.GasPrice != that.GasPrice {
+	if this.ProposerNodeId != that.ProposerNodeId {
 		return false
 	}
-	if this.ProposerAccount != that.ProposerAccount {
+	if this.GasPrice != that.GasPrice {
 		return false
 	}
 	if this.GasUsed != that.GasUsed {
 		return false
 	}
-	if this.ProposerNodeId != that.ProposerNodeId {
+	if string(this.TotalGasFee) != string(that.TotalGasFee) {
 		return false
 	}
-	if string(this.Extra) != string(that.Extra) {
+	if string(this.GasFeeReward) != string(that.GasFeeReward) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -282,32 +282,32 @@ func (m *BlockHeader) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Extra) > 0 {
-		i -= len(m.Extra)
-		copy(dAtA[i:], m.Extra)
-		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
+	if len(m.GasFeeReward) > 0 {
+		i -= len(m.GasFeeReward)
+		copy(dAtA[i:], m.GasFeeReward)
+		i = encodeVarint(dAtA, i, uint64(len(m.GasFeeReward)))
 		i--
 		dAtA[i] = 0x72
 	}
-	if m.ProposerNodeId != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.ProposerNodeId))
+	if len(m.TotalGasFee) > 0 {
+		i -= len(m.TotalGasFee)
+		copy(dAtA[i:], m.TotalGasFee)
+		i = encodeVarint(dAtA, i, uint64(len(m.TotalGasFee)))
 		i--
-		dAtA[i] = 0x68
+		dAtA[i] = 0x6a
 	}
 	if m.GasUsed != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
 		i--
 		dAtA[i] = 0x60
 	}
-	if len(m.ProposerAccount) > 0 {
-		i -= len(m.ProposerAccount)
-		copy(dAtA[i:], m.ProposerAccount)
-		i = encodeVarint(dAtA, i, uint64(len(m.ProposerAccount)))
-		i--
-		dAtA[i] = 0x5a
-	}
 	if m.GasPrice != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasPrice))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.ProposerNodeId != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.ProposerNodeId))
 		i--
 		dAtA[i] = 0x50
 	}
@@ -546,32 +546,32 @@ func (m *BlockHeader) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Extra) > 0 {
-		i -= len(m.Extra)
-		copy(dAtA[i:], m.Extra)
-		i = encodeVarint(dAtA, i, uint64(len(m.Extra)))
+	if len(m.GasFeeReward) > 0 {
+		i -= len(m.GasFeeReward)
+		copy(dAtA[i:], m.GasFeeReward)
+		i = encodeVarint(dAtA, i, uint64(len(m.GasFeeReward)))
 		i--
 		dAtA[i] = 0x72
 	}
-	if m.ProposerNodeId != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.ProposerNodeId))
+	if len(m.TotalGasFee) > 0 {
+		i -= len(m.TotalGasFee)
+		copy(dAtA[i:], m.TotalGasFee)
+		i = encodeVarint(dAtA, i, uint64(len(m.TotalGasFee)))
 		i--
-		dAtA[i] = 0x68
+		dAtA[i] = 0x6a
 	}
 	if m.GasUsed != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
 		i--
 		dAtA[i] = 0x60
 	}
-	if len(m.ProposerAccount) > 0 {
-		i -= len(m.ProposerAccount)
-		copy(dAtA[i:], m.ProposerAccount)
-		i = encodeVarint(dAtA, i, uint64(len(m.ProposerAccount)))
-		i--
-		dAtA[i] = 0x5a
-	}
 	if m.GasPrice != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasPrice))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.ProposerNodeId != 0 {
+		i = encodeVarint(dAtA, i, uint64(m.ProposerNodeId))
 		i--
 		dAtA[i] = 0x50
 	}
@@ -734,14 +734,16 @@ func (m *BlockHeader) ResetVT() {
 	f2 := m.ReceiptRoot[:0]
 	f3 := m.ParentHash[:0]
 	f4 := m.Bloom[:0]
-	f5 := m.Extra[:0]
+	f5 := m.TotalGasFee[:0]
+	f6 := m.GasFeeReward[:0]
 	m.Reset()
 	m.StateRoot = f0
 	m.TxRoot = f1
 	m.ReceiptRoot = f2
 	m.ParentHash = f3
 	m.Bloom = f4
-	m.Extra = f5
+	m.TotalGasFee = f5
+	m.GasFeeReward = f6
 }
 func (m *BlockHeader) ReturnToVTPool() {
 	if m != nil {
@@ -846,20 +848,20 @@ func (m *BlockHeader) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
+	if m.ProposerNodeId != 0 {
+		n += 1 + sov(uint64(m.ProposerNodeId))
+	}
 	if m.GasPrice != 0 {
 		n += 1 + sov(uint64(m.GasPrice))
-	}
-	l = len(m.ProposerAccount)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
 	}
 	if m.GasUsed != 0 {
 		n += 1 + sov(uint64(m.GasUsed))
 	}
-	if m.ProposerNodeId != 0 {
-		n += 1 + sov(uint64(m.ProposerNodeId))
+	l = len(m.TotalGasFee)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
 	}
-	l = len(m.Extra)
+	l = len(m.GasFeeReward)
 	if l > 0 {
 		n += 1 + l + sov(uint64(l))
 	}
@@ -1370,6 +1372,25 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 10:
 			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposerNodeId", wireType)
+			}
+			m.ProposerNodeId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ProposerNodeId |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 11:
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field GasPrice", wireType)
 			}
 			m.GasPrice = 0
@@ -1382,43 +1403,11 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.GasPrice |= int64(b&0x7F) << shift
+				m.GasPrice |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 11:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProposerAccount", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ProposerAccount = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 12:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field GasUsed", wireType)
@@ -1439,27 +1428,8 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 		case 13:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProposerNodeId", wireType)
-			}
-			m.ProposerNodeId = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ProposerNodeId |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 14:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Extra", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalGasFee", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -1486,9 +1456,43 @@ func (m *BlockHeader) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Extra = append(m.Extra[:0], dAtA[iNdEx:postIndex]...)
-			if m.Extra == nil {
-				m.Extra = []byte{}
+			m.TotalGasFee = append(m.TotalGasFee[:0], dAtA[iNdEx:postIndex]...)
+			if m.TotalGasFee == nil {
+				m.TotalGasFee = []byte{}
+			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GasFeeReward", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GasFeeReward = append(m.GasFeeReward[:0], dAtA[iNdEx:postIndex]...)
+			if m.GasFeeReward == nil {
+				m.GasFeeReward = []byte{}
 			}
 			iNdEx = postIndex
 		default:

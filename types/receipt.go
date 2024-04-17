@@ -3,44 +3,13 @@ package types
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"math/big"
 
 	"github.com/samber/lo"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/axiomesh/axiom-kit/types/pb"
 )
-
-type EventType int32
-
-const (
-	EventOTHER EventType = 0
-)
-
-var eventTypeName = map[EventType]string{
-	EventOTHER: "OTHER",
-}
-
-func (x EventType) String() string {
-	return eventTypeName[x]
-}
-
-func (x EventType) toPB() pb.Event_EventType {
-	switch x {
-	case EventOTHER:
-		return pb.Event_OTHER
-	default:
-		return pb.Event_OTHER
-	}
-}
-
-func eventTypeFromPB(x pb.Event_EventType) EventType {
-	switch x {
-	case pb.Event_OTHER:
-		return EventOTHER
-	default:
-		return EventOTHER
-	}
-}
 
 type ReceiptStatus int32
 
@@ -78,57 +47,6 @@ func receiptStatusFromPB(x pb.Receipt_Status) ReceiptStatus {
 	default:
 		return ReceiptFAILED
 	}
-}
-
-type Event struct {
-	TxHash    *Hash
-	Data      []byte
-	EventType EventType
-}
-
-func (e *Event) toPB() (*pb.Event, error) {
-	if e == nil {
-		return &pb.Event{}, nil
-	}
-
-	return &pb.Event{
-		TxHash:    e.TxHash.Bytes(),
-		Data:      e.Data,
-		EventType: e.EventType.toPB(),
-	}, nil
-}
-
-func (e *Event) fromPB(p *pb.Event) error {
-	var err error
-	e.TxHash, err = decodeHash(p.TxHash)
-	if err != nil {
-		return err
-	}
-	e.Data = p.Data
-	e.EventType = eventTypeFromPB(p.EventType)
-	return nil
-}
-
-func (e *Event) Marshal() ([]byte, error) {
-	helper, err := e.toPB()
-	if err != nil {
-		return nil, err
-	}
-	return helper.MarshalVTStrict()
-}
-
-func (e *Event) Unmarshal(data []byte) error {
-	helper := pb.EventFromVTPool()
-	defer func() {
-		helper.Reset()
-		helper.ReturnToVTPool()
-	}()
-	err := helper.UnmarshalVT(data)
-	if err != nil {
-		return err
-	}
-
-	return e.fromPB(helper)
 }
 
 type EvmLog struct {
@@ -252,10 +170,9 @@ type Receipt struct {
 	TxHash            *Hash
 	Ret               []byte
 	Status            ReceiptStatus
-	Events            []*Event
 	GasUsed           uint64
 	CumulativeGasUsed uint64
-	EffectiveGasPrice uint64
+	EffectiveGasPrice *big.Int
 	EvmLogs           []*EvmLog
 	Bloom             *Bloom
 	ContractAddress   *Address
@@ -266,14 +183,6 @@ func (r *Receipt) toPB() (*pb.Receipt, error) {
 		return &pb.Receipt{}, nil
 	}
 
-	events := make([]*pb.Event, len(r.Events))
-	for i, e := range r.Events {
-		event, err := e.toPB()
-		if err != nil {
-			return nil, err
-		}
-		events[i] = event
-	}
 	evmLogs := make([]*pb.EvmLog, len(r.EvmLogs))
 	for i, l := range r.EvmLogs {
 		log, err := l.toPB()
@@ -286,10 +195,9 @@ func (r *Receipt) toPB() (*pb.Receipt, error) {
 		TxHash:            r.TxHash.Bytes(),
 		Ret:               r.Ret,
 		Status:            r.Status.toPB(),
-		Events:            events,
 		GasUsed:           r.GasUsed,
 		CumulativeGasUsed: r.CumulativeGasUsed,
-		EffectiveGasPrice: r.EffectiveGasPrice,
+		EffectiveGasPrice: r.EffectiveGasPrice.Bytes(),
 		EvmLogs:           evmLogs,
 		Bloom:             r.Bloom.Bytes(),
 		ContractAddress:   r.ContractAddress.Bytes(),
@@ -304,13 +212,6 @@ func (r *Receipt) fromPB(p *pb.Receipt) error {
 	}
 	r.Ret = p.Ret
 	r.Status = receiptStatusFromPB(p.Status)
-	for _, e := range p.Events {
-		event := &Event{}
-		if err := event.fromPB(e); err != nil {
-			return err
-		}
-		r.Events = append(r.Events, event)
-	}
 	r.GasUsed = p.GasUsed
 	for _, l := range p.EvmLogs {
 		log := &EvmLog{}
@@ -328,7 +229,9 @@ func (r *Receipt) fromPB(p *pb.Receipt) error {
 		return err
 	}
 	r.CumulativeGasUsed = p.CumulativeGasUsed
-	r.EffectiveGasPrice = p.EffectiveGasPrice
+	if len(p.EffectiveGasPrice) != 0 {
+		r.EffectiveGasPrice = big.NewInt(0).SetBytes(p.EffectiveGasPrice)
+	}
 	return nil
 }
 
@@ -358,7 +261,6 @@ func (r *Receipt) Hash() *Hash {
 		TxHash:            r.TxHash,
 		Ret:               r.Ret,
 		Status:            r.Status,
-		Events:            r.Events,
 		EvmLogs:           r.EvmLogs,
 		Bloom:             r.Bloom,
 		GasUsed:           r.GasUsed,

@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/exp/rand"
-	"golang.org/x/exp/slices"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/rand"
+	"golang.org/x/exp/slices"
 )
 
 func TestInternalNode_Marshal(t *testing.T) {
@@ -58,7 +57,6 @@ func TestLeafNode_Marshal(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.True(t, equalLeafNode(leaf1, node.(*LeafNode)))
-
 }
 
 func TestStateDelta_Marshal(t *testing.T) {
@@ -131,7 +129,6 @@ func TestStateDelta_Marshal(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func equalInternalNode(n1, n2 *InternalNode) bool {

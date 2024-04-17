@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/axiomesh/axiom-kit/storage"
 	"github.com/axiomesh/axiom-kit/types"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var (

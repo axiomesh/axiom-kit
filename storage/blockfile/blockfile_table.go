@@ -325,7 +325,6 @@ func (b *BlockTable) BatchAppend(item uint64, listOfBlob [][]byte) error {
 }
 
 func (b *BlockTable) doBatchAppend(item uint64, listOfBlob ...[]byte) error {
-
 	b.lock.RLock()
 	if b.index == nil || b.head == nil {
 		b.lock.RUnlock()
@@ -380,7 +379,6 @@ func (b *BlockTable) doBatchAppend(item uint64, listOfBlob ...[]byte) error {
 			offset:  newOffset,
 		}
 		mergeIdxBytes = append(mergeIdxBytes, idx.marshallBinary()...)
-
 	}
 	// Write indexEntry
 	_, _ = b.index.Write(mergeIdxBytes)

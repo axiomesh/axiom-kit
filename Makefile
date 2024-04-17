@@ -43,7 +43,6 @@ compile-pb: clean-pb
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Message \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Receipt \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Receipts \
-		--go-vtproto_opt=pool=$(PB_PKG_PATH).Event \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).EvmLog \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).Message \
 		--go-vtproto_opt=pool=$(PB_PKG_PATH).SyncStateRequest \

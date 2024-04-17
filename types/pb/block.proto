@@ -23,11 +23,11 @@ message BlockHeader {
     int64 timestamp = 7;
     uint64 epoch = 8;
     bytes bloom = 9;
-    int64 gas_price = 10;
-    string proposer_account = 11;
+    uint64 proposer_node_id = 10;
+    uint64 gas_price = 11;
     uint64 gas_used = 12;
-    uint64 proposer_node_id = 13;
-    bytes extra = 14;
+    bytes total_gas_fee = 13;
+    bytes gas_fee_reward = 14;
 }
 
 message BlockBody {

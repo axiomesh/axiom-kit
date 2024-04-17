@@ -2,26 +2,28 @@ package types
 
 import (
 	"crypto/sha256"
-	"github.com/samber/lo"
+	"math/big"
 	"sync/atomic"
+
+	"github.com/samber/lo"
 
 	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 type BlockHeader struct {
-	Number          uint64
-	StateRoot       *Hash
-	TxRoot          *Hash
-	ReceiptRoot     *Hash
-	ParentHash      *Hash
-	Timestamp       int64
-	Epoch           uint64
-	Bloom           *Bloom
-	GasPrice        int64
-	GasUsed         uint64
-	ProposerAccount string
-	ProposerNodeID  uint64
-	Extra           []byte
+	Number         uint64
+	StateRoot      *Hash
+	TxRoot         *Hash
+	ReceiptRoot    *Hash
+	ParentHash     *Hash
+	Timestamp      int64
+	Epoch          uint64
+	Bloom          *Bloom
+	ProposerNodeID uint64
+	GasPrice       uint64
+	GasUsed        uint64
+	TotalGasFee    *big.Int
+	GasFeeReward   *big.Int
 
 	hashCache atomic.Value
 }
@@ -31,14 +33,12 @@ func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
 		return nil, nil
 	}
 	pbHeader := &pb.BlockHeader{
-		Number:          h.Number,
-		Timestamp:       h.Timestamp,
-		Epoch:           h.Epoch,
-		GasPrice:        h.GasPrice,
-		ProposerAccount: h.ProposerAccount,
-		GasUsed:         h.GasUsed,
-		ProposerNodeId:  h.ProposerNodeID,
-		Extra:           h.Extra,
+		Number:         h.Number,
+		Timestamp:      h.Timestamp,
+		Epoch:          h.Epoch,
+		GasPrice:       h.GasPrice,
+		ProposerNodeId: h.ProposerNodeID,
+		GasUsed:        h.GasUsed,
 	}
 	if h.StateRoot != nil {
 		pbHeader.StateRoot = h.StateRoot.Bytes()
@@ -54,6 +54,12 @@ func (h *BlockHeader) toPB() (*pb.BlockHeader, error) {
 	}
 	if h.Bloom != nil {
 		pbHeader.Bloom = h.Bloom.Bytes()
+	}
+	if h.TotalGasFee != nil {
+		pbHeader.TotalGasFee = h.TotalGasFee.Bytes()
+	}
+	if h.GasFeeReward != nil {
+		pbHeader.GasFeeReward = h.GasFeeReward.Bytes()
 	}
 	return pbHeader, nil
 }
@@ -87,7 +93,6 @@ func (h *BlockHeader) fromPB(m *pb.BlockHeader) error {
 	}
 	h.Timestamp = m.Timestamp
 	h.Epoch = m.Epoch
-	h.ProposerAccount = m.ProposerAccount
 	if len(m.Bloom) != 0 {
 		h.Bloom, err = decodeBloom(m.Bloom)
 		if err != nil {
@@ -97,7 +102,12 @@ func (h *BlockHeader) fromPB(m *pb.BlockHeader) error {
 	h.GasPrice = m.GasPrice
 	h.GasUsed = m.GasUsed
 	h.ProposerNodeID = m.ProposerNodeId
-	h.Extra = m.Extra
+	if len(m.TotalGasFee) != 0 {
+		h.TotalGasFee = big.NewInt(0).SetBytes(m.TotalGasFee)
+	}
+	if len(m.GasFeeReward) != 0 {
+		h.GasFeeReward = big.NewInt(0).SetBytes(m.GasFeeReward)
+	}
 	return nil
 }
 
@@ -125,19 +135,20 @@ func (h *BlockHeader) Unmarshal(data []byte) error {
 
 func (h *BlockHeader) CalculateHash() *Hash {
 	blockheader := &BlockHeader{
-		Number:          h.Number,
-		StateRoot:       h.StateRoot,
-		TxRoot:          h.TxRoot,
-		ReceiptRoot:     h.ReceiptRoot,
-		ParentHash:      h.ParentHash,
-		Timestamp:       h.Timestamp,
-		Epoch:           h.Epoch,
-		GasPrice:        h.GasPrice,
-		GasUsed:         h.GasUsed,
-		ProposerAccount: h.ProposerAccount,
-		ProposerNodeID:  h.ProposerNodeID,
-		Extra:           h.Extra,
-		hashCache:       atomic.Value{},
+		Number:         h.Number,
+		StateRoot:      h.StateRoot,
+		TxRoot:         h.TxRoot,
+		ReceiptRoot:    h.ReceiptRoot,
+		ParentHash:     h.ParentHash,
+		Timestamp:      h.Timestamp,
+		Epoch:          h.Epoch,
+		Bloom:          h.Bloom,
+		GasPrice:       h.GasPrice,
+		GasUsed:        h.GasUsed,
+		ProposerNodeID: h.ProposerNodeID,
+		TotalGasFee:    h.TotalGasFee,
+		GasFeeReward:   h.GasFeeReward,
+		hashCache:      atomic.Value{},
 	}
 	raw, err := blockheader.Marshal()
 	if err != nil {
@@ -169,26 +180,34 @@ func (h *BlockHeader) Clone() *BlockHeader {
 	if h == nil {
 		return nil
 	}
-	bl := &Bloom{}
+	var bl *Bloom
 	if h.Bloom != nil {
+		bl = new(Bloom)
 		bl.SetBytes(h.Bloom.Bytes())
 	}
-
+	var totalGasFee *big.Int
+	if h.TotalGasFee != nil {
+		totalGasFee = big.NewInt(0).SetBytes(h.TotalGasFee.Bytes())
+	}
+	var gasFeeReward *big.Int
+	if h.GasFeeReward != nil {
+		gasFeeReward = big.NewInt(0).SetBytes(h.GasFeeReward.Bytes())
+	}
 	return &BlockHeader{
-		Number:          h.Number,
-		StateRoot:       h.StateRoot.Clone(),
-		TxRoot:          h.TxRoot.Clone(),
-		ReceiptRoot:     h.ReceiptRoot.Clone(),
-		ParentHash:      h.ParentHash.Clone(),
-		Timestamp:       h.Timestamp,
-		Epoch:           h.Epoch,
-		Bloom:           bl,
-		GasPrice:        h.GasPrice,
-		GasUsed:         h.GasUsed,
-		ProposerAccount: h.ProposerAccount,
-		ProposerNodeID:  h.ProposerNodeID,
-		Extra:           h.Extra,
-		hashCache:       atomic.Value{},
+		Number:         h.Number,
+		StateRoot:      h.StateRoot.Clone(),
+		TxRoot:         h.TxRoot.Clone(),
+		ReceiptRoot:    h.ReceiptRoot.Clone(),
+		ParentHash:     h.ParentHash.Clone(),
+		Timestamp:      h.Timestamp,
+		Epoch:          h.Epoch,
+		Bloom:          bl,
+		GasUsed:        h.GasUsed,
+		GasPrice:       h.GasPrice,
+		ProposerNodeID: h.ProposerNodeID,
+		TotalGasFee:    totalGasFee,
+		GasFeeReward:   gasFeeReward,
+		hashCache:      atomic.Value{},
 	}
 }
 
