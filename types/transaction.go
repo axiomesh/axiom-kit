@@ -14,16 +14,40 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/axiomesh/axiom-kit/types/pb"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/samber/lo"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
+
+// AccessList is an EIP-2930 access list.
+type AccessList []AccessTuple
+
+func (l AccessList) ToEthAccessList() types.AccessList {
+	return lo.Map(l, func(item AccessTuple, index int) types.AccessTuple {
+		return item.ToEthAccessTuple()
+	})
+}
+
+// AccessTuple is the element type of an access list.
+type AccessTuple struct {
+	Address     Address
+	StorageKeys []Hash
+}
+
+func (t AccessTuple) ToEthAccessTuple() types.AccessTuple {
+	return types.AccessTuple{
+		Address: t.Address.rawAddress,
+		StorageKeys: lo.Map(t.StorageKeys, func(item Hash, index int) common.Hash {
+			return item.rawHash
+		}),
+	}
+}
 
 // deriveBufferPool holds temporary encoder buffers for DeriveSha and TX encoding.
 var encodeBufferPool = sync.Pool{
@@ -637,8 +661,20 @@ func (tx *Transaction) RbftGetValue() *big.Int {
 	return tx.GetValue()
 }
 
-func (tx *Transaction) RbftGetAccessList() types.AccessList {
-	return tx.GetAccessList()
+func (tx *Transaction) RbftGetAccessList() AccessList {
+	accessList := tx.GetAccessList()
+	return lo.Map(accessList, func(item types.AccessTuple, index int) AccessTuple {
+		return AccessTuple{
+			Address: Address{
+				rawAddress: item.Address,
+			},
+			StorageKeys: lo.Map(item.StorageKeys, func(item common.Hash, index int) Hash {
+				return Hash{
+					rawHash: item,
+				}
+			}),
+		}
+	})
 }
 
 func (tx *Transaction) Unmarshal(buf []byte) error {
@@ -740,7 +776,6 @@ func (tx *Transaction) SignByTxType(prv *ecdsa.PrivateKey) error {
 			return err
 		}
 		tx.Inner.setSignatureValues(signer.chainId, v, r, s)
-
 	}
 	return nil
 }

@@ -11,6 +11,7 @@ type TxPool[T any, Constraint types.TXConstraint[T]] interface {
 
 	// Start starts txPool service
 	Start() error
+
 	// Stop stops txPool service
 	Stop()
 

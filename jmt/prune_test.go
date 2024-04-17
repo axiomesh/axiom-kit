@@ -95,18 +95,17 @@ func Test_PruneJournal(t *testing.T) {
 	require.Equal(t, pruneArgs.Journal.RootHash, rootHash6)
 }
 
-//			                      [0_]
-//		                      /         \
-//						   [0_0]          [0_b]
-//				             |              |
-//		                  [0_00]          [0_bb]
-//		                    |                |
-//		               [0_000]            ——————
-//		                   ｜           |         |
-//			   	       ——————————     <0_bb17>   <0_bbf7>
-//			           |       |
-//				    <0_0001>  <0_0003>
-//
+//		                      [0_]
+//	                      /         \
+//					   [0_0]          [0_b]
+//			             |              |
+//	                  [0_00]          [0_bb]
+//	                    |                |
+//	               [0_000]            ——————
+//	                   ｜           |         |
+//		   	       ——————————     <0_bb17>   <0_bbf7>
+//		           |       |
+//			    <0_0001>  <0_0003>
 func Test_PruneHistoryWithOnlyInsert(t *testing.T) {
 	// init version 0 jmt
 	jmt, s := initEmptyJMT()

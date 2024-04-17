@@ -1,7 +1,6 @@
 package types
 
 import (
-	eth_types "github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 )
 
@@ -26,5 +25,5 @@ type RbftTransaction interface {
 	RbftGetGasLimit() uint64
 	RbftGetGasFeeCap() *big.Int
 	RbftGetValue() *big.Int
-	RbftGetAccessList() eth_types.AccessList
+	RbftGetAccessList() AccessList
 }

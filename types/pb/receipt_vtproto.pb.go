@@ -34,23 +34,6 @@ func (this *Receipt) EqualVT(that *Receipt) bool {
 	if this.Status != that.Status {
 		return false
 	}
-	if len(this.Events) != len(that.Events) {
-		return false
-	}
-	for i, vx := range this.Events {
-		vy := that.Events[i]
-		if p, q := vx, vy; p != q {
-			if p == nil {
-				p = &Event{}
-			}
-			if q == nil {
-				q = &Event{}
-			}
-			if !p.EqualVT(q) {
-				return false
-			}
-		}
-	}
 	if this.GasUsed != that.GasUsed {
 		return false
 	}
@@ -80,7 +63,7 @@ func (this *Receipt) EqualVT(that *Receipt) bool {
 	if this.CumulativeGasUsed != that.CumulativeGasUsed {
 		return false
 	}
-	if this.EffectiveGasPrice != that.EffectiveGasPrice {
+	if string(this.EffectiveGasPrice) != string(that.EffectiveGasPrice) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -121,31 +104,6 @@ func (this *Receipts) EqualVT(that *Receipts) bool {
 
 func (this *Receipts) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*Receipts)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *Event) EqualVT(that *Event) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if string(this.TxHash) != string(that.TxHash) {
-		return false
-	}
-	if string(this.Data) != string(that.Data) {
-		return false
-	}
-	if this.EventType != that.EventType {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *Event) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*Event)
 	if !ok {
 		return false
 	}
@@ -230,29 +188,31 @@ func (m *Receipt) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.EffectiveGasPrice != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.EffectiveGasPrice))
+	if len(m.EffectiveGasPrice) > 0 {
+		i -= len(m.EffectiveGasPrice)
+		copy(dAtA[i:], m.EffectiveGasPrice)
+		i = encodeVarint(dAtA, i, uint64(len(m.EffectiveGasPrice)))
 		i--
-		dAtA[i] = 0x50
+		dAtA[i] = 0x4a
 	}
 	if m.CumulativeGasUsed != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.CumulativeGasUsed))
 		i--
-		dAtA[i] = 0x48
+		dAtA[i] = 0x40
 	}
 	if len(m.ContractAddress) > 0 {
 		i -= len(m.ContractAddress)
 		copy(dAtA[i:], m.ContractAddress)
 		i = encodeVarint(dAtA, i, uint64(len(m.ContractAddress)))
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x3a
 	}
 	if len(m.Bloom) > 0 {
 		i -= len(m.Bloom)
 		copy(dAtA[i:], m.Bloom)
 		i = encodeVarint(dAtA, i, uint64(len(m.Bloom)))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x32
 	}
 	if len(m.EvmLogs) > 0 {
 		for iNdEx := len(m.EvmLogs) - 1; iNdEx >= 0; iNdEx-- {
@@ -263,25 +223,13 @@ func (m *Receipt) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x2a
 		}
 	}
 	if m.GasUsed != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
 		i--
-		dAtA[i] = 0x28
-	}
-	if len(m.Events) > 0 {
-		for iNdEx := len(m.Events) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Events[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x22
-		}
+		dAtA[i] = 0x20
 	}
 	if m.Status != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.Status))
@@ -346,58 +294,6 @@ func (m *Receipts) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xa
 		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Event) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Event) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *Event) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.EventType != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.EventType))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarint(dAtA, i, uint64(len(m.Data)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.TxHash) > 0 {
-		i -= len(m.TxHash)
-		copy(dAtA[i:], m.TxHash)
-		i = encodeVarint(dAtA, i, uint64(len(m.TxHash)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -527,29 +423,31 @@ func (m *Receipt) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.EffectiveGasPrice != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.EffectiveGasPrice))
+	if len(m.EffectiveGasPrice) > 0 {
+		i -= len(m.EffectiveGasPrice)
+		copy(dAtA[i:], m.EffectiveGasPrice)
+		i = encodeVarint(dAtA, i, uint64(len(m.EffectiveGasPrice)))
 		i--
-		dAtA[i] = 0x50
+		dAtA[i] = 0x4a
 	}
 	if m.CumulativeGasUsed != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.CumulativeGasUsed))
 		i--
-		dAtA[i] = 0x48
+		dAtA[i] = 0x40
 	}
 	if len(m.ContractAddress) > 0 {
 		i -= len(m.ContractAddress)
 		copy(dAtA[i:], m.ContractAddress)
 		i = encodeVarint(dAtA, i, uint64(len(m.ContractAddress)))
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x3a
 	}
 	if len(m.Bloom) > 0 {
 		i -= len(m.Bloom)
 		copy(dAtA[i:], m.Bloom)
 		i = encodeVarint(dAtA, i, uint64(len(m.Bloom)))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x32
 	}
 	if len(m.EvmLogs) > 0 {
 		for iNdEx := len(m.EvmLogs) - 1; iNdEx >= 0; iNdEx-- {
@@ -560,25 +458,13 @@ func (m *Receipt) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x2a
 		}
 	}
 	if m.GasUsed != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.GasUsed))
 		i--
-		dAtA[i] = 0x28
-	}
-	if len(m.Events) > 0 {
-		for iNdEx := len(m.Events) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Events[iNdEx].MarshalToSizedBufferVTStrict(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0x22
-		}
+		dAtA[i] = 0x20
 	}
 	if m.Status != 0 {
 		i = encodeVarint(dAtA, i, uint64(m.Status))
@@ -643,58 +529,6 @@ func (m *Receipts) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xa
 		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Event) MarshalVTStrict() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVTStrict(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Event) MarshalToVTStrict(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
-}
-
-func (m *Event) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.EventType != 0 {
-		i = encodeVarint(dAtA, i, uint64(m.EventType))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarint(dAtA, i, uint64(len(m.Data)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.TxHash) > 0 {
-		i -= len(m.TxHash)
-		copy(dAtA[i:], m.TxHash)
-		i = encodeVarint(dAtA, i, uint64(len(m.TxHash)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -803,23 +637,20 @@ var vtprotoPool_Receipt = sync.Pool{
 func (m *Receipt) ResetVT() {
 	f0 := m.TxHash[:0]
 	f1 := m.Ret[:0]
-	for _, mm := range m.Events {
-		mm.ResetVT()
-	}
-	f2 := m.Events[:0]
 	for _, mm := range m.EvmLogs {
 		mm.ResetVT()
 	}
-	f3 := m.EvmLogs[:0]
-	f4 := m.Bloom[:0]
-	f5 := m.ContractAddress[:0]
+	f2 := m.EvmLogs[:0]
+	f3 := m.Bloom[:0]
+	f4 := m.ContractAddress[:0]
+	f5 := m.EffectiveGasPrice[:0]
 	m.Reset()
 	m.TxHash = f0
 	m.Ret = f1
-	m.Events = f2
-	m.EvmLogs = f3
-	m.Bloom = f4
-	m.ContractAddress = f5
+	m.EvmLogs = f2
+	m.Bloom = f3
+	m.ContractAddress = f4
+	m.EffectiveGasPrice = f5
 }
 func (m *Receipt) ReturnToVTPool() {
 	if m != nil {
@@ -853,29 +684,6 @@ func (m *Receipts) ReturnToVTPool() {
 }
 func ReceiptsFromVTPool() *Receipts {
 	return vtprotoPool_Receipts.Get().(*Receipts)
-}
-
-var vtprotoPool_Event = sync.Pool{
-	New: func() interface{} {
-		return &Event{}
-	},
-}
-
-func (m *Event) ResetVT() {
-	f0 := m.TxHash[:0]
-	f1 := m.Data[:0]
-	m.Reset()
-	m.TxHash = f0
-	m.Data = f1
-}
-func (m *Event) ReturnToVTPool() {
-	if m != nil {
-		m.ResetVT()
-		vtprotoPool_Event.Put(m)
-	}
-}
-func EventFromVTPool() *Event {
-	return vtprotoPool_Event.Get().(*Event)
 }
 
 var vtprotoPool_EvmLog = sync.Pool{
@@ -923,12 +731,6 @@ func (m *Receipt) SizeVT() (n int) {
 	if m.Status != 0 {
 		n += 1 + sov(uint64(m.Status))
 	}
-	if len(m.Events) > 0 {
-		for _, e := range m.Events {
-			l = e.SizeVT()
-			n += 1 + l + sov(uint64(l))
-		}
-	}
 	if m.GasUsed != 0 {
 		n += 1 + sov(uint64(m.GasUsed))
 	}
@@ -949,8 +751,9 @@ func (m *Receipt) SizeVT() (n int) {
 	if m.CumulativeGasUsed != 0 {
 		n += 1 + sov(uint64(m.CumulativeGasUsed))
 	}
-	if m.EffectiveGasPrice != 0 {
-		n += 1 + sov(uint64(m.EffectiveGasPrice))
+	l = len(m.EffectiveGasPrice)
+	if l > 0 {
+		n += 1 + l + sov(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -967,27 +770,6 @@ func (m *Receipts) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + sov(uint64(l))
 		}
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *Event) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.TxHash)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	l = len(m.Data)
-	if l > 0 {
-		n += 1 + l + sov(uint64(l))
-	}
-	if m.EventType != 0 {
-		n += 1 + sov(uint64(m.EventType))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1154,47 +936,6 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Events", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if len(m.Events) == cap(m.Events) {
-				m.Events = append(m.Events, &Event{})
-			} else {
-				m.Events = m.Events[:len(m.Events)+1]
-				if m.Events[len(m.Events)-1] == nil {
-					m.Events[len(m.Events)-1] = &Event{}
-				}
-			}
-			if err := m.Events[len(m.Events)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field GasUsed", wireType)
 			}
@@ -1213,7 +954,7 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 6:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field EvmLogs", wireType)
 			}
@@ -1254,7 +995,7 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 7:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Bloom", wireType)
 			}
@@ -1288,7 +1029,7 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 				m.Bloom = []byte{}
 			}
 			iNdEx = postIndex
-		case 8:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ContractAddress", wireType)
 			}
@@ -1322,7 +1063,7 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 				m.ContractAddress = []byte{}
 			}
 			iNdEx = postIndex
-		case 9:
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CumulativeGasUsed", wireType)
 			}
@@ -1341,11 +1082,11 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-		case 10:
-			if wireType != 0 {
+		case 9:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field EffectiveGasPrice", wireType)
 			}
-			m.EffectiveGasPrice = 0
+			var byteLen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflow
@@ -1355,11 +1096,26 @@ func (m *Receipt) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.EffectiveGasPrice |= uint64(b&0x7F) << shift
+				byteLen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			if byteLen < 0 {
+				return ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.EffectiveGasPrice = append(m.EffectiveGasPrice[:0], dAtA[iNdEx:postIndex]...)
+			if m.EffectiveGasPrice == nil {
+				m.EffectiveGasPrice = []byte{}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])
@@ -1452,144 +1208,6 @@ func (m *Receipts) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Event) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Event: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Event: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TxHash", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TxHash = append(m.TxHash[:0], dAtA[iNdEx:postIndex]...)
-			if m.TxHash == nil {
-				m.TxHash = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLength
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Data = append(m.Data[:0], dAtA[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EventType", wireType)
-			}
-			m.EventType = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.EventType |= Event_EventType(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skip(dAtA[iNdEx:])

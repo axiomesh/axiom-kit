@@ -830,7 +830,7 @@ func Test_StateTransitWithDifferentInsertOrder(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt11.Update(1, toHex("02"), []byte("v3"))
 	require.Nil(t, err)
-	//printJMT(jmt11, 1)
+	// printJMT(jmt11, 1)
 	err = jmt11.Update(1, toHex("04"), []byte("v4"))
 	require.Nil(t, err)
 	rootHash11 := jmt11.Commit(nil)
@@ -913,7 +913,7 @@ func Test_StateTransitWithDifferentDeleteOrder(t *testing.T) {
 	require.Nil(t, err)
 	err = jmt11.Update(1, toHex("02"), []byte{})
 	require.Nil(t, err)
-	//printJMT(jmt11, 1)
+	// printJMT(jmt11, 1)
 	err = jmt11.Update(1, toHex("04"), []byte{})
 	require.Nil(t, err)
 	rootHash11 := jmt11.Commit(nil)
@@ -1162,7 +1162,7 @@ func printJMT(jmt *JMT, version uint64) {
 	for j := 0; j < len(res); j++ {
 		fmt.Printf("%v\n", res[j].String())
 	}
-	fmt.Printf("======End Print JMT========\n")
+	fmt.Print("======End Print JMT========\n")
 }
 
 func convertHex(in []byte) string {

@@ -2,9 +2,10 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/axiomesh/axiom-kit/types/pb"
-	"strings"
 )
 
 type SnapshotJournal struct {

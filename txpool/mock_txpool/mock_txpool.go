@@ -40,11 +40,6 @@ func (m *MockTxPool[T, Constraint]) EXPECT() *MockTxPoolMockRecorder[T, Constrai
 	return m.recorder
 }
 
-// ISGOMOCK indicates that this struct is a gomock mock.
-func (m *MockTxPool[T, Constraint]) ISGOMOCK() struct{} {
-	return struct{}{}
-}
-
 // AddLocalTx mocks base method.
 func (m *MockTxPool[T, Constraint]) AddLocalTx(tx *T) error {
 	m.ctrl.T.Helper()
@@ -1156,11 +1151,6 @@ func NewMocktxPoolInfo[T any, Constraint types.TXConstraint[T]](ctrl *gomock.Con
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MocktxPoolInfo[T, Constraint]) EXPECT() *MocktxPoolInfoMockRecorder[T, Constraint] {
 	return m.recorder
-}
-
-// ISGOMOCK indicates that this struct is a gomock mock.
-func (m *MocktxPoolInfo[T, Constraint]) ISGOMOCK() struct{} {
-	return struct{}{}
 }
 
 // GetAccountMeta mocks base method.
