@@ -30,6 +30,9 @@ type ConsensusParams struct {
 	// The maximum number of validators in the network.
 	MaxValidatorNum uint64 `mapstructure:"max_validator_num" toml:"max_validator_num" json:"max_validator_num"`
 
+	// The minimum number of validators in the network.
+	MinValidatorNum uint64 `mapstructure:"min_validator_num" toml:"min_validator_num" json:"min_validator_num"`
+
 	// The maximum number of packaged transactions per block.
 	BlockMaxTxNum uint64 `mapstructure:"block_max_tx_num" toml:"block_max_tx_num" json:"block_max_tx_num"`
 
