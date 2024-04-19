@@ -2,7 +2,6 @@ package blockfile
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -465,9 +465,9 @@ func (b *BlockTable) releaseFilesAfter(num uint32, remove bool) {
 	for fnum, f := range b.files {
 		if fnum > num {
 			delete(b.files, fnum)
-			f.Close()
+			_ = f.Close()
 			if remove {
-				os.Remove(f.Name())
+				_ = os.Remove(f.Name())
 			}
 		}
 	}
@@ -476,7 +476,7 @@ func (b *BlockTable) releaseFilesAfter(num uint32, remove bool) {
 func (b *BlockTable) releaseFile(num uint32) {
 	if f, exist := b.files[num]; exist {
 		delete(b.files, num)
-		f.Close()
+		_ = f.Close()
 	}
 }
 

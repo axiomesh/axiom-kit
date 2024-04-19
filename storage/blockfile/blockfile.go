@@ -1,7 +1,6 @@
 package blockfile
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -9,15 +8,32 @@ import (
 	"sync"
 	"sync/atomic"
 
-	pkgerr "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/sirupsen/logrus"
 )
 
-type BlockFile struct {
-	blocks uint64 // Number of blocks
+// BlockFile block number start from 0
+//
+//go:generate mockgen -destination mock_blockfile/mock_blockfile.go -package mock_blockfile -source blockfile.go -typed
+type BlockFile interface {
+	NextBlockNumber() uint64
 
-	tables       map[string]*BlockTable // Data tables for stroring blocks
+	Get(kind string, number uint64) ([]byte, error)
+
+	AppendBlock(number uint64, hash, header, extra, receipts, transactions []byte) (err error)
+
+	BatchAppendBlock(number uint64, listOfHash, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) (err error)
+
+	TruncateBlocks(targetBlock uint64) error
+
+	Close() error
+}
+
+type blockFile struct {
+	nextBlockNumber uint64 // next block number
+
+	tables       map[string]*BlockTable // Data tables for store nextBlockNumber
 	instanceLock fileutil.Releaser      // File-system lock to prevent double opens
 
 	logger    logrus.FieldLogger
@@ -26,7 +42,11 @@ type BlockFile struct {
 	appendLock sync.Mutex
 }
 
-func NewBlockFile(p string, logger logrus.FieldLogger) (*BlockFile, error) {
+func NewBlockFile(p string, logger logrus.FieldLogger) (BlockFile, error) {
+	return newBlockFile(p, logger)
+}
+
+func newBlockFile(p string, logger logrus.FieldLogger) (*blockFile, error) {
 	if info, err := os.Lstat(p); !os.IsNotExist(err) {
 		if info.Mode()&os.ModeSymlink != 0 {
 			logger.WithField("path", p).Error("Symbolic link is not supported")
@@ -41,7 +61,7 @@ func NewBlockFile(p string, logger logrus.FieldLogger) (*BlockFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	blockfile := &BlockFile{
+	blockfile := &blockFile{
 		tables:       make(map[string]*BlockTable),
 		instanceLock: lock,
 		logger:       logger,
@@ -68,25 +88,25 @@ func NewBlockFile(p string, logger logrus.FieldLogger) (*BlockFile, error) {
 	return blockfile, nil
 }
 
-func (bf *BlockFile) Blocks() (uint64, error) {
-	return atomic.LoadUint64(&bf.blocks), nil
+func (bf *blockFile) NextBlockNumber() uint64 {
+	return atomic.LoadUint64(&bf.nextBlockNumber)
 }
 
-func (bf *BlockFile) Get(kind string, number uint64) ([]byte, error) {
+func (bf *blockFile) Get(kind string, number uint64) ([]byte, error) {
 	if table := bf.tables[kind]; table != nil {
-		return table.Retrieve(number - 1)
+		return table.Retrieve(number)
 	}
 	return nil, errors.New("unknown table")
 }
 
-func (bf *BlockFile) AppendBlock(number uint64, hash, header, extra, receipts, transactions []byte) (err error) {
+func (bf *blockFile) AppendBlock(number uint64, hash, header, extra, receipts, transactions []byte) (err error) {
 	bf.appendLock.Lock()
 	defer bf.appendLock.Unlock()
 
 	err = bf.doBatchAppendBlock(number, [][]byte{header}, [][]byte{extra}, [][]byte{receipts}, [][]byte{transactions})
 	if err != nil {
 		bf.logger.WithFields(logrus.Fields{
-			"number": bf.blocks,
+			"number": bf.nextBlockNumber,
 			"hash":   hash,
 			"err":    err,
 		}).Error("Failed to append block")
@@ -94,13 +114,13 @@ func (bf *BlockFile) AppendBlock(number uint64, hash, header, extra, receipts, t
 	return err
 }
 
-func (bf *BlockFile) BatchAppendBlock(number uint64, listOfHash, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) (err error) {
+func (bf *blockFile) BatchAppendBlock(number uint64, listOfHash, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) (err error) {
 	bf.appendLock.Lock()
 	defer bf.appendLock.Unlock()
 	err = bf.doBatchAppendBlock(number, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions)
 	if err != nil {
 		bf.logger.WithFields(logrus.Fields{
-			"number":              bf.blocks,
+			"number":              bf.nextBlockNumber,
 			"first_hash":          listOfHash[0],
 			"batch_append_number": len(listOfHash),
 			"err":                 err,
@@ -109,8 +129,8 @@ func (bf *BlockFile) BatchAppendBlock(number uint64, listOfHash, listOfHeader, l
 	return err
 }
 
-func (bf *BlockFile) doBatchAppendBlock(number uint64, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) error {
-	if atomic.LoadUint64(&bf.blocks) != number {
+func (bf *blockFile) doBatchAppendBlock(number uint64, listOfHeader, listOfExtra, listOfReceipts, listOfTransactions [][]byte) error {
+	if atomic.LoadUint64(&bf.nextBlockNumber) != number {
 		return errors.New("the append operation is out-order")
 	}
 
@@ -135,54 +155,54 @@ func (bf *BlockFile) doBatchAppendBlock(number uint64, listOfHeader, listOfExtra
 			}).Info("Append block failed")
 		}
 	}()
-	if err = bf.tables[BlockFileHeaderTable].BatchAppend(bf.blocks, listOfHeader); err != nil {
-		return pkgerr.Wrap(err, "failed to append block header")
+	if err = bf.tables[BlockFileHeaderTable].BatchAppend(bf.nextBlockNumber, listOfHeader); err != nil {
+		return errors.Wrap(err, "failed to append block header")
 	}
-	if err = bf.tables[BlockFileTXsTable].BatchAppend(bf.blocks, listOfTransactions); err != nil {
-		return pkgerr.Wrap(err, "failed to append block transactions")
+	if err = bf.tables[BlockFileTXsTable].BatchAppend(bf.nextBlockNumber, listOfTransactions); err != nil {
+		return errors.Wrap(err, "failed to append block transactions")
 	}
-	if err = bf.tables[BlockFileExtraTable].BatchAppend(bf.blocks, listOfExtra); err != nil {
-		return pkgerr.Wrap(err, "failed to append block extra")
+	if err = bf.tables[BlockFileExtraTable].BatchAppend(bf.nextBlockNumber, listOfExtra); err != nil {
+		return errors.Wrap(err, "failed to append block extra")
 	}
-	if err = bf.tables[BlockFileReceiptsTable].BatchAppend(bf.blocks, listOfReceipts); err != nil {
-		return pkgerr.Wrap(err, "failed to append block receipts")
+	if err = bf.tables[BlockFileReceiptsTable].BatchAppend(bf.nextBlockNumber, listOfReceipts); err != nil {
+		return errors.Wrap(err, "failed to append block receipts")
 	}
-	atomic.AddUint64(&bf.blocks, uint64(batchNum)) // Only modify atomically
+	atomic.AddUint64(&bf.nextBlockNumber, uint64(batchNum)) // Only modify atomically
 	return nil
 }
 
-func (bf *BlockFile) TruncateBlocks(items uint64) error {
-	if atomic.LoadUint64(&bf.blocks) <= items {
+func (bf *blockFile) TruncateBlocks(targetBlock uint64) error {
+	if targetBlock >= atomic.LoadUint64(&bf.nextBlockNumber) {
 		return nil
 	}
 	for _, table := range bf.tables {
-		if err := table.truncate(items); err != nil {
+		if err := table.truncate(targetBlock + 1); err != nil {
 			return err
 		}
 	}
-	atomic.StoreUint64(&bf.blocks, items)
+	atomic.StoreUint64(&bf.nextBlockNumber, targetBlock+1)
 	return nil
 }
 
 // repair truncates all data tables to the same length.
-func (bf *BlockFile) repair() error {
-	min := uint64(math.MaxUint64)
+func (bf *blockFile) repair() error {
+	minNumber := uint64(math.MaxUint64)
 	for _, table := range bf.tables {
 		items := atomic.LoadUint64(&table.items)
-		if min > items {
-			min = items
+		if minNumber > items {
+			minNumber = items
 		}
 	}
 	for _, table := range bf.tables {
-		if err := table.truncate(min); err != nil {
+		if err := table.truncate(minNumber); err != nil {
 			return err
 		}
 	}
-	atomic.StoreUint64(&bf.blocks, min)
+	atomic.StoreUint64(&bf.nextBlockNumber, minNumber)
 	return nil
 }
 
-func (bf *BlockFile) Close() error {
+func (bf *blockFile) Close() error {
 	var errs []error
 	bf.closeOnce.Do(func() {
 		for _, table := range bf.tables {

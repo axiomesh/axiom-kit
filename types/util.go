@@ -153,3 +153,11 @@ func insertDot(str string, count int) string {
 	res = strings.TrimRight(res, ".")
 	return res
 }
+
+func IsZeroBytes(bytes []byte) bool {
+	b := byte(0)
+	for _, s := range bytes {
+		b |= s
+	}
+	return b == 0
+}

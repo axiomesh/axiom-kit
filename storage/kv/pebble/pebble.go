@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 )
 
 const (
@@ -27,7 +27,7 @@ type pdb struct {
 }
 
 // todo (zqr): use logger to record panic
-func New(path string, opts *pebble.Options, wo *pebble.WriteOptions, logger logrus.FieldLogger, metricsOpts ...MetricsOption) (storage.Storage, error) {
+func New(path string, opts *pebble.Options, wo *pebble.WriteOptions, logger logrus.FieldLogger, metricsOpts ...MetricsOption) (kv.Storage, error) {
 	db, err := pebble.Open(path, opts)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (p *pdb) Has(key []byte) bool {
 	return true
 }
 
-func (p *pdb) Iterator(start, end []byte) storage.Iterator {
+func (p *pdb) Iterator(start, end []byte) kv.Iterator {
 	iter := &iter{
 		iter: p.db.NewIter(&pebble.IterOptions{
 			LowerBound: start,
@@ -111,7 +111,7 @@ func (p *pdb) Iterator(start, end []byte) storage.Iterator {
 	return iter
 }
 
-func (p *pdb) Prefix(prefix []byte) storage.Iterator {
+func (p *pdb) Prefix(prefix []byte) kv.Iterator {
 	ran := util.BytesPrefix(prefix)
 	iter := &iter{
 		iter: p.db.NewIter(&pebble.IterOptions{
@@ -124,7 +124,7 @@ func (p *pdb) Prefix(prefix []byte) storage.Iterator {
 	return iter
 }
 
-func (p *pdb) NewBatch() storage.Batch {
+func (p *pdb) NewBatch() kv.Batch {
 	return &pdbBatch{
 		batch:  p.db.NewBatch(),
 		wo:     p.wo,

@@ -108,6 +108,10 @@ func (h *Hash) SetBytes(b []byte) {
 	h.hashStr = ""
 }
 
+func (h *Hash) IsZero() bool {
+	return IsZeroBytes(h.rawHash.Bytes())
+}
+
 func (h *Hash) ETHHash() common.Hash {
 	return h.rawHash
 }
@@ -195,6 +199,10 @@ func (a *Address) Bytes() []byte {
 		return []byte{}
 	}
 	return a.rawAddress.Bytes()
+}
+
+func (a *Address) IsZero() bool {
+	return IsZeroBytes(a.rawAddress.Bytes())
 }
 
 // String returns an EIP55-compliant hex string representation of the address.

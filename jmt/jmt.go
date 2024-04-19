@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 	"github.com/axiomesh/axiom-kit/types"
 )
 
@@ -22,7 +22,7 @@ type JMT struct {
 	rootNodeKey *types.NodeKey
 	typ         []byte
 
-	backend    storage.Storage
+	backend    kv.Storage
 	pruneCache PruneCache
 	trieCache  TrieCache
 	dirtySet   map[string]types.Node
@@ -37,7 +37,7 @@ type PruneArgs struct {
 
 // New load and init jmt from kv.
 // Before New, there must be a mapping <rootHash, rootNodeKey> in kv.
-func New(rootHash common.Hash, backend storage.Storage, trieCache TrieCache, pruneCache PruneCache, logger logrus.FieldLogger) (*JMT, error) {
+func New(rootHash common.Hash, backend kv.Storage, trieCache TrieCache, pruneCache PruneCache, logger logrus.FieldLogger) (*JMT, error) {
 	var root types.Node
 	var err error
 	jmt := &JMT{

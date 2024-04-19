@@ -2,19 +2,17 @@ package jmt
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/axiomesh/axiom-kit/log"
-	"github.com/axiomesh/axiom-kit/storage"
-	"github.com/axiomesh/axiom-kit/storage/pebble"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 	"github.com/axiomesh/axiom-kit/types"
 )
 
@@ -308,6 +306,7 @@ func Test_DeleteUntilEmptyTreeWithStateTransit2(t *testing.T) {
 
 	// verify
 	jmt2, err := New(rootHash1, s, nil, nil, jmt.logger)
+	require.Nil(t, err)
 	n, err = jmt2.Get(toHex("a1"))
 	require.Nil(t, err)
 	require.Nil(t, n)
@@ -991,17 +990,17 @@ func Test_Case_Random_1(t *testing.T) {
 		// nnum := rand.Intn(maxn)
 		nnum := maxn
 		fmt.Println("【Random Testcase ", i, "】, node num:", nnum)
-		kv := make(map[string][]byte, nnum)
+		kvMap := make(map[string][]byte, nnum)
 		for j := 0; j < nnum; j++ {
 			k, v := getRandomHexKV(4, 16)
-			kv[string(k)] = v
+			kvMap[string(k)] = v
 			err := jmt.Update(0, k, v)
 			require.Nil(t, err)
 		}
 		rootHash := jmt.Commit(nil)
 		jmt, err := New(rootHash, s, nil, nil, jmt.logger)
 		require.Nil(t, err)
-		for k, v := range kv {
+		for k, v := range kvMap {
 			n, err := jmt.Get(([]byte)(k))
 			require.Nil(t, err)
 			require.NotNil(t, n)
@@ -1151,7 +1150,7 @@ func printJMT(jmt *JMT, version uint64) {
 	for {
 		data, err := iter.Next()
 		if err != nil {
-			if err == ErrorNoMoreData {
+			if errors.Is(err, ErrorNoMoreData) {
 				break
 			}
 			panic(err)
@@ -1174,9 +1173,8 @@ func convertHex(in []byte) string {
 	return ret
 }
 
-func initEmptyJMT() (*JMT, storage.Storage) {
-	dir, _ := os.MkdirTemp("", "TestKV")
-	s, _ := pebble.New(dir, nil, nil, logrus.New())
+func initEmptyJMT() (*JMT, kv.Storage) {
+	s := kv.NewMemory()
 	logger := log.NewWithModule("JMT-Test")
 	// init dummy jmt
 	rootHash := common.Hash{}
@@ -1229,9 +1227,8 @@ func getRandomHexKV(lk, lv int) (k []byte, v []byte) {
 	return k, v
 }
 
-func initKV() storage.Storage {
-	dir, _ := os.MkdirTemp("", "TestKV")
-	s, _ := pebble.New(dir, nil, nil, logrus.New())
+func initKV() kv.Storage {
+	s := kv.NewMemory()
 	// init dummy jmt
 	rootHash := placeHolder
 	rootNodeKey := &types.NodeKey{
