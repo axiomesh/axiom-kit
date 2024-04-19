@@ -2,7 +2,6 @@ package blockfile
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -32,30 +31,76 @@ func TestBlockFileBasics(t *testing.T) {
 	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
-	err = f.TruncateBlocks(uint64(0))
-	assert.Nil(t, err)
-	err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte(""), []byte("1"), []byte("1"))
-	assert.Nil(t, err)
-	num, err := f.Blocks()
-	assert.Nil(t, err)
-	assert.Equal(t, uint64(1), num)
 
-	_, err = f.Get(BlockFileHeaderTable, uint64(1))
-	assert.Nil(t, err)
+	tests := []struct {
+		name string
+		f    BlockFile
+	}{
+		{
+			name: "file",
+			f:    f,
+		},
+		{
+			name: "memory",
+			f:    NewMemory(),
+		},
+	}
 
-	emptyExtra, err := f.Get(BlockFileExtraTable, uint64(1))
-	assert.Nil(t, err)
-	assert.Empty(t, emptyExtra)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := tt.f
+			err = f.TruncateBlocks(uint64(0))
+			assert.Nil(t, err)
+			err = f.AppendBlock(uint64(0), types.NewHash([]byte{1}).Bytes(), []byte("0"), []byte(""), []byte("0"), []byte("0"))
+			assert.Nil(t, err)
+			num := f.NextBlockNumber()
+			assert.Equal(t, uint64(1), num)
 
-	err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
-	assert.Nil(t, err)
-	num, err = f.Blocks()
-	assert.Nil(t, err)
-	assert.Equal(t, uint64(2), num)
+			_, err = f.Get(BlockFileHeaderTable, uint64(0))
+			assert.Nil(t, err)
 
-	extra, err := f.Get(BlockFileExtraTable, uint64(2))
-	assert.Nil(t, err)
-	assert.EqualValues(t, []byte("1"), extra)
+			emptyExtra, err := f.Get(BlockFileExtraTable, uint64(0))
+			assert.Nil(t, err)
+			assert.Empty(t, emptyExtra)
+
+			err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+			assert.Nil(t, err)
+			num = f.NextBlockNumber()
+			assert.Equal(t, uint64(2), num)
+
+			extra, err := f.Get(BlockFileExtraTable, uint64(1))
+			assert.Nil(t, err)
+			assert.EqualValues(t, []byte("1"), extra)
+
+			err = f.TruncateBlocks(uint64(1))
+			assert.Nil(t, err)
+			assert.Equal(t, uint64(2), f.NextBlockNumber())
+
+			err = f.TruncateBlocks(uint64(2))
+			assert.Nil(t, err)
+			assert.Equal(t, uint64(2), f.NextBlockNumber())
+
+			err = f.TruncateBlocks(uint64(0))
+			assert.Nil(t, err)
+			assert.Equal(t, uint64(1), f.NextBlockNumber())
+
+			_, err = f.Get(BlockFileHeaderTable, uint64(1))
+			assert.Error(t, err)
+
+			header0, err := f.Get(BlockFileHeaderTable, uint64(0))
+			assert.Nil(t, err)
+			assert.EqualValues(t, []byte("0"), header0)
+
+			err = f.AppendBlock(uint64(1), types.NewHash([]byte{1}).Bytes(), []byte("1"), []byte("1"), []byte("1"), []byte("1"))
+			assert.Nil(t, err)
+			num = f.NextBlockNumber()
+			assert.Equal(t, uint64(2), num)
+
+			header1, err := f.Get(BlockFileHeaderTable, uint64(1))
+			assert.Nil(t, err)
+			assert.EqualValues(t, []byte("1"), header1)
+		})
+	}
 }
 
 func TestBlockTableBasics(t *testing.T) {
@@ -79,7 +124,7 @@ func TestBlockTableBasics(t *testing.T) {
 	}
 	// Check that we cannot read too far
 	_, err = f.Retrieve(uint64(255))
-	assert.Equal(t, errors.New("out of bounds"), err)
+	assert.ErrorContains(t, err, "out of bounds")
 }
 
 func TestBatchAppendBlock(t *testing.T) {
@@ -109,11 +154,11 @@ func TestBatchAppendBlock(t *testing.T) {
 	}
 	// Check that we cannot read too far
 	_, err = f.Retrieve(uint64(batchNum))
-	ast.Equal(errors.New("out of bounds"), err)
+	assert.ErrorContains(t, err, "out of bounds")
 }
 
 func TestAppendBlocKCase1(t *testing.T) {
-	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
+	f, err := newBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
@@ -126,7 +171,7 @@ func TestAppendBlocKCase1(t *testing.T) {
 }
 
 func TestAppendBlocKCase2(t *testing.T) {
-	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
+	f, err := newBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))
@@ -139,7 +184,7 @@ func TestAppendBlocKCase2(t *testing.T) {
 }
 
 func TestAppendBlocKCase4(t *testing.T) {
-	f, err := NewBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
+	f, err := newBlockFile(getStoragePath(t), log.NewWithModule("blockfile_test"))
 	assert.Nil(t, err)
 	defer f.Close()
 	err = f.TruncateBlocks(uint64(0))

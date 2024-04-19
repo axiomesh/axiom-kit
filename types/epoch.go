@@ -27,6 +27,9 @@ type ConsensusParams struct {
 	// Used to calculate max log size in memory: CheckpointPeriod*HighWatermarkCheckpointPeriod.
 	HighWatermarkCheckpointPeriod uint64 `mapstructure:"high_watermark_checkpoint_period" toml:"high_watermark_checkpoint_period" json:"high_watermark_checkpoint_period"`
 
+	// The minimum number of validators in the network.
+	MinValidatorNum uint64 `mapstructure:"min_validator_num" toml:"min_validator_num" json:"min_validator_num"`
+
 	// The maximum number of validators in the network.
 	MaxValidatorNum uint64 `mapstructure:"max_validator_num" toml:"max_validator_num" json:"max_validator_num"`
 
@@ -58,19 +61,17 @@ type ConsensusParams struct {
 type FinanceParams struct {
 	GasLimit uint64 `mapstructure:"gas_limit" toml:"gas_limit" json:"gas_limit"`
 
-	StartGasPriceAvailable bool        `mapstructure:"start_gas_price_available" toml:"start_gas_price_available" json:"start_gas_price_available"`
-	StartGasPrice          *CoinNumber `mapstructure:"start_gas_price" toml:"start_gas_price" json:"start_gas_price"`
-	MaxGasPrice            *CoinNumber `mapstructure:"max_gas_price" toml:"max_gas_price" json:"max_gas_price"`
-	MinGasPrice            *CoinNumber `mapstructure:"min_gas_price" toml:"min_gas_price" json:"min_gas_price"`
-	GasChangeRateValue     uint64      `mapstructure:"gas_change_rate_value" toml:"gas_change_rate_value" json:"gas_change_rate_value"`
-	GasChangeRateDecimals  uint64      `mapstructure:"gas_change_rate_decimals" toml:"gas_change_rate_decimals" json:"gas_change_rate_decimals"`
+	MinGasPrice *CoinNumber `mapstructure:"min_gas_price" toml:"min_gas_price" json:"min_gas_price"`
 }
 
 type StakeParams struct {
-	StakeEnable                      bool        `mapstructure:"stake_enable" toml:"stake_enable" json:"stake_enable"`
-	MaxAddStakeRatio                 uint64      `mapstructure:"max_add_stake_ratio" toml:"max_add_stake_ratio" json:"max_add_stake_ratio"`
-	MaxUnlockStakeRatio              uint64      `mapstructure:"max_unlock_stake_ratio" toml:"max_unlock_stake_ratio" json:"max_unlock_stake_ratio"`
-	UnlockPeriodEpochNumber          uint64      `mapstructure:"unlock_period_epoch_number" toml:"unlock_period_epoch_number" json:"unlock_period_epoch_number"`
+	StakeEnable         bool   `mapstructure:"stake_enable" toml:"stake_enable" json:"stake_enable"`
+	MaxAddStakeRatio    uint64 `mapstructure:"max_add_stake_ratio" toml:"max_add_stake_ratio" json:"max_add_stake_ratio"`
+	MaxUnlockStakeRatio uint64 `mapstructure:"max_unlock_stake_ratio" toml:"max_unlock_stake_ratio" json:"max_unlock_stake_ratio"`
+
+	// unit: seconds
+	UnlockPeriod uint64 `mapstructure:"unlock_period" toml:"unlock_period" json:"unlock_period"`
+
 	MaxPendingInactiveValidatorRatio uint64      `mapstructure:"max_pending_inactive_validator_ratio" toml:"max_pending_inactive_validator_ratio" json:"max_pending_inactive_validator_ratio"`
 	MinDelegateStake                 *CoinNumber `mapstructure:"min_delegate_stake" toml:"min_delegate_stake" json:"min_delegate_stake"`
 	MinValidatorStake                *CoinNumber `mapstructure:"min_validator_stake" toml:"min_validator_stake" json:"min_validator_stake"`
@@ -120,6 +121,7 @@ func (e *EpochInfo) Clone() *EpochInfo {
 			ProposerElectionType:          e.ConsensusParams.ProposerElectionType,
 			CheckpointPeriod:              e.ConsensusParams.CheckpointPeriod,
 			HighWatermarkCheckpointPeriod: e.ConsensusParams.HighWatermarkCheckpointPeriod,
+			MinValidatorNum:               e.ConsensusParams.MinValidatorNum,
 			MaxValidatorNum:               e.ConsensusParams.MaxValidatorNum,
 			BlockMaxTxNum:                 e.ConsensusParams.BlockMaxTxNum,
 			EnableTimedGenEmptyBlock:      e.ConsensusParams.EnableTimedGenEmptyBlock,
@@ -130,19 +132,14 @@ func (e *EpochInfo) Clone() *EpochInfo {
 			ReBroadcastToleranceNumber:                         e.ConsensusParams.ReBroadcastToleranceNumber,
 		},
 		FinanceParams: FinanceParams{
-			GasLimit:               e.FinanceParams.GasLimit,
-			StartGasPriceAvailable: e.FinanceParams.StartGasPriceAvailable,
-			StartGasPrice:          e.FinanceParams.StartGasPrice.Clone(),
-			MaxGasPrice:            e.FinanceParams.MaxGasPrice.Clone(),
-			MinGasPrice:            e.FinanceParams.MinGasPrice.Clone(),
-			GasChangeRateValue:     e.FinanceParams.GasChangeRateValue,
-			GasChangeRateDecimals:  e.FinanceParams.GasChangeRateDecimals,
+			GasLimit:    e.FinanceParams.GasLimit,
+			MinGasPrice: e.FinanceParams.MinGasPrice.Clone(),
 		},
 		StakeParams: StakeParams{
 			StakeEnable:                      e.StakeParams.StakeEnable,
 			MaxAddStakeRatio:                 e.StakeParams.MaxAddStakeRatio,
 			MaxUnlockStakeRatio:              e.StakeParams.MaxUnlockStakeRatio,
-			UnlockPeriodEpochNumber:          e.StakeParams.UnlockPeriodEpochNumber,
+			UnlockPeriod:                     e.StakeParams.UnlockPeriod,
 			MaxPendingInactiveValidatorRatio: e.StakeParams.MaxPendingInactiveValidatorRatio,
 			MinDelegateStake:                 e.StakeParams.MinDelegateStake.Clone(),
 			MinValidatorStake:                e.StakeParams.MinValidatorStake.Clone(),
@@ -198,8 +195,12 @@ func (p *ConsensusParams) Validate() error {
 		return errors.New("again_propose_interval_block_in_validators_num_percentage cannot be greater than or equal to 100")
 	}
 
-	if p.MaxValidatorNum < 4 {
-		return errors.New("max_validator_num must be greater than or equal to 4")
+	if p.MinValidatorNum == 0 {
+		return errors.New("min_validator_num must be greater than 0")
+	}
+
+	if p.MaxValidatorNum < p.MinValidatorNum {
+		return errors.Errorf("max_validator_num must be greater than or equal to %d", p.MinValidatorNum)
 	}
 
 	if p.BlockMaxTxNum == 0 {
@@ -217,14 +218,8 @@ func (p *ConsensusParams) Validate() error {
 }
 
 func (p *FinanceParams) Validate() error {
-	if !p.StartGasPrice.ToBigInt().IsUint64() {
-		return errors.Errorf("invalid start_gas_price %s, must be uint64", p.StartGasPrice)
-	}
 	if !p.MinGasPrice.ToBigInt().IsUint64() {
 		return errors.Errorf("invalid min_gas_price %s, must be uint64", p.MinGasPrice)
-	}
-	if !p.MaxGasPrice.ToBigInt().IsUint64() {
-		return errors.Errorf("invalid max_gas_price %s, must be uint64", p.MaxGasPrice)
 	}
 	return nil
 }

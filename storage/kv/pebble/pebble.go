@@ -1,13 +1,14 @@
 package pebble
 
 import (
+	"errors"
 	"time"
 
 	"github.com/cockroachdb/pebble"
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 )
 
 const (
@@ -26,8 +27,7 @@ type pdb struct {
 	metrics *Metrics
 }
 
-// todo (zqr): use logger to record panic
-func New(path string, opts *pebble.Options, wo *pebble.WriteOptions, logger logrus.FieldLogger, metricsOpts ...MetricsOption) (storage.Storage, error) {
+func New(path string, opts *pebble.Options, wo *pebble.WriteOptions, logger logrus.FieldLogger, metricsOpts ...MetricsOption) (kv.Storage, error) {
 	db, err := pebble.Open(path, opts)
 	if err != nil {
 		return nil, err
@@ -53,8 +53,7 @@ func (p *pdb) Put(key, value []byte) {
 	if err := p.db.Set(key, value, p.wo); err != nil {
 		p.logger.WithFields(logrus.Fields{
 			"err": err,
-		}).Error("Pebble put failed")
-		panic(err)
+		}).Panic("Pebble put failed")
 	}
 }
 
@@ -62,71 +61,92 @@ func (p *pdb) Delete(key []byte) {
 	if err := p.db.Delete(key, p.wo); err != nil {
 		p.logger.WithFields(logrus.Fields{
 			"err": err,
-		}).Error("Pebble delete failed")
-		panic(err)
+		}).Panic("Pebble delete failed")
 	}
 }
 
 func (p *pdb) Get(key []byte) []byte {
 	val, closer, err := p.db.Get(key)
 	if err != nil {
-		if err == pebble.ErrNotFound {
+		if errors.Is(err, pebble.ErrNotFound) {
 			return nil
 		}
 		p.logger.WithFields(logrus.Fields{
 			"err": err,
-		}).Error("Pebble get failed")
-		panic(err)
+		}).Panic("Pebble get failed")
+		return nil
 	}
 	ret := make([]byte, len(val))
 	copy(ret, val)
-	closer.Close()
+	if err := closer.Close(); err != nil {
+		p.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Warn("Pebble get closer close failed")
+	}
 	return ret
 }
 
 func (p *pdb) Has(key []byte) bool {
 	_, closer, err := p.db.Get(key)
 	if err != nil {
-		if err == pebble.ErrNotFound {
+		if errors.Is(err, pebble.ErrNotFound) {
 			return false
 		}
 		p.logger.WithFields(logrus.Fields{
 			"err": err,
-		}).Error("Pebble judge key has failed")
-		panic(err)
+		}).Panic("Pebble judge key has failed")
+		return false
 	}
-	closer.Close()
+	if err := closer.Close(); err != nil {
+		p.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Warn("Pebble has closer close failed")
+	}
 	return true
 }
 
-func (p *pdb) Iterator(start, end []byte) storage.Iterator {
-	it, _ := p.db.NewIter(&pebble.IterOptions{
+func (p *pdb) Iterator(start, end []byte) kv.Iterator {
+	it, err := p.db.NewIter(&pebble.IterOptions{
 		LowerBound: start,
 		UpperBound: end,
 	})
+	if err != nil {
+		p.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Panic("Pebble NewIter failed")
+		return nil
+	}
 	iter := &iter{
 		iter:       it,
 		positioned: false,
+		logger:     p.logger,
 	}
 	iter.iter.First()
 	return iter
 }
 
-func (p *pdb) Prefix(prefix []byte) storage.Iterator {
+func (p *pdb) Prefix(prefix []byte) kv.Iterator {
 	ran := util.BytesPrefix(prefix)
-	it, _ := p.db.NewIter(&pebble.IterOptions{
+	it, err := p.db.NewIter(&pebble.IterOptions{
 		LowerBound: ran.Start,
 		UpperBound: ran.Limit,
 	})
+	if err != nil {
+		p.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Panic("Pebble NewIter failed")
+		return nil
+	}
 	iter := &iter{
 		iter:       it,
 		positioned: false,
+		logger:     p.logger,
 	}
 	iter.iter.First()
 	return iter
 }
 
-func (p *pdb) NewBatch() storage.Batch {
+func (p *pdb) NewBatch() kv.Batch {
 	return &pdbBatch{
 		batch:  p.db.NewBatch(),
 		wo:     p.wo,
@@ -183,8 +203,8 @@ func (it *iter) Value() []byte {
 	if err != nil {
 		it.logger.WithFields(logrus.Fields{
 			"err": err,
-		}).Error("Pebble iter value failed")
-		panic(err)
+		}).Panic("Pebble iter value failed")
+		return nil
 	}
 	return val
 }
@@ -197,12 +217,22 @@ type pdbBatch struct {
 }
 
 func (p *pdbBatch) Put(key, value []byte) {
-	p.batch.Set(key, value, nil)
+	err := p.batch.Set(key, value, nil)
+	if err != nil {
+		p.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Warn("Pebble batch set failed")
+	}
 	p.size += len(key) + len(value)
 }
 
 func (p *pdbBatch) Delete(key []byte) {
-	p.batch.Delete(key, nil)
+	err := p.batch.Delete(key, nil)
+	if err != nil {
+		p.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Warn("Pebble batch delete failed")
+	}
 	p.size += len(key)
 }
 
@@ -210,8 +240,7 @@ func (p *pdbBatch) Commit() {
 	if err := p.batch.Commit(p.wo); err != nil {
 		p.logger.WithFields(logrus.Fields{
 			"err": err,
-		}).Error("Pebble batch commit failed")
-		panic(err)
+		}).Panic("Pebble batch commit failed")
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 	"github.com/axiomesh/axiom-kit/types"
 )
 
@@ -345,7 +345,7 @@ func Test_PruneHistoryWithOnlyDelete(t *testing.T) {
 	require.Equal(t, n, []byte("v8"))
 }
 
-func prune(backend storage.Storage, journal *types.TrieJournal) {
+func prune(backend kv.Storage, journal *types.TrieJournal) {
 	batch := backend.NewBatch()
 	for k := range journal.PruneSet {
 		batch.Delete([]byte(k))

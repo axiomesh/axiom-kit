@@ -143,7 +143,7 @@ func TestEpochInfo_Clone(t *testing.T) {
 	require.True(t, reflect.DeepEqual(epochInfo, epochInfo.Clone()))
 }
 
-func getAvailbaleEpochInfoWithSetter(setter func(e *EpochInfo)) *EpochInfo {
+func getAvailableEpochInfoWithSetter(setter func(e *EpochInfo)) *EpochInfo {
 	e := &EpochInfo{
 		Epoch:       1,
 		EpochPeriod: 100,
@@ -152,6 +152,7 @@ func getAvailbaleEpochInfoWithSetter(setter func(e *EpochInfo)) *EpochInfo {
 			ProposerElectionType:          ProposerElectionTypeWRF,
 			CheckpointPeriod:              1,
 			HighWatermarkCheckpointPeriod: 10,
+			MinValidatorNum:               4,
 			MaxValidatorNum:               4,
 			BlockMaxTxNum:                 500,
 			EnableTimedGenEmptyBlock:      false,
@@ -162,19 +163,14 @@ func getAvailbaleEpochInfoWithSetter(setter func(e *EpochInfo)) *EpochInfo {
 			ReBroadcastToleranceNumber:                         2,
 		},
 		FinanceParams: FinanceParams{
-			GasLimit:               0x5f5e100,
-			StartGasPriceAvailable: true,
-			StartGasPrice:          CoinNumberByGmol(5000),
-			MaxGasPrice:            CoinNumberByGmol(10000),
-			MinGasPrice:            CoinNumberByGmol(1000),
-			GasChangeRateValue:     1250,
-			GasChangeRateDecimals:  4,
+			GasLimit:    0x5f5e100,
+			MinGasPrice: CoinNumberByGmol(1000),
 		},
 		StakeParams: StakeParams{
 			StakeEnable:                      true,
 			MaxAddStakeRatio:                 1000,
 			MaxUnlockStakeRatio:              1000,
-			UnlockPeriodEpochNumber:          10,
+			UnlockPeriod:                     10,
 			MaxPendingInactiveValidatorRatio: 10,
 			MinDelegateStake:                 CoinNumberByAxc(100),
 			MinValidatorStake:                CoinNumberByAxc(10000000),
@@ -199,14 +195,14 @@ func TestEpochInfo_Validate(t *testing.T) {
 	}{
 		{
 			name:      "valid",
-			epochInfo: getAvailbaleEpochInfoWithSetter(nil),
+			epochInfo: getAvailableEpochInfoWithSetter(nil),
 			checkError: func(t *testing.T, err error) {
 				require.Nil(t, err)
 			},
 		},
 		{
 			name: "err EpochPeriod zero",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.EpochPeriod = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -215,7 +211,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err EpochPeriod",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.CheckpointPeriod = 10
 				e.EpochPeriod = 15
 			}),
@@ -227,7 +223,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		// consensus params
 		{
 			name: "err CheckpointPeriod",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.CheckpointPeriod = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -236,7 +232,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err HighWatermarkCheckpointPeriod",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.HighWatermarkCheckpointPeriod = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -245,7 +241,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err AgainProposeIntervalBlockInValidatorsNumPercentage zero",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.AgainProposeIntervalBlockInValidatorsNumPercentage = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -254,7 +250,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err AgainProposeIntervalBlockInValidatorsNumPercentage",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.AgainProposeIntervalBlockInValidatorsNumPercentage = 1000
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -262,8 +258,17 @@ func TestEpochInfo_Validate(t *testing.T) {
 			},
 		},
 		{
+			name: "err MinValidatorNum",
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
+				e.ConsensusParams.MinValidatorNum = 0
+			}),
+			checkError: func(t *testing.T, err error) {
+				require.ErrorContains(t, err, "min_validator_num must be greater than 0")
+			},
+		},
+		{
 			name: "err MaxValidatorNum",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.MaxValidatorNum = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -272,7 +277,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err BlockMaxTxNum",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.BlockMaxTxNum = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -281,7 +286,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err AbnormalNodeExcludeView",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.AbnormalNodeExcludeView = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -290,7 +295,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err ProposerElectionType",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.ConsensusParams.ProposerElectionType = "sss"
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -300,37 +305,19 @@ func TestEpochInfo_Validate(t *testing.T) {
 
 		// finance params
 		{
-			name: "err StartGasPrice",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
-				e.FinanceParams.StartGasPrice = CoinNumberByAxc(1000000)
-			}),
-			checkError: func(t *testing.T, err error) {
-				require.ErrorContains(t, err, "invalid start_gas_price")
-			},
-		},
-		{
 			name: "err MinGasPrice",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.FinanceParams.MinGasPrice = CoinNumberByAxc(1000000)
 			}),
 			checkError: func(t *testing.T, err error) {
 				require.ErrorContains(t, err, "invalid min_gas_price")
 			},
 		},
-		{
-			name: "err MaxGasPrice",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
-				e.FinanceParams.MaxGasPrice = CoinNumberByAxc(1000000)
-			}),
-			checkError: func(t *testing.T, err error) {
-				require.ErrorContains(t, err, "invalid max_gas_price")
-			},
-		},
 
 		// StakeParams
 		{
 			name: "err MaxAddStakeRatio zero",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxAddStakeRatio = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -339,7 +326,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MaxAddStakeRatio overflow",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxAddStakeRatio = RatioLimit + 1
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -348,7 +335,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MaxUnlockStakeRatio zero",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxUnlockStakeRatio = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -357,7 +344,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MaxUnlockStakeRatio overflow",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxUnlockStakeRatio = RatioLimit + 1
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -366,7 +353,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MaxPendingInactiveValidatorRatio zero",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxPendingInactiveValidatorRatio = 0
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -375,7 +362,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MaxPendingInactiveValidatorRatio overflow",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxPendingInactiveValidatorRatio = RatioLimit + 1
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -384,7 +371,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MinDelegateStake",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MinDelegateStake = CoinNumberByBigInt(new(big.Int).SetInt64(-1))
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -393,7 +380,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MinValidatorStake",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MinValidatorStake = CoinNumberByBigInt(new(big.Int).SetInt64(-1))
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -402,7 +389,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "err MaxValidatorStake",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.StakeParams.MaxValidatorStake = CoinNumberByBigInt(new(big.Int).SetInt64(-1))
 			}),
 			checkError: func(t *testing.T, err error) {
@@ -413,7 +400,7 @@ func TestEpochInfo_Validate(t *testing.T) {
 		// misc params
 		{
 			name: "err TxMaxSize",
-			epochInfo: getAvailbaleEpochInfoWithSetter(func(e *EpochInfo) {
+			epochInfo: getAvailableEpochInfoWithSetter(func(e *EpochInfo) {
 				e.MiscParams.TxMaxSize = 0
 			}),
 			checkError: func(t *testing.T, err error) {

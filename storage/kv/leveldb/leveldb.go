@@ -1,35 +1,25 @@
 package leveldb
 
 import (
+	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/errors"
+	leveldberrors "github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	leveldbstorage "github.com/syndtr/goleveldb/leveldb/storage"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 )
 
 type ldb struct {
 	db *leveldb.DB
 }
 
-func New(path string, o *opt.Options) (storage.Storage, error) {
+func New(path string, o *opt.Options) (kv.Storage, error) {
 	db, err := leveldb.OpenFile(path, o)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ldb{
-		db: db,
-	}, nil
-}
-
-func NewMemory() (storage.Storage, error) {
-	db, err := leveldb.Open(leveldbstorage.NewMemStorage(), nil)
-	if err != nil {
-		return nil, err
-	}
 	return &ldb{
 		db: db,
 	}, nil
@@ -50,7 +40,7 @@ func (l *ldb) Delete(key []byte) {
 func (l *ldb) Get(key []byte) []byte {
 	val, err := l.db.Get(key, nil)
 	if err != nil {
-		if err == errors.ErrNotFound {
+		if errors.Is(err, leveldberrors.ErrNotFound) {
 			return nil
 		}
 		panic(err)
@@ -62,7 +52,7 @@ func (l *ldb) Has(key []byte) bool {
 	return l.Get(key) != nil
 }
 
-func (l *ldb) Iterator(start, end []byte) storage.Iterator {
+func (l *ldb) Iterator(start, end []byte) kv.Iterator {
 	rg := &util.Range{
 		Start: start,
 		Limit: end,
@@ -72,13 +62,13 @@ func (l *ldb) Iterator(start, end []byte) storage.Iterator {
 	return &iter{iter: it}
 }
 
-func (l *ldb) Prefix(prefix []byte) storage.Iterator {
+func (l *ldb) Prefix(prefix []byte) kv.Iterator {
 	rg := util.BytesPrefix(prefix)
 
 	return &iter{iter: l.db.NewIterator(rg, nil)}
 }
 
-func (l *ldb) NewBatch() storage.Batch {
+func (l *ldb) NewBatch() kv.Batch {
 	return &ldbBatch{
 		ldb:   l.db,
 		batch: &leveldb.Batch{},

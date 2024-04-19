@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/axiomesh/axiom-kit/log"
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 )
 
 var testLogger = log.NewWithModule("storage_test")
@@ -453,7 +453,7 @@ func BenchmarkPebbleSuite(b *testing.B) {
 	path, err := os.MkdirTemp("", "*")
 	assert.Nil(b, err)
 
-	storage.BenchKvSuite(b, func() storage.Storage {
+	kv.BenchKvSuite(b, func() kv.Storage {
 		db, err := New(path, opts, nil, testLogger)
 		if err != nil {
 			b.Fatal(err)
