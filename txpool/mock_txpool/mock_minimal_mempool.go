@@ -32,7 +32,7 @@ type MockMinimalTxPool[T any, Constraint types.TXConstraint[T]] struct {
 // Users can define custom MockTxPool like this:
 // func NewMockCustomTxPool(ctrl *gomock.Controller) *MockTxPool {...}
 // in which users must specify output for all functions.
-func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int, ctrl *gomock.Controller) txpool.TxPool[T, Constraint] {
+func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int, ctrl *gomock.Controller) *MockMinimalTxPool[T, Constraint] {
 	mock := &MockMinimalTxPool[T, Constraint]{
 		MockTxPool:        NewMockTxPool[T, Constraint](ctrl),
 		allTxs:            make(map[string]map[string]*T),
