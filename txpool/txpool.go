@@ -74,6 +74,8 @@ type TxPool[T any, Constraint types.TXConstraint[T]] interface {
 	ReceiveMissingRequests(batchHash string, txs map[uint64]*T) error
 
 	GetLocalTxs() [][]byte
+
+	ReplyBatchSignal()
 }
 
 type txPoolInfo[T any, Constraint types.TXConstraint[T]] interface {

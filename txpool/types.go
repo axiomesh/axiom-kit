@@ -123,4 +123,5 @@ const (
 	GenBatchSizeEvent
 	ReConstructBatchEvent
 	GetTxsForGenBatchEvent
+	ReplyBatchSignalEvent
 )
