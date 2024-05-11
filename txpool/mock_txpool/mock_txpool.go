@@ -876,6 +876,42 @@ func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) DoAndReturn(f func
 	return c
 }
 
+// ReplyBatchSignal mocks base method.
+func (m *MockTxPool[T, Constraint]) ReplyBatchSignal() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReplyBatchSignal")
+}
+
+// ReplyBatchSignal indicates an expected call of ReplyBatchSignal.
+func (mr *MockTxPoolMockRecorder[T, Constraint]) ReplyBatchSignal() *MockTxPoolReplyBatchSignalCall[T, Constraint] {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplyBatchSignal", reflect.TypeOf((*MockTxPool[T, Constraint])(nil).ReplyBatchSignal))
+	return &MockTxPoolReplyBatchSignalCall[T, Constraint]{Call: call}
+}
+
+// MockTxPoolReplyBatchSignalCall wrap *gomock.Call
+type MockTxPoolReplyBatchSignalCall[T any, Constraint types.TXConstraint[T]] struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockTxPoolReplyBatchSignalCall[T, Constraint]) Return() *MockTxPoolReplyBatchSignalCall[T, Constraint] {
+	c.Call = c.Call.Return()
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockTxPoolReplyBatchSignalCall[T, Constraint]) Do(f func()) *MockTxPoolReplyBatchSignalCall[T, Constraint] {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockTxPoolReplyBatchSignalCall[T, Constraint]) DoAndReturn(f func()) *MockTxPoolReplyBatchSignalCall[T, Constraint] {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // RestoreOneBatch mocks base method.
 func (m *MockTxPool[T, Constraint]) RestoreOneBatch(hash string) error {
 	m.ctrl.T.Helper()

@@ -269,6 +269,8 @@ func NewMockMinimalTxPool[T any, Constraint types.TXConstraint[T]](batchSize int
 	mock.EXPECT().IsStarted().DoAndReturn(func() bool {
 		return mock.started.Load()
 	}).AnyTimes()
+
+	mock.EXPECT().ReplyBatchSignal().Return().AnyTimes()
 	return mock
 }
 
