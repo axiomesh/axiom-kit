@@ -62,6 +62,7 @@ type (
 	}
 
 	NodeKeyHeap []*NodeKey // max heap to store NodeKey
+
 )
 
 // just for debug
@@ -148,7 +149,7 @@ func (j *TrieJournal) String() string {
 	}
 	sort.Strings(dirtyKeys)
 	for _, k := range dirtyKeys {
-		//res.WriteString(fmt.Sprintf("%v\n", DecodeNodeKey([]byte(k)).String()))
+		// res.WriteString(fmt.Sprintf("%v\n", DecodeNodeKey([]byte(k)).String()))
 		res.WriteString(fmt.Sprintf("%v\n", []byte(k)))
 	}
 
@@ -159,7 +160,7 @@ func (j *TrieJournal) String() string {
 	}
 	sort.Strings(pruneKeys)
 	for _, k := range pruneKeys {
-		//res.WriteString(fmt.Sprintf("%v\n", DecodeNodeKey([]byte(k)).String()))
+		// res.WriteString(fmt.Sprintf("%v\n", DecodeNodeKey([]byte(k)).String()))
 		res.WriteString(fmt.Sprintf("%v\n", []byte(k)))
 	}
 	res.WriteString("]}\n")
@@ -476,11 +477,11 @@ func (h NodeKeyHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
-func (h *NodeKeyHeap) Push(x interface{}) {
+func (h *NodeKeyHeap) Push(x any) {
 	*h = append(*h, x.(*NodeKey))
 }
 
-func (h *NodeKeyHeap) Pop() interface{} {
+func (h *NodeKeyHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]

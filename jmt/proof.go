@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axiomesh/axiom-kit/log"
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 	"github.com/axiomesh/axiom-kit/types"
 )
 
@@ -69,7 +69,7 @@ func (jmt *JMT) prove(root types.Node, key []byte, next int, proof *ProofResult)
 }
 
 // VerifyTrie verifies a whole trie
-func VerifyTrie(rootHash common.Hash, backend storage.Storage, cache PruneCache) (bool, error) {
+func VerifyTrie(rootHash common.Hash, backend kv.Storage, cache PruneCache) (bool, error) {
 	logger := log.NewWithModule("JMT-VerifyTrie")
 
 	trie, err := New(rootHash, backend, nil, cache, logger)

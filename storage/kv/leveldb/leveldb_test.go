@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 
-	"github.com/axiomesh/axiom-kit/storage"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 )
 
 func TestIter_Next(t *testing.T) {
@@ -428,23 +428,11 @@ func BenchmarkLevelDbSuite(b *testing.B) {
 	path, err := os.MkdirTemp("", "*")
 	assert.Nil(b, err)
 
-	storage.BenchKvSuite(b, func() storage.Storage {
+	kv.BenchKvSuite(b, func() kv.Storage {
 		db, err := New(path, &opt.Options{})
 		if err != nil {
 			b.Fatal(err)
 		}
 		return db
 	})
-}
-
-func TestLdb_Mem(t *testing.T) {
-	s, err := NewMemory()
-	require.Nil(t, err)
-
-	s.Put([]byte("key"), []byte("value"))
-	v1 := s.Get([]byte("key"))
-	assert.Equal(t, v1, []byte("value"))
-	s.Delete([]byte("key"))
-	v2 := s.Get([]byte("key"))
-	assert.True(t, v2 == nil)
 }

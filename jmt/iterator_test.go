@@ -1,15 +1,13 @@
 package jmt
 
 import (
-	"os"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/axiomesh/axiom-kit/storage"
-	"github.com/axiomesh/axiom-kit/storage/pebble"
+	"github.com/axiomesh/axiom-kit/storage/kv"
 )
 
 func Test_IterateEmptyTree(t *testing.T) {
@@ -25,7 +23,7 @@ func Test_IterateEmptyTree(t *testing.T) {
 	for {
 		node, err := iter.Next()
 		if err != nil {
-			if err == ErrorNoMoreData {
+			if errors.Is(err, ErrorNoMoreData) {
 				require.Equal(t, 1, len(res))
 				break
 			} else {
@@ -57,7 +55,7 @@ func Test_IterateStop(t *testing.T) {
 			n, err := iter.Next()
 			if err != nil {
 				require.Nil(t, n)
-				if err != ErrorNoMoreData {
+				if !errors.Is(err, ErrorNoMoreData) {
 					require.Equal(t, err, ErrorInterrupted)
 				} else {
 					require.Equal(t, 1, len(res))
@@ -89,7 +87,7 @@ func Test_IterateTimeout(t *testing.T) {
 			n, err := iter.Next()
 			if err != nil {
 				require.Nil(t, n)
-				if err != ErrorNoMoreData {
+				if !errors.Is(err, ErrorNoMoreData) {
 					require.Equal(t, err, ErrorTimeout)
 				} else {
 					require.Equal(t, 1, len(res))
@@ -164,7 +162,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 			data, err := iter.Next()
 			if err != nil {
 				require.Nil(t, data)
-				if err == ErrorNoMoreData {
+				if errors.Is(err, ErrorNoMoreData) {
 					break
 				}
 				panic(err)
@@ -217,7 +215,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 			data, err := iter.Next()
 			if err != nil {
 				require.Nil(t, data)
-				if err == ErrorNoMoreData {
+				if errors.Is(err, ErrorNoMoreData) {
 					break
 				}
 				panic(err)
@@ -273,7 +271,7 @@ func Test_IterateHistoryTrie(t *testing.T) {
 		for {
 			data, err := iter.Next()
 			if err != nil {
-				if err == ErrorNoMoreData {
+				if errors.Is(err, ErrorNoMoreData) {
 					break
 				}
 				panic(err)
@@ -400,7 +398,7 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 			data, err := iter.Next()
 			if err != nil {
 				require.Nil(t, data)
-				if err == ErrorNoMoreData {
+				if errors.Is(err, ErrorNoMoreData) {
 					break
 				}
 				panic(err)
@@ -422,7 +420,7 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 			data, err := iter.Next()
 			if err != nil {
 				require.Nil(t, data)
-				if err == ErrorNoMoreData {
+				if errors.Is(err, ErrorNoMoreData) {
 					break
 				}
 				panic(err)
@@ -443,7 +441,7 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 		for {
 			data, err := iter.Next()
 			if err != nil {
-				if err == ErrorNoMoreData {
+				if errors.Is(err, ErrorNoMoreData) {
 					break
 				}
 				panic(err)
@@ -459,8 +457,6 @@ func Test_IterateHistoryTrieLeafOnly(t *testing.T) {
 	}
 }
 
-func initKVStorage() storage.Storage {
-	dir, _ := os.MkdirTemp("", "TestKVStorage")
-	s, _ := pebble.New(dir, nil, nil, logrus.New())
-	return s
+func initKVStorage() kv.Storage {
+	return kv.NewMemory()
 }

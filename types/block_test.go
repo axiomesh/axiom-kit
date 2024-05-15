@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/samber/lo"
@@ -27,18 +28,17 @@ func TestBlock_Marshal(t *testing.T) {
 		},
 		{
 			Header: &BlockHeader{
-				Number:          0,
-				StateRoot:       NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
-				TxRoot:          NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
-				ReceiptRoot:     NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
-				ParentHash:      NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
-				Timestamp:       0,
-				Epoch:           0,
-				Bloom:           new(Bloom),
-				GasPrice:        0,
-				ProposerAccount: "111",
-				GasUsed:         0,
-				ProposerNodeID:  0,
+				Number:         0,
+				StateRoot:      NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				TxRoot:         NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				ReceiptRoot:    NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				ParentHash:     NewHashByStr("0x416cff32e16ee5b024d89a5ec055a706d8f9d289859f7e1f9622610b13f8067c"),
+				Timestamp:      0,
+				Epoch:          0,
+				Bloom:          new(Bloom),
+				GasPrice:       0,
+				GasUsed:        0,
+				ProposerNodeID: 0,
 			},
 			Transactions: []*Transaction{
 				tx,
@@ -94,27 +94,31 @@ func TestClone(t *testing.T) {
 	assert.Nil(t, err)
 	tx2, err := GenerateEmptyTransactionAndSigner()
 	assert.Nil(t, err)
+	bloom := new(Bloom)
+	bloom[0] = 1
 	tests := []*Block{
-		{},
 		{
 			Header:       &BlockHeader{},
 			Transactions: []*Transaction{tx1, tx2},
 			Extra:        &BlockExtra{},
 		},
+		{},
 		{
 			Header: &BlockHeader{
-				Number:          0,
-				StateRoot:       NewHashByStr("1111111111111111111111111111111111111111111111111111111111111111"),
-				TxRoot:          NewHashByStr("2222222222222222222222222222222222222222222222222222222222222222"),
-				ReceiptRoot:     NewHashByStr("3333333333333333333333333333333333333333333333333333333333333333"),
-				ParentHash:      NewHashByStr("4444444444444444444444444444444444444444444444444444444444444444"),
-				Timestamp:       0,
-				Epoch:           0,
-				Bloom:           new(Bloom),
-				GasPrice:        0,
-				ProposerAccount: "111",
-				GasUsed:         0,
-				ProposerNodeID:  0,
+				Number:         1,
+				StateRoot:      NewHashByStr("1111111111111111111111111111111111111111111111111111111111111111"),
+				TxRoot:         NewHashByStr("2222222222222222222222222222222222222222222222222222222222222222"),
+				ReceiptRoot:    NewHashByStr("3333333333333333333333333333333333333333333333333333333333333333"),
+				ParentHash:     NewHashByStr("4444444444444444444444444444444444444444444444444444444444444444"),
+				Timestamp:      1,
+				Epoch:          1,
+				Bloom:          bloom,
+				ProposerNodeID: 1,
+				GasPrice:       1,
+				GasUsed:        1,
+				TotalGasFee:    big.NewInt(1),
+				GasFeeReward:   big.NewInt(1),
+				hashCache:      atomic.Value{},
 			},
 		},
 	}
@@ -172,8 +176,9 @@ func TestClone(t *testing.T) {
 				assert.Equal(t, tt.Header.GasPrice, clonedBlock.Header.GasPrice)
 				assert.Equal(t, tt.Header.GasUsed, clonedBlock.Header.GasUsed)
 				assert.Equal(t, tt.Header.Timestamp, clonedBlock.Header.Timestamp)
-				assert.Equal(t, tt.Header.ProposerAccount, clonedBlock.Header.ProposerAccount)
 				assert.Equal(t, tt.Header.ProposerNodeID, clonedBlock.Header.ProposerNodeID)
+				assert.Equal(t, tt.Header.TotalGasFee, clonedBlock.Header.TotalGasFee)
+				assert.Equal(t, tt.Header.GasFeeReward, clonedBlock.Header.GasFeeReward)
 			}
 		})
 	}

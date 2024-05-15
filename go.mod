@@ -2,10 +2,7 @@ module github.com/axiomesh/axiom-kit
 
 go 1.20
 
-replace (
-	github.com/ethereum/go-ethereum v1.13.14 => github.com/axiomesh/go-ethereum v1.13.14-1
-	github.com/kataras/iris/v12 v12.2.0-beta5 => github.com/kataras/iris/v12 v12.2.10
-)
+replace github.com/ethereum/go-ethereum v1.13.14 => github.com/axiomesh/go-ethereum v1.13.14-1
 
 require (
 	github.com/cbergoon/merkletree v0.2.0

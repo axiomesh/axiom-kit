@@ -4,13 +4,13 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/axiomesh/axiom-kit/types/pb"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+
+	"github.com/axiomesh/axiom-kit/types/pb"
 )
 
 // Transaction types.
@@ -42,6 +42,7 @@ type TxData interface {
 
 	RawSignatureValues() (v, r, s *big.Int)
 	setSignatureValues(chainID, v, r, s *big.Int)
+	EffectiveGasPrice(baseFee *big.Int) *big.Int
 }
 
 // AccessListTx is the data of EIP-2930 access list transactions.
@@ -101,6 +102,7 @@ type IncentiveTx struct {
 
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"`
+
 	R *big.Int `json:"r" gencodec:"required"`
 	S *big.Int `json:"s" gencodec:"required"`
 }
@@ -179,6 +181,10 @@ func (tx *AccessListTx) RawSignatureValues() (v, r, s *big.Int) {
 
 func (tx *AccessListTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.ChainID, tx.V, tx.R, tx.S = chainID, v, r, s
+}
+
+func (tx *AccessListTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return new(big.Int).Set(tx.GasPrice)
 }
 
 func (tx *AccessListTx) toPB() *pb.AccessListTx {
@@ -281,6 +287,10 @@ func (tx *LegacyTx) RawSignatureValues() (v, r, s *big.Int) {
 
 func (tx *LegacyTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.V, tx.R, tx.S = v, r, s
+}
+
+func (tx *LegacyTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	return new(big.Int).Set(tx.GasPrice)
 }
 
 func (tx *LegacyTx) toPB() *pb.LegacyTx {
@@ -392,6 +402,18 @@ func (tx *DynamicFeeTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.ChainID, tx.V, tx.R, tx.S = chainID, v, r, s
 }
 
+func (tx *DynamicFeeTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	dst := new(big.Int)
+	if baseFee == nil {
+		return dst.Set(tx.GasFeeCap)
+	}
+	tip := dst.Sub(tx.GasFeeCap, baseFee)
+	if tip.Cmp(tx.GasTipCap) > 0 {
+		tip.Set(tx.GasTipCap)
+	}
+	return tip.Add(tip, baseFee)
+}
+
 func (tx *DynamicFeeTx) toPB() *pb.DynamicFeeTx {
 	if tx == nil {
 		return &pb.DynamicFeeTx{}
@@ -497,11 +519,25 @@ func (tx *IncentiveTx) GetTo() *common.Address { return tx.To }
 func (tx *IncentiveTx) GetIncentiveAddress() *common.Address {
 	return tx.IncentiveAddress
 }
+
 func (tx *IncentiveTx) RawSignatureValues() (v, r, s *big.Int) {
 	return tx.V, tx.R, tx.S
 }
+
 func (tx *IncentiveTx) setSignatureValues(chainID, v, r, s *big.Int) {
 	tx.ChainID, tx.V, tx.R, tx.S = chainID, v, r, s
+}
+
+func (tx *IncentiveTx) EffectiveGasPrice(baseFee *big.Int) *big.Int {
+	dst := new(big.Int)
+	if baseFee == nil {
+		return dst.Set(tx.GasFeeCap)
+	}
+	tip := dst.Sub(tx.GasFeeCap, baseFee)
+	if tip.Cmp(tx.GasTipCap) > 0 {
+		tip.Set(tx.GasTipCap)
+	}
+	return tip.Add(tip, baseFee)
 }
 
 func (tx *IncentiveTx) toPB() *pb.IncentiveTx {

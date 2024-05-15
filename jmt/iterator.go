@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/axiomesh/axiom-kit/storage"
-	"github.com/axiomesh/axiom-kit/types"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/axiomesh/axiom-kit/storage/kv"
+	"github.com/axiomesh/axiom-kit/types"
 )
 
 var (
@@ -20,7 +21,7 @@ var (
 // Iterator traverse whole jmt trie
 type Iterator struct {
 	rootHash common.Hash
-	backend  storage.Storage
+	backend  kv.Storage
 	cache    PruneCache
 
 	bufferC chan *RawNode // use buffer to balance between read and write
@@ -31,7 +32,7 @@ type Iterator struct {
 	nodeKeyHeap *types.NodeKeyHeap // max heap, store NodeKeys that are waiting to be visited
 }
 
-func NewIterator(rootHash common.Hash, backend storage.Storage, cache PruneCache, bufSize int, timeout time.Duration) *Iterator {
+func NewIterator(rootHash common.Hash, backend kv.Storage, cache PruneCache, bufSize int, timeout time.Duration) *Iterator {
 	nodeKeyHeap := &types.NodeKeyHeap{}
 	heap.Init(nodeKeyHeap)
 	return &Iterator{
