@@ -142,7 +142,6 @@ func (h *BlockHeader) CalculateHash() *Hash {
 		ParentHash:     h.ParentHash,
 		Timestamp:      h.Timestamp,
 		Epoch:          h.Epoch,
-		Bloom:          h.Bloom,
 		GasPrice:       h.GasPrice,
 		GasUsed:        h.GasUsed,
 		ProposerNodeID: h.ProposerNodeID,
