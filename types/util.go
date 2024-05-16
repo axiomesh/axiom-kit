@@ -119,7 +119,7 @@ func (c *CoinNumber) UnmarshalText(b []byte) error {
 }
 
 func (c *CoinNumber) ToBigInt() *big.Int {
-	return (*big.Int)(c)
+	return new(big.Int).Set((*big.Int)(c))
 }
 
 func (c *CoinNumber) String() string {
