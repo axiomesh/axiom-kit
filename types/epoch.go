@@ -65,9 +65,10 @@ type FinanceParams struct {
 }
 
 type StakeParams struct {
-	StakeEnable         bool   `mapstructure:"stake_enable" toml:"stake_enable" json:"stake_enable"`
-	MaxAddStakeRatio    uint64 `mapstructure:"max_add_stake_ratio" toml:"max_add_stake_ratio" json:"max_add_stake_ratio"`
-	MaxUnlockStakeRatio uint64 `mapstructure:"max_unlock_stake_ratio" toml:"max_unlock_stake_ratio" json:"max_unlock_stake_ratio"`
+	StakeEnable           bool   `mapstructure:"stake_enable" toml:"stake_enable" json:"stake_enable"`
+	MaxAddStakeRatio      uint64 `mapstructure:"max_add_stake_ratio" toml:"max_add_stake_ratio" json:"max_add_stake_ratio"`
+	MaxUnlockStakeRatio   uint64 `mapstructure:"max_unlock_stake_ratio" toml:"max_unlock_stake_ratio" json:"max_unlock_stake_ratio"`
+	MaxUnlockingRecordNum uint64 `mapstructure:"max_unlocking_record_num" toml:"max_unlocking_record_num" json:"max_unlocking_record_num"`
 
 	// unit: seconds
 	UnlockPeriod uint64 `mapstructure:"unlock_period" toml:"unlock_period" json:"unlock_period"`
@@ -139,6 +140,7 @@ func (e *EpochInfo) Clone() *EpochInfo {
 			StakeEnable:                      e.StakeParams.StakeEnable,
 			MaxAddStakeRatio:                 e.StakeParams.MaxAddStakeRatio,
 			MaxUnlockStakeRatio:              e.StakeParams.MaxUnlockStakeRatio,
+			MaxUnlockingRecordNum:            e.StakeParams.MaxUnlockingRecordNum,
 			UnlockPeriod:                     e.StakeParams.UnlockPeriod,
 			MaxPendingInactiveValidatorRatio: e.StakeParams.MaxPendingInactiveValidatorRatio,
 			MinDelegateStake:                 e.StakeParams.MinDelegateStake.Clone(),
@@ -236,6 +238,9 @@ func (p *StakeParams) Validate() error {
 	}
 	if p.MaxUnlockStakeRatio > RatioLimit {
 		return errors.Errorf("max_unlock_stake_ratio cannot be greater than %d: %d", RatioLimit, p.MaxUnlockStakeRatio)
+	}
+	if p.MaxUnlockingRecordNum == 0 {
+		return errors.New("max_unlocking_record_num cannot be 0")
 	}
 	if p.MaxPendingInactiveValidatorRatio == 0 {
 		return errors.New("max_pending_inactive_validator_ratio cannot be 0")
