@@ -314,6 +314,9 @@ func MarshalObjects[T any, Constraint CodecObjectConstraint[T]](objs []*T) ([]by
 			return nil, err
 		}
 		objsRaw[i] = objRaw
+		fmt.Println("============marshal with index", i)
+		fmt.Println(objsRaw[i])
+		fmt.Println("============end marshal with index", i)
 	}
 	helper := pb.BytesSlice{
 		Slice: objsRaw,
@@ -353,6 +356,9 @@ func UnmarshalObjectsWithIndex[T any, Constraint CodecObjectConstraint[T]](data 
 		return nil, err
 	}
 	obj := new(T)
+	fmt.Println("============start unmarshal with index")
+	fmt.Println(helper.Slice[index])
+	fmt.Println("============end unmarshal with index")
 	if err := Constraint(obj).Unmarshal(helper.Slice[index]); err != nil {
 		return nil, err
 	}
