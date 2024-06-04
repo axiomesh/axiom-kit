@@ -77,6 +77,7 @@ type StakeParams struct {
 	MinDelegateStake                 *CoinNumber `mapstructure:"min_delegate_stake" toml:"min_delegate_stake" json:"min_delegate_stake"`
 	MinValidatorStake                *CoinNumber `mapstructure:"min_validator_stake" toml:"min_validator_stake" json:"min_validator_stake"`
 	MaxValidatorStake                *CoinNumber `mapstructure:"max_validator_stake" toml:"max_validator_stake" json:"max_validator_stake"`
+	EnablePartialUnlock              bool        `mapstructure:"enable_partial_unlock" toml:"enable_partial_unlock" json:"enable_partial_unlock"`
 }
 
 type MiscParams struct {
@@ -146,6 +147,7 @@ func (e *EpochInfo) Clone() *EpochInfo {
 			MinDelegateStake:                 e.StakeParams.MinDelegateStake.Clone(),
 			MinValidatorStake:                e.StakeParams.MinValidatorStake.Clone(),
 			MaxValidatorStake:                e.StakeParams.MaxValidatorStake.Clone(),
+			EnablePartialUnlock:              e.StakeParams.EnablePartialUnlock,
 		},
 		MiscParams: MiscParams{
 			TxMaxSize: e.MiscParams.TxMaxSize,
