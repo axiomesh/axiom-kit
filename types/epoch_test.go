@@ -170,11 +170,13 @@ func getAvailableEpochInfoWithSetter(setter func(e *EpochInfo)) *EpochInfo {
 			StakeEnable:                      true,
 			MaxAddStakeRatio:                 1000,
 			MaxUnlockStakeRatio:              1000,
+			MaxUnlockingRecordNum:            5,
 			UnlockPeriod:                     10,
 			MaxPendingInactiveValidatorRatio: 10,
 			MinDelegateStake:                 CoinNumberByAxc(100),
 			MinValidatorStake:                CoinNumberByAxc(10000000),
 			MaxValidatorStake:                CoinNumberByAxc(50000000),
+			EnablePartialUnlock:              false,
 		},
 		MiscParams: MiscParams{
 			TxMaxSize: 4 * 32 * 1024,
