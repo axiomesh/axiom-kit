@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,21 +11,47 @@ import (
 func TestParseCoinNumber(t *testing.T) {
 	tests := []struct {
 		valueStr string
-		want     *CoinNumber
+		want     func() *CoinNumber
 		wantErr  assert.ErrorAssertionFunc
 	}{
 		// no error
-		{valueStr: "1", want: CoinNumberByMol(1), wantErr: assert.NoError},
-		{valueStr: "1mol", want: CoinNumberByMol(1), wantErr: assert.NoError},
-		{valueStr: "1 mol", want: CoinNumberByMol(1), wantErr: assert.NoError},
-		{valueStr: "1gmol", want: CoinNumberByGmol(1), wantErr: assert.NoError},
-		{valueStr: "1 gmol", want: CoinNumberByGmol(1), wantErr: assert.NoError},
-		{valueStr: "1.111111111gmol", want: CoinNumberByMol(1_100_000_000), wantErr: assert.NoError},
-		{valueStr: "1.111111111 gmol", want: CoinNumberByMol(1_100_000_000), wantErr: assert.NoError},
-		{valueStr: "1axc", want: CoinNumberByAxc(1), wantErr: assert.NoError},
-		{valueStr: "1 axc", want: CoinNumberByAxc(1), wantErr: assert.NoError},
-		{valueStr: "1.111111111axc", want: CoinNumberByGmol(1_100_000_000), wantErr: assert.NoError},
-		{valueStr: "1.111111111 axc", want: CoinNumberByGmol(1_100_000_000), wantErr: assert.NoError},
+		{valueStr: "1", want: func() *CoinNumber {
+			return CoinNumberByMol(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1mol", want: func() *CoinNumber {
+			return CoinNumberByMol(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1 mol", want: func() *CoinNumber {
+			return CoinNumberByMol(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1gmol", want: func() *CoinNumber {
+			return CoinNumberByGmol(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1 gmol", want: func() *CoinNumber {
+			return CoinNumberByGmol(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1.111111111gmol", want: func() *CoinNumber {
+			return CoinNumberByMol(1_100_000_000)
+		}, wantErr: assert.NoError},
+		{valueStr: "1.111111111 gmol", want: func() *CoinNumber {
+			return CoinNumberByMol(1_100_000_000)
+		}, wantErr: assert.NoError},
+		{valueStr: "1axc", want: func() *CoinNumber {
+			return CoinNumberByAxc(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1 axc", want: func() *CoinNumber {
+			return CoinNumberByAxc(1)
+		}, wantErr: assert.NoError},
+		{valueStr: "1.111111111axc", want: func() *CoinNumber {
+			return CoinNumberByGmol(1_100_000_000)
+		}, wantErr: assert.NoError},
+		{valueStr: "1.111111111 axc", want: func() *CoinNumber {
+			return CoinNumberByGmol(1_100_000_000)
+		}, wantErr: assert.NoError},
+		{valueStr: "100001576744488228294", want: func() *CoinNumber {
+			c, _ := new(big.Int).SetString("100001576744488228294", 10)
+			return CoinNumberByBigInt(c)
+		}, wantErr: assert.NoError},
 
 		// error
 		{valueStr: "1.1", want: nil, wantErr: assert.Error},
@@ -40,7 +67,7 @@ func TestParseCoinNumber(t *testing.T) {
 			if tt.wantErr(t, err, fmt.Sprintf("ParseCoinNumber(%v)", tt.valueStr)) {
 				return
 			}
-			assert.Truef(t, tt.want.ToBigInt().Cmp(got.ToBigInt()) == 0, "ParseCoinNumber(%v)", tt.valueStr)
+			assert.Truef(t, tt.want().ToBigInt().Cmp(got.ToBigInt()) == 0, "ParseCoinNumber(%v)", tt.valueStr)
 		})
 	}
 }
