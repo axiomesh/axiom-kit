@@ -70,39 +70,37 @@ func ParseCoinNumber(valueStr string) (*CoinNumber, error) {
 	}
 
 	numericPart := valueStr
-	factorPart := big.NewInt(1)
-	var uInfo *unitInfo
+	decimals := 0
 	for _, info := range unitMap {
 		if strings.HasSuffix(valueStr, info.Str) {
 			numericPart = strings.TrimSpace(strings.TrimSuffix(valueStr, info.Str))
-			factorPart = info.Num
-			uInfo = info
+			decimals = info.Decimals
 			break
 		}
 	}
 
-	numericValue, ok := new(big.Float).SetString(numericPart)
-	if !ok {
-		return nil, fmt.Errorf("invalid coin number format: %v, only support mol/axc/gmol uint, e.g: 100mol, 1.1axc, 1000.1gmol", valueStr)
-	}
-
 	decimalPart := strings.Split(numericPart, ".")
+	intPart := decimalPart[0]
+	decPart := ""
 	if len(decimalPart) == 2 {
-		if uInfo == nil {
-			if len(decimalPart[1]) > 0 {
-				return nil, fmt.Errorf("invalid coin number format: %v, must be an integer wihout unit", valueStr)
-			}
-		} else {
-			if len(decimalPart[1]) > uInfo.Decimals {
-				return nil, fmt.Errorf("invalid coin number format: %v, decimal part length must be less or equal than %v", valueStr, uInfo.Decimals)
-			}
+		decPart = decimalPart[1]
+		if len(decPart) > decimals {
+			return nil, fmt.Errorf("invalid coin number format: %v, decimal part length must be less or equal than %v", valueStr, decimals)
 		}
 	}
 
-	numericValue = new(big.Float).Mul(numericValue, new(big.Float).SetInt(factorPart))
-	res := new(big.Int)
-	res, _ = numericValue.Int(res)
-	return (*CoinNumber)(res), nil
+	fullNumber := intPart + decPart + strings.Repeat("0", decimals-len(decPart))
+	if fullNumber == "" {
+		fullNumber = "0"
+	}
+
+	numericValue := new(big.Int)
+	numericValue, ok := numericValue.SetString(fullNumber, 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid numeric value: %v", fullNumber)
+	}
+
+	return (*CoinNumber)(numericValue), nil
 }
 
 func (c *CoinNumber) MarshalText() (text []byte, err error) {
