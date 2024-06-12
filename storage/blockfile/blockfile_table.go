@@ -317,6 +317,7 @@ func (b *BlockTable) BatchAppend(item uint64, listOfBlob [][]byte) error {
 			if err != nil {
 				return err
 			}
+			item = b.items
 		}
 	} else {
 		return b.doBatchAppend(item, listOfBlob...)

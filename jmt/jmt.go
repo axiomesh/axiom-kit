@@ -2,7 +2,6 @@ package jmt
 
 import (
 	"errors"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -344,15 +343,13 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 
 	// try in dirtySet first
 	if dirty, ok := jmt.dirtySet[string(k)]; ok {
-		jmt.logger.Debugf("[JMT-getNode] get from dirty, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 		return dirty, err
 	}
 
 	// try in pruneCache
-	if jmt.pruneCache != nil {
+	if jmt.pruneCache != nil && jmt.pruneCache.Enable() {
 		if v, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
 			nextNode = v
-			jmt.logger.Debugf("[JMT-getNode] get from pruneCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 			return nextNode, err
 		}
 	}
@@ -362,9 +359,9 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 		if v, ok := jmt.trieCache.Get(k); ok {
 			nextNode, err = types.UnmarshalJMTNodeFromPb(v)
 			if err != nil {
+				jmt.logger.Errorf("[getNode] get from trieCache error, k=%v, v=%v", k, v)
 				return nil, err
 			}
-			jmt.logger.Debugf("[JMT-getNode] get from trieCache, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 			return nextNode, err
 		}
 	}
@@ -373,10 +370,9 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	nextRawNode = jmt.backend.Get(k)
 	nextNode, err = types.UnmarshalJMTNodeFromPb(nextRawNode)
 	if err != nil {
+		jmt.logger.Errorf("[getNode] get from kv error, k=%v, nextRawNode=%v", k, nextRawNode)
 		return nil, err
 	}
-
-	jmt.logger.Debugf("[JMT-getNode] get from kv, h=%v,k=%v,v=%v", jmt.rootNodeKey.Version, k, nextNode)
 
 	return nextNode, err
 }

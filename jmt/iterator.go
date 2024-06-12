@@ -202,9 +202,10 @@ func (it *Iterator) getNode(nk *types.NodeKey) (types.Node, []byte, error) {
 	k := nk.Encode()
 
 	// try in trie pruneCache
-	if it.cache != nil {
+	if it.cache != nil && it.cache.Enable() {
 		if v, ok := it.cache.Get(nk.Version, k); ok {
 			nextNode = v
+			nextRawNode = nextNode.Encode()
 			return nextNode, nextRawNode, err
 		}
 	}
