@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"testing"
 	"time"
 
@@ -35,13 +36,25 @@ func TestInternalNode_Marshal(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, equalInternalNode(n1, node.(*InternalNode)))
 
-	n1.Children[10] = nil
-	blob2 := n1.Encode()
+	n2 := n1.Copy().(*InternalNode)
+	n2.Children[10] = nil
+	blob2 := n2.Encode()
 	assert.NotNil(t, blob2)
-	node1, err := UnmarshalJMTNodeFromPb(blob2)
-	assert.False(t, equalInternalNode(node1.(*InternalNode), node.(*InternalNode)))
+	node2, err := UnmarshalJMTNodeFromPb(blob2)
+	assert.False(t, equalInternalNode(node2.(*InternalNode), node.(*InternalNode)))
 
 	assert.True(t, len(blob) > len(blob2))
+
+	n3 := n2.Copy().(*InternalNode)
+	n3.Children[1] = nil
+	blob3 := n3.Encode()
+	assert.NotNil(t, blob3)
+	node3, err := UnmarshalJMTNodeFromPb(blob3)
+	assert.Nil(t, node3)
+
+	//fmt.Printf("n1.Children=%v\n", n1.Children)
+
+	fmt.Printf("len1=%v,len2=%v\n", len(blob), len(blob2))
 }
 
 func TestLeafNode_Marshal(t *testing.T) {
@@ -139,7 +152,7 @@ func equalInternalNode(n1, n2 *InternalNode) bool {
 		return false
 	}
 
-	for i := 0; i < 16; i++ {
+	for i := 0; i < TrieDegree; i++ {
 		if n1.Children[i] == nil && n2.Children[i] == nil {
 			continue
 		}
@@ -187,16 +200,16 @@ func mockRandomInternalNode() *InternalNode {
 	rand.Seed(uint64(time.Now().UnixNano()))
 
 	res := &InternalNode{
-		Children: [16]*Child{},
+		Children: [TrieDegree]*Child{},
 	}
 
-	res.Children[rand.Uint32()%16] = &Child{
+	res.Children[rand.Uint32()%TrieDegree] = &Child{
 		Version: rand.Uint64(),
 		Leaf:    rand.Uint32()%2 == 1,
 		Hash:    sha256.Sum256(v),
 	}
 
-	res.Children[rand.Uint32()%16] = &Child{
+	res.Children[rand.Uint32()%TrieDegree] = &Child{
 		Version: rand.Uint64(),
 		Leaf:    rand.Uint32()%2 == 1,
 		Hash:    sha256.Sum256(v),
