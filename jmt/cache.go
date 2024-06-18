@@ -12,4 +12,8 @@ type PruneCache interface {
 
 type TrieCache interface {
 	Get(k []byte) ([]byte, bool)
+
+	Has(k []byte) bool
+
+	Enable() bool
 }

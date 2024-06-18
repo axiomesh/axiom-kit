@@ -2,6 +2,8 @@ package jmt
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
@@ -310,6 +312,9 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 		batch := jmt.backend.NewBatch()
 		for k, v := range jmt.dirtySet {
 			batch.Put([]byte(k), v.Encode())
+			if jmt.root != v {
+				types.RecycleTrieNode(v)
+			}
 		}
 		batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
 		batch.Commit()
@@ -355,7 +360,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	}
 
 	// try in trieCache
-	if jmt.trieCache != nil {
+	if jmt.trieCache != nil && jmt.trieCache.Enable() {
 		if v, ok := jmt.trieCache.Get(k); ok {
 			nextNode, err = types.UnmarshalJMTNodeFromPb(v)
 			if err != nil {
@@ -375,6 +380,44 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 	}
 
 	return nextNode, err
+}
+
+// todo: batch preload
+func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
+	visited := make(map[string]struct{})
+	var wg sync.WaitGroup
+
+	for _, nk := range nodeKeys {
+		k := nk
+
+		// de-duplicate
+		if _, exist := visited[string(k)]; exist {
+			continue
+		}
+		visited[string(k)] = struct{}{}
+
+		// try in pruneCache
+		if jmt.pruneCache != nil && jmt.pruneCache.Enable() {
+			if _, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
+				return
+			}
+		}
+
+		// try in trieCache
+		if jmt.trieCache != nil && jmt.trieCache.Enable() {
+			if jmt.trieCache.Has(k) {
+				return
+			}
+		}
+
+		// try in kv at last
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			jmt.backend.Has(k)
+		}()
+	}
+	wg.Wait()
 }
 
 // splitLeafNode splits common prefix of two leaf nodes into a series of internal nodes, and construct a tree.

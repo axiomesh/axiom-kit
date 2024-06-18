@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -19,6 +20,7 @@ type Node interface {
 	Encode() []byte
 	GetHash() common.Hash
 	Copy() Node
+	Type() int
 	String() string // just for debug
 }
 
@@ -38,19 +40,22 @@ type (
 
 type (
 	InternalNode struct {
-		Children [16]*Child `json:"children"`
+		Children [TrieDegree]*Child
+
+		blob []byte      // encode result for reuse
+		hash common.Hash // hash result for reuse
 	}
 
 	LeafNode struct {
-		Key  []byte      `json:"key"`
-		Val  []byte      `json:"value"`
-		Hash common.Hash `json:"hash"`
+		Key  []byte
+		Val  []byte
+		Hash common.Hash
 	}
 
 	Child struct {
-		Hash    common.Hash `json:"hash"`
-		Version uint64      `json:"version"`
-		Leaf    bool        `json:"leaf"`
+		Hash    common.Hash
+		Version uint64
+		Leaf    bool
 	}
 )
 
@@ -62,8 +67,19 @@ type (
 	}
 
 	NodeKeyHeap []*NodeKey // max heap to store NodeKey
-
 )
+
+const (
+	TrieDegree       = 16
+	TypeInternalNode = 0
+	TypeLeafNode     = 1
+)
+
+var internalNodePool = sync.Pool{
+	New: func() any {
+		return &InternalNode{}
+	},
+}
 
 // just for debug
 func (nk *NodeKey) String() string {
@@ -91,6 +107,18 @@ func (nk *NodeKey) Encode() []byte {
 	return buf
 }
 
+func (nk *NodeKey) GetIndex() []byte {
+	var length byte
+	for i := 0; i < len(nk.Type); i++ {
+		length++
+	}
+	buf := make([]byte, 0)
+	buf = append(buf, length)
+	buf = append(buf, nk.Type...)
+	buf = append(buf, nk.Path...)
+	return buf
+}
+
 // DecodeNodeKey decode from bytes in physical storage to NodeKey
 func DecodeNodeKey(raw []byte) *NodeKey {
 	nk := &NodeKey{}
@@ -101,14 +129,26 @@ func DecodeNodeKey(raw []byte) *NodeKey {
 	return nk
 }
 
+func RecycleTrieNode(n Node) {
+	if n != nil && n.Type() == TypeInternalNode {
+		nn := n.(*InternalNode)
+		nn.blob = nil
+		nn.hash = common.Hash{}
+		for i := range nn.Children {
+			nn.Children[i] = nil
+		}
+		internalNodePool.Put(nn)
+	}
+}
+
 // just for debug
 func (n *InternalNode) String() string {
 	res := strings.Builder{}
-	for i := 0; i < 16; i++ {
-		res.WriteString(strconv.Itoa(i))
+	for i := 0; i < TrieDegree; i++ {
 		if n.Children[i] == nil {
-			res.WriteString(", ")
+			continue
 		} else {
+			res.WriteString(strconv.Itoa(i))
 			child := n.Children[i]
 			res.WriteString(":<Hash[")
 			res.WriteString(child.Hash.String()[2:6])
@@ -169,7 +209,11 @@ func (j *TrieJournal) String() string {
 }
 
 func (n *InternalNode) GetHash() common.Hash {
+	if n.hash != (common.Hash{}) {
+		return n.hash
+	}
 	data := sha256.Sum256(n.Encode())
+	n.hash = data
 	return data
 }
 
@@ -184,19 +228,40 @@ func (n *LeafNode) GetHash() common.Hash {
 	return data
 }
 
+// deep copy
 func (n *InternalNode) Copy() Node {
-	return &InternalNode{
-		Children: n.Children,
+	nn := internalNodePool.Get().(*InternalNode)
+	for i, child := range n.Children {
+		if child == nil {
+			continue
+		}
+		nn.Children[i] = &Child{
+			Hash:    child.Hash,
+			Leaf:    child.Leaf,
+			Version: child.Version,
+		}
 	}
+	return nn
 }
 
+// deep copy
 func (n *LeafNode) Copy() Node {
 	nn := &LeafNode{
 		Hash: n.Hash,
+		Key:  make([]byte, len(n.Key)),
+		Val:  make([]byte, len(n.Val)),
 	}
 	copy(nn.Key, n.Key)
 	copy(nn.Val, n.Val)
 	return nn
+}
+
+func (n *InternalNode) Type() int {
+	return TypeInternalNode
+}
+
+func (n *LeafNode) Type() int {
+	return TypeLeafNode
 }
 
 func (n *InternalNode) Encode() []byte {
@@ -204,7 +269,11 @@ func (n *InternalNode) Encode() []byte {
 		return nil
 	}
 
-	children := make([]*pb.Child, 16)
+	if len(n.blob) > 0 {
+		return n.blob
+	}
+
+	children := make([]*pb.Child, TrieDegree)
 	for i, child := range n.Children {
 		if child == nil {
 			continue
@@ -233,6 +302,7 @@ func (n *InternalNode) Encode() []byte {
 	if err != nil {
 		return nil
 	}
+	n.blob = res
 	return res
 }
 
@@ -247,7 +317,7 @@ func (n *InternalNode) unmarshalInternalFromPb(data []byte) error {
 		return err
 	}
 
-	n.Children = [16]*Child{}
+	n.Children = [TrieDegree]*Child{}
 	for i, child := range helper.Children {
 		if len(child.Hash) == 0 {
 			continue
