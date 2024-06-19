@@ -383,12 +383,13 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 }
 
 // todo: batch preload
-func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
+func (jmt *JMT) PreloadTrieNodes(nodeKeys []*types.NodeKey) {
 	visited := make(map[string]struct{})
 	var wg sync.WaitGroup
 
-	for _, nk := range nodeKeys {
-		k := nk
+	for i := range nodeKeys {
+		nk := nodeKeys[i]
+		k := nk.Encode()
 
 		// de-duplicate
 		if _, exist := visited[string(k)]; exist {
@@ -398,15 +399,17 @@ func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
 
 		// try in pruneCache
 		if jmt.pruneCache != nil && jmt.pruneCache.Enable() {
-			if _, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
-				return
+			if exist := jmt.pruneCache.Has(k); exist {
+				//jmt.logger.Infof("[PreloadTrieNodes] jmt preload in pruneCache, nk=%v", nk)
+				continue
 			}
 		}
 
 		// try in trieCache
 		if jmt.trieCache != nil && jmt.trieCache.Enable() {
 			if jmt.trieCache.Has(k) {
-				return
+				//jmt.logger.Infof("[PreloadTrieNodes] jmt preload in trieCache, k=%v", nk)
+				continue
 			}
 		}
 
@@ -414,6 +417,7 @@ func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			//jmt.logger.Infof("[PreloadTrieNodes] jmt preload in kv, k=%v", nk)
 			jmt.backend.Has(k)
 		}()
 	}

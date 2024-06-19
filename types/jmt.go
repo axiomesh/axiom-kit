@@ -87,7 +87,7 @@ func (nk *NodeKey) String() string {
 	res.WriteString("Version[")
 	res.WriteString(strconv.Itoa(int(nk.Version)))
 	res.WriteString("], Type[")
-	res.WriteString(strconv.Itoa(len(nk.Type)))
+	res.WriteString(hexutil.DecodeFromNibbles(BytesToHex(nk.Type)))
 	res.WriteString("], Path[")
 	res.WriteString(hexutil.DecodeFromNibbles(nk.Path))
 	res.WriteString("]")
@@ -99,7 +99,7 @@ func (nk *NodeKey) Encode() []byte {
 	for i := 0; i < len(nk.Type); i++ {
 		length++
 	}
-	buf := make([]byte, 8)
+	buf := make([]byte, 8, 8+len(nk.Type)+len(nk.Path))
 	binary.BigEndian.PutUint64(buf, nk.Version)
 	buf = append(buf, length)
 	buf = append(buf, nk.Type...)
@@ -112,8 +112,8 @@ func (nk *NodeKey) GetIndex() []byte {
 	for i := 0; i < len(nk.Type); i++ {
 		length++
 	}
-	buf := make([]byte, 0)
-	buf = append(buf, length)
+	buf := make([]byte, 1, 1+len(nk.Type)+len(nk.Path))
+	buf[0] = length
 	buf = append(buf, nk.Type...)
 	buf = append(buf, nk.Path...)
 	return buf
