@@ -677,6 +677,10 @@ func (tx *Transaction) RbftGetAccessList() AccessList {
 	})
 }
 
+func (tx *Transaction) RbftClone() RbftTransaction {
+	return tx.Clone()
+}
+
 func (tx *Transaction) Unmarshal(buf []byte) error {
 	return tx.UnmarshalBinary(buf)
 }
@@ -1134,4 +1138,10 @@ func toPBHashes(hashes []common.Hash) [][]byte {
 		hashesPB[i] = hash.Bytes()
 	}
 	return hashesPB
+}
+
+func CloneTransaction[T any, C TXConstraint[T]](tx *T) *T {
+	cloned := C(tx).RbftClone()
+	var anyCloned any = cloned
+	return anyCloned.(*T)
 }
