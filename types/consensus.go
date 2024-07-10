@@ -1,8 +1,6 @@
 package types
 
-import (
-	"math/big"
-)
+import "math/big"
 
 // TXConstraint is used to ensure that the pointer of T must be RbftTransaction
 type TXConstraint[T any] interface {
@@ -26,4 +24,5 @@ type RbftTransaction interface {
 	RbftGetGasFeeCap() *big.Int
 	RbftGetValue() *big.Int
 	RbftGetAccessList() AccessList
+	RbftClone() RbftTransaction
 }

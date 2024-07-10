@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"math/big"
 	"sync/atomic"
 	"testing"
@@ -205,4 +206,21 @@ func TestTransaction_PB(t *testing.T) {
 	assert.Equal(t, dynamicFeeTx.Inner.GetGasFeeCap(), dynamicFeeTx2.Inner.GetGasFeeCap())
 	assert.Equal(t, dynamicFeeTx.Inner.GetTo().String(), dynamicFeeTx2.Inner.GetTo().String())
 	assert.True(t, dynamicFeeTx2.Time.Before(dynamicFeeTx.Time))
+}
+
+func TestCloneTx(t *testing.T) {
+	tx := &Transaction{
+		Inner: &LegacyTx{
+			Nonce:    100,
+			GasPrice: big.NewInt(5000000),
+			Gas:      100000000,
+			Value:    big.NewInt(1),
+			Data:     []byte{0, 1, 2, 3, 4, 5, 6, 7, 8},
+		},
+		Time: time.Now(),
+		hash: atomic.Value{},
+		size: atomic.Value{},
+	}
+	cl := CloneTransaction[Transaction, *Transaction](tx)
+	fmt.Println(cl.hash)
 }
