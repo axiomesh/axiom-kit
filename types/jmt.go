@@ -60,10 +60,13 @@ type (
 )
 
 type (
+	// todo use pool to recycle
 	NodeKey struct {
 		Version uint64 // version of current tree node.
 		Path    []byte // addressing path from root to current node. Path is part of LeafNode.Key.
 		Type    []byte // additional field for identify a tree uniquely together with Version and Path.
+
+		blob []byte // encode result for reuse
 	}
 
 	NodeKeyHeap []*NodeKey // max heap to store NodeKey
@@ -95,6 +98,10 @@ func (nk *NodeKey) String() string {
 }
 
 func (nk *NodeKey) Encode() []byte {
+	if len(nk.blob) != 0 {
+		return nk.blob
+	}
+
 	var length byte
 	for i := 0; i < len(nk.Type); i++ {
 		length++
@@ -104,6 +111,7 @@ func (nk *NodeKey) Encode() []byte {
 	buf = append(buf, length)
 	buf = append(buf, nk.Type...)
 	buf = append(buf, nk.Path...)
+	nk.blob = buf
 	return buf
 }
 
@@ -206,6 +214,10 @@ func (j *TrieJournal) String() string {
 	res.WriteString("]}\n")
 
 	return res.String()
+}
+
+func NewInternalNode() *InternalNode {
+	return internalNodePool.Get().(*InternalNode)
 }
 
 func (n *InternalNode) GetHash() common.Hash {

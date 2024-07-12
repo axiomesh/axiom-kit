@@ -361,13 +361,8 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 
 	// try in trieCache
 	if jmt.trieCache != nil && jmt.trieCache.Enable() {
-		if v, ok := jmt.trieCache.Get(k); ok {
-			nextNode, err = types.UnmarshalJMTNodeFromPb(v)
-			if err != nil {
-				jmt.logger.Errorf("[getNode] get from trieCache error, k=%v, v=%v", k, v)
-				return nil, err
-			}
-			return nextNode, err
+		if v, ok := jmt.trieCache.Get(nk); ok {
+			return v, err
 		}
 	}
 
@@ -383,7 +378,7 @@ func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
 }
 
 // todo: batch preload
-func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
+func (jmt *JMT) PreloadTrieNodes(nodeKeys []*types.NodeKey) {
 	visited := make(map[string]struct{})
 	var wg sync.WaitGroup
 
@@ -391,14 +386,14 @@ func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
 		k := nk
 
 		// de-duplicate
-		if _, exist := visited[string(k)]; exist {
+		if _, exist := visited[string(k.Encode())]; exist {
 			continue
 		}
-		visited[string(k)] = struct{}{}
+		visited[string(k.Encode())] = struct{}{}
 
 		// try in pruneCache
 		if jmt.pruneCache != nil && jmt.pruneCache.Enable() {
-			if _, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k); ok {
+			if _, ok := jmt.pruneCache.Get(jmt.rootNodeKey.Version, k.Encode()); ok {
 				return
 			}
 		}
@@ -414,7 +409,7 @@ func (jmt *JMT) PreloadTrieNodes(nodeKeys [][]byte) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			jmt.backend.Has(k)
+			jmt.backend.Has(k.Encode())
 		}()
 	}
 	wg.Wait()
