@@ -50,7 +50,7 @@ func init() {
 func (c *JMTCache) ExportTrieCacheMetrics() {
 	trieCacheHitCounterPerBlock.Set(float64(trieCacheHitCount.Load()))
 	trieCacheMissCounterPerBlock.Set(float64(trieCacheMissCount.Load()))
-	trieCacheSize.Set(float64((childSlotSize*c.childBuffer.usedSize + headerSlotSize*c.headerBuffer.usedSize) / 1024 / 1024))
+	trieCacheSize.Set((childSlotSize*float64(c.childBuffer.usedSize) + headerSlotSize*float64(c.headerBuffer.usedSize)) / 1024 / 1024)
 }
 
 func (c *JMTCache) ResetTrieCacheMetrics() {
@@ -63,6 +63,9 @@ const (
 	headerSlotSize   = 68
 	childSlotSize    = 45
 	bufferOffsetSize = 4
+
+	recycleStartThreshold = 0.8
+	recycleStopThreshold  = 0.5
 )
 
 type (
@@ -119,12 +122,12 @@ type (
 	ChildSlot    = [childSlotSize]byte
 	BufferOffset = uint32
 
-	// 堆元素，固定5B=1B的深度+4B的Offset
-	NodeDepthHeapItem = [5]byte
+	// 堆元素，固定5B=1B的深度+1B当前header的分支位置+4B的BufferOffset
+	NodeDepthHeapItem = [6]byte
 
 	NodeDepthHeap struct {
 		heap      []NodeDepthHeapItem       // 树深度大根堆，记录缓存中各个节点在树的深度信息
-		headIndex map[NodeDepthHeapItem]int // 记录缓存中存活的树节点的深度信息在堆中的索引，便于删除
+		heapIndex map[NodeDepthHeapItem]int // 记录缓存中存活的树节点的深度信息在堆中的索引，便于删除
 	}
 
 	BufferBitmap struct {
@@ -141,20 +144,26 @@ type (
 	NodeDataList []*NodeData
 )
 
-var zeroOffset = []byte{0, 0, 0, 0}
+var (
+	zeroOffset             = []byte{0, 0, 0, 0}
+	checkFlushTimeInterval = 60 * time.Second
+)
 
 // todo check megabytesLimit range overflow
 // todo rebuild cache after restart node
 func NewJMTCache(megabytesLimit int, logger logrus.FieldLogger) *JMTCache {
-	if megabytesLimit <= 0 {
+	if megabytesLimit < 128 {
 		megabytesLimit = 128
 	}
 
-	nodeDepthHeap := &NodeDepthHeap{}
+	nodeDepthHeap := &NodeDepthHeap{
+		heap:      make([]NodeDepthHeapItem, 0),
+		heapIndex: make(map[NodeDepthHeapItem]int),
+	}
 	heap.Init(nodeDepthHeap)
 
-	headerNum := BufferOffset(megabytesLimit * 1024 * 1024 / 10 / headerSlotSize)
-	childNum := BufferOffset(megabytesLimit * 1024 * 1024 / 10 * 9 / childSlotSize)
+	headerNum := BufferOffset(megabytesLimit * 1024 * 1024 / 100 * 20 / headerSlotSize)
+	childNum := BufferOffset(megabytesLimit * 1024 * 1024 / 100 * 80 / childSlotSize)
 
 	cache := &JMTCache{
 		headerBuffer: &HeaderBuffer{
@@ -173,6 +182,7 @@ func NewJMTCache(megabytesLimit int, logger logrus.FieldLogger) *JMTCache {
 		rootOffsetMap: make(map[string]BufferOffset),
 		logger:        logger,
 	}
+	go cache.recycle()
 	return cache
 }
 
@@ -228,7 +238,45 @@ func (c *JMTCache) Has(nk *types.NodeKey) bool {
 	return false
 }
 
+func (c *JMTCache) recycle() {
+	ticker := time.NewTicker(checkFlushTimeInterval)
+	for range ticker.C {
+		c.lock.Lock()
+		c.logger.Infof("[JMTCache-recycle] header used rate: %v, child used rate: %v", float64(c.headerBuffer.usedSize)/float64(c.headerBuffer.totalSize), float64(c.childBuffer.usedSize)/float64(c.childBuffer.totalSize))
+		if float64(c.childBuffer.usedSize)/float64(c.childBuffer.totalSize) < recycleStartThreshold &&
+			float64(c.headerBuffer.usedSize)/float64(c.headerBuffer.totalSize) < recycleStartThreshold {
+			c.lock.Unlock()
+			continue
+		}
+		current := time.Now()
+		for float64(c.childBuffer.usedSize)/float64(c.childBuffer.totalSize) >= recycleStopThreshold ||
+			float64(c.headerBuffer.usedSize)/float64(c.headerBuffer.totalSize) >= recycleStopThreshold {
+			item := heap.Pop(c.nodeDepthHeap).(NodeDepthHeapItem)
+			currentHeaderOffset := binary.BigEndian.Uint32(item[2:])
+
+			headerBuffer := c.headerBuffer.buffer
+			childBuffer := c.childBuffer.buffer
+			// mark all current header's child slot as free
+			for childSlot := byte(0); childSlot < types.TrieDegree; childSlot++ {
+				childOffset := binary.BigEndian.Uint32(headerBuffer[currentHeaderOffset][childSlot*bufferOffsetSize : (childSlot+1)*bufferOffsetSize])
+				c.childBuffer.resetSlot(childOffset)
+			}
+			// dereference current header in its parent header
+			parentHeaderOffset := binary.BigEndian.Uint32(headerBuffer[currentHeaderOffset][headerSlotSize-bufferOffsetSize:])
+			childOffset := binary.BigEndian.Uint32(headerBuffer[parentHeaderOffset][item[1]*bufferOffsetSize : (item[1]+1)*bufferOffsetSize])
+			binary.BigEndian.PutUint32(childBuffer[childOffset][childSlotSize-bufferOffsetSize:], 0)
+			// mark current header slot as free
+			c.headerBuffer.resetSlot(currentHeaderOffset)
+		}
+		c.lock.Unlock()
+		c.logger.Infof("[JMTCache-recycle] recycle jmt cache, time: %v", time.Since(current))
+	}
+}
+
 func (c *JMTCache) Update(insertNodes, delNodes NodeDataList) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	realDelNodes := make(NodeDataList, 0)
 	insertSet := make(map[string]map[string]struct{})
 	for _, n := range insertNodes {
@@ -258,9 +306,6 @@ func (c *JMTCache) Update(insertNodes, delNodes NodeDataList) {
 
 // todo delete to empty case
 func (c *JMTCache) delete(nodes NodeDataList) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	// sort trie nodes from top to bottom
 	sort.Sort(nodes)
 
@@ -272,7 +317,8 @@ func (c *JMTCache) delete(nodes NodeDataList) {
 			continue
 		}
 		currentSlot := byte(0) // current header's location in its parent header
-		for depth := 0; depth < len(nodes[i].Nk.Path); depth++ {
+		depth := byte(0)
+		for ; int(depth) < len(nodes[i].Nk.Path); depth++ {
 			currentSlot = nodes[i].Nk.Path[depth]
 			childOffset := binary.BigEndian.Uint32(headerBuffer[currentHeaderOffset][currentSlot*bufferOffsetSize : (currentSlot+1)*bufferOffsetSize])
 			currentHeaderOffset = binary.BigEndian.Uint32(childBuffer[childOffset][childSlotSize-bufferOffsetSize:])
@@ -294,13 +340,17 @@ func (c *JMTCache) delete(nodes NodeDataList) {
 		binary.BigEndian.PutUint32(childBuffer[childOffset][childSlotSize-bufferOffsetSize:], 0)
 		// mark current header slot as free
 		c.headerBuffer.resetSlot(currentHeaderOffset)
+
+		// delete current header info in heap
+		item := NodeDepthHeapItem{}
+		item[0] = depth
+		item[1] = currentSlot
+		binary.BigEndian.PutUint32(item[2:], currentHeaderOffset)
+		heap.Remove(c.nodeDepthHeap, c.nodeDepthHeap.heapIndex[item])
 	}
 }
 
 func (c *JMTCache) insert(nodes NodeDataList) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	// sort trie nodes from top to bottom
 	sort.Sort(nodes)
 
@@ -308,9 +358,9 @@ func (c *JMTCache) insert(nodes NodeDataList) {
 	childBuffer := c.childBuffer.buffer
 	for i := range nodes {
 		var parentHeaderOffset BufferOffset
-		var currentSlot, begin, end byte
+		var currentSlot, begin, end, depth byte
 		currentHeaderOffset, rootExist := c.rootOffsetMap[string(nodes[i].Nk.Type)]
-		for depth := 0; depth < len(nodes[i].Nk.Path); depth++ {
+		for ; int(depth) < len(nodes[i].Nk.Path); depth++ {
 			currentSlot = nodes[i].Nk.Path[depth]
 			begin, end = currentSlot*bufferOffsetSize, (currentSlot+1)*bufferOffsetSize
 			childOffset := binary.BigEndian.Uint32(headerBuffer[currentHeaderOffset][begin:end])
@@ -332,6 +382,13 @@ func (c *JMTCache) insert(nodes NodeDataList) {
 				parentChildOffset := binary.BigEndian.Uint32(headerBuffer[parentHeaderOffset][begin:end])
 				binary.BigEndian.PutUint32(childBuffer[parentChildOffset][childSlotSize-bufferOffsetSize:], currentHeaderOffset)
 			}
+
+			// record current header info in heap for recycling
+			item := NodeDepthHeapItem{}
+			item[0] = depth
+			item[1] = currentSlot
+			binary.BigEndian.PutUint32(item[2:], currentHeaderOffset)
+			heap.Push(c.nodeDepthHeap, item)
 		}
 		if !rootExist {
 			c.rootOffsetMap[string(nodes[i].Nk.Type)] = currentHeaderOffset
@@ -421,12 +478,14 @@ func (c *JMTCache) printCacheTrie(rootHeaderOffset BufferOffset) string {
 }
 
 func (cb *ChildBuffer) resetSlot(offset BufferOffset) {
+	if offset == 0 {
+		return
+	}
 	cb.bitMap.Remove(offset)
 	cb.buffer[offset] = ChildSlot{}
 	cb.usedSize--
 }
 
-// todo gc
 func (cb *ChildBuffer) allocSlot() BufferOffset {
 	if cb.usedSize == cb.totalSize-1 {
 		panic("child buffer is full")
@@ -448,12 +507,14 @@ func (cb *ChildBuffer) allocSlot() BufferOffset {
 }
 
 func (hb *HeaderBuffer) resetSlot(offset BufferOffset) {
+	if offset == 0 {
+		return
+	}
 	hb.bitMap.Remove(offset)
 	hb.buffer[offset] = HeaderSlot{}
 	hb.usedSize--
 }
 
-// todo gc
 func (hb *HeaderBuffer) allocSlot() BufferOffset {
 	if hb.usedSize == hb.totalSize-1 {
 		panic("header buffer is full")
@@ -484,18 +545,24 @@ func (h *NodeDepthHeap) Less(i, j int) bool {
 
 func (h *NodeDepthHeap) Swap(i, j int) {
 	h.heap[i], h.heap[j] = h.heap[j], h.heap[i]
+
+	h.heapIndex[h.heap[i]] = i
+	h.heapIndex[h.heap[j]] = j
 }
 
 func (h *NodeDepthHeap) Push(x any) {
-	h.heap = append(h.heap, x.(NodeDepthHeapItem))
+	item := x.(NodeDepthHeapItem)
+	h.heapIndex[item] = len(h.heap)
+	h.heap = append(h.heap, item)
 }
 
 func (h *NodeDepthHeap) Pop() any {
 	old := h.heap
 	n := len(old)
-	x := old[n-1]
+	item := old[n-1]
 	h.heap = old[0 : n-1]
-	return x
+	delete(h.heapIndex, item)
+	return item
 }
 
 func NewBufferBitmap(size BufferOffset) *BufferBitmap {
@@ -504,13 +571,6 @@ func NewBufferBitmap(size BufferOffset) *BufferBitmap {
 		size: size,
 	}
 }
-
-//func (b *BufferBitmap) Add(num BufferOffset) {
-//	if num >= b.size {
-//		return
-//	}
-//	b.bits[num/64] |= 1 << (num % 64)
-//}
 
 func (b *BufferBitmap) Remove(num BufferOffset) {
 	if num >= b.size {
