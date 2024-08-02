@@ -15,3 +15,25 @@ message TransactionMeta {
     uint64 block_height = 2;
     uint64 index = 3;
 }
+
+message QuorumCheckpoint {
+    uint64 epoch = 1;
+    ExecuteState state = 2;
+    map<uint64, bytes> signatures = 3;
+    message Validator {
+      uint64 id=1;
+      string p2p_id=2;
+      string primary=3;
+      repeated string workers=4;
+    }
+    repeated Validator validator_set = 4;
+}
+
+message ExecuteState {
+    uint64 height = 1;
+    string digest = 2;
+}
+
+message EpochChange {
+    QuorumCheckpoint quorum_checkpoint = 1;
+}

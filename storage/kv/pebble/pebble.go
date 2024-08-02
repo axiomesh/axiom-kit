@@ -209,6 +209,13 @@ func (it *iter) Value() []byte {
 	return val
 }
 
+func (it *iter) First() bool {
+	return it.iter.First()
+}
+func (it *iter) Last() bool {
+	return it.iter.Last()
+}
+
 type pdbBatch struct {
 	batch  *pebble.Batch
 	wo     *pebble.WriteOptions

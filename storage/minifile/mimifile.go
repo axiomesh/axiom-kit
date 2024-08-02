@@ -11,15 +11,27 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/google/btree"
 	"github.com/prometheus/tsdb/fileutil"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
+
+const FLOCK = "FLOCK"
 
 type MiniFile struct {
 	path         string
 	instanceLock fileutil.Releaser // File-system lock to prevent double opens
 	lock         *sync.Mutex
 	closed       int64
+	keyIndex     *btree.BTree
+}
+
+type BTreeItem struct {
+	Key string
+}
+
+func (item BTreeItem) Less(than btree.Item) bool {
+	return item.Key < than.(BTreeItem).Key
 }
 
 func New(path string) (*MiniFile, error) {
@@ -28,7 +40,7 @@ func New(path string) (*MiniFile, error) {
 		return nil, err
 	}
 
-	flock, _, err := fileutil.Flock(filepath.Join(abs, "FLOCK"))
+	flock, _, err := fileutil.Flock(filepath.Join(abs, FLOCK))
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +53,7 @@ func New(path string) (*MiniFile, error) {
 		path:         abs,
 		instanceLock: flock,
 		lock:         &sync.Mutex{},
+		keyIndex:     btree.New(32),
 	}, nil
 }
 
@@ -66,6 +79,7 @@ func (mf *MiniFile) Put(key string, value []byte) error {
 		return fmt.Errorf("fail to write file %s: %w", name, err)
 	}
 
+	mf.keyIndex.ReplaceOrInsert(BTreeItem{Key: key})
 	return nil
 }
 
@@ -80,9 +94,60 @@ func (mf *MiniFile) Delete(key string) error {
 	err := os.Remove(filepath.Join(mf.path, key))
 	if err != nil && isNoFileError(err) {
 		return nil
+	} else {
+		mf.keyIndex.Delete(BTreeItem{Key: key})
 	}
 
 	return err
+}
+
+func (mf *MiniFile) AscendRange(startKey, endKey []byte, handleFn func(k []byte, v []byte) (bool, error)) {
+	if mf.isClosed() {
+		return
+	}
+
+	mf.lock.Lock()
+	defer mf.lock.Unlock()
+
+	start := BTreeItem{Key: string(startKey)}
+	end := BTreeItem{Key: string(endKey)}
+
+	mf.keyIndex.AscendRange(start, end, func(item btree.Item) bool {
+		btreeItem := item.(BTreeItem)
+		val, err := mf.get(btreeItem.Key)
+		if err != nil || val == nil {
+			return false
+		}
+		continueIteration, err := handleFn([]byte(btreeItem.Key), val)
+		if err != nil || !continueIteration {
+			return false
+		}
+		return true
+	})
+}
+
+func (mf *MiniFile) DescendRange(startKey, endKey []byte, handleFn func(k []byte, v []byte) (bool, error)) {
+	if mf.isClosed() {
+		return
+	}
+
+	mf.lock.Lock()
+	defer mf.lock.Unlock()
+
+	start := BTreeItem{Key: string(startKey)}
+	end := BTreeItem{Key: string(endKey)}
+	mf.keyIndex.DescendRange(start, end, func(item btree.Item) bool {
+		btreeItem := item.(BTreeItem)
+		val, err := mf.get(btreeItem.Key)
+		if err != nil || val == nil {
+			return false
+		}
+		continueIteration, err := handleFn([]byte(btreeItem.Key), val)
+		if err != nil || !continueIteration {
+			return false
+		}
+		return true
+	})
 }
 
 func (mf *MiniFile) Get(key string) ([]byte, error) {

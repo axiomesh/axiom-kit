@@ -227,6 +227,31 @@ func TestPdb_Iterator(t *testing.T) {
 	assert.EqualValues(t, cnt, 8)
 }
 
+func TestPdb_Iterator_Descend(t *testing.T) {
+	dir, err := os.MkdirTemp("", "TestIterator")
+	require.Nil(t, err)
+
+	s, err := New(dir, nil, nil, testLogger)
+	require.Nil(t, err)
+
+	batch := s.NewBatch()
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("key%d", i)
+		batch.Put([]byte(key), []byte(key))
+	}
+	batch.Commit()
+	it := s.Iterator([]byte("key1"), []byte("key9"))
+	var resultAscendRange []string
+
+	assert.True(t, it.Last())
+	for valid := it.Last(); valid; valid = it.Prev() {
+		value := it.Value()
+		resultAscendRange = append(resultAscendRange, string(value))
+	}
+	assert.Equal(t, []string{"key8", "key7", "key6", "key5", "key4", "key3", "key2", "key1"}, resultAscendRange)
+
+}
+
 func TestPdb_Iterator_Empty(t *testing.T) {
 	dir, err := os.MkdirTemp("", "TestIterator")
 	require.Nil(t, err)

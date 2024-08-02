@@ -25,3 +25,11 @@ func (it *iter) Key() []byte {
 func (it *iter) Value() []byte {
 	return it.iter.Value()
 }
+
+func (it *iter) First() bool {
+	return it.iter.First()
+}
+
+func (it *iter) Last() bool {
+	return it.iter.Last()
+}

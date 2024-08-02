@@ -54,7 +54,7 @@ type Iterator interface {
 
 	// Seek moves the iterator to the first key/value pair whose key is greater
 	// than or equal to the given key.
-	// It returns whether such pair exist.
+	// It returns whether such pair exists.
 	//
 	// It is safe to modify the contents of the argument after Seek returns.
 	Seek(key []byte) bool
@@ -64,6 +64,10 @@ type Iterator interface {
 
 	// Value returns the value of the current key/value pair, or nil if done.
 	Value() []byte
+
+	First() bool
+
+	Last() bool
 }
 
 type Batch interface {

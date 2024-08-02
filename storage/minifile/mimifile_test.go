@@ -3,6 +3,8 @@ package minifile
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,9 +29,15 @@ func TestNewBatchFile(t *testing.T) {
 	b, err = New(".")
 	assert.Nil(t, err)
 	assert.NotEqual(t, ".", b.path)
+	path = b.path
+	defer func() {
+		err = os.Remove(filepath.Join(path, FLOCK))
+		assert.Nil(t, err)
+	}()
 
 	b, err = New(".")
 	assert.NotNil(t, err)
+
 }
 
 func TestBatchFile_Put(t *testing.T) {
@@ -132,4 +140,74 @@ func BenchmarkMiniFile_Get(b *testing.B) {
 
 	err = f.Close()
 	assert.Nil(b, err)
+}
+
+func TestMiniFile_AscendRange(t *testing.T) {
+	path := t.TempDir()
+
+	b, err := New(path)
+	assert.Nil(t, err)
+
+	data := []struct {
+		key   string
+		value []byte
+	}{
+		{"alice", []byte("alice_val")},
+		{"bob", []byte("bob_val")},
+		{"carol", []byte("carol_val")},
+		{"dave", []byte("dave_val")},
+		{"eric", []byte("eric_val")},
+		{"fred", []byte("fred_val")},
+		{"george", []byte("george_val")},
+		{"harry", []byte("harry_val")},
+	}
+
+	for _, d := range data {
+		err = b.Put(d.key, d.value)
+		assert.Nil(t, err)
+	}
+
+	// Test AscendRange
+	var resultAscendRange []string
+
+	b.AscendRange([]byte("dave"), []byte("george"), func(key, value []byte) (bool, error) {
+		resultAscendRange = append(resultAscendRange, string(key))
+		return true, nil
+	})
+	assert.Equal(t, []string{"dave", "eric", "fred"}, resultAscendRange)
+}
+
+func TestMiniFile_DescendRange(t *testing.T) {
+	path := t.TempDir()
+
+	b, err := New(path)
+	assert.Nil(t, err)
+
+	data := []struct {
+		key   string
+		value []byte
+	}{
+		{"alice", []byte("alice_val")},
+		{"bob", []byte("bob_val")},
+		{"carol", []byte("carol_val")},
+		{"dave", []byte("dave_val")},
+		{"eric", []byte("eric_val")},
+		{"fred", []byte("fred_val")},
+		{"george", []byte("george_val")},
+		{"harry", []byte("harry_val")},
+	}
+
+	for _, d := range data {
+		err = b.Put(d.key, d.value)
+		assert.Nil(t, err)
+	}
+
+	// Test AscendRange
+	var resultAscendRange []string
+
+	b.DescendRange([]byte("harry"), []byte("bob"), func(key, value []byte) (bool, error) {
+		resultAscendRange = append(resultAscendRange, string(key))
+		return true, nil
+	})
+	assert.Equal(t, []string{"harry", "george", "fred", "eric", "dave", "carol"}, resultAscendRange)
 }

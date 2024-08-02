@@ -8,6 +8,7 @@ require (
 	github.com/cbergoon/merkletree v0.2.0
 	github.com/cockroachdb/pebble v0.0.0-20230928194634-aa077af62593
 	github.com/ethereum/go-ethereum v1.13.14
+	github.com/google/btree v1.0.0
 	github.com/holiman/uint256 v1.2.4
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
