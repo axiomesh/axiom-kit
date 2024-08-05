@@ -25,8 +25,11 @@ message  Child{
   bool leaf = 3;
 }
 
-message StateDelta{
-  repeated TrieJournal journal = 1;
+message StateJournal{
+  repeated TrieJournal trie_journal = 1;
+  map<string, bytes> code_journal = 2;
+  SnapJournal snap_journal = 3;
+  bytes root_hash = 4;
 }
 
 message TrieJournal{
@@ -35,4 +38,14 @@ message TrieJournal{
   uint64 type = 3;
   bytes root_hash = 4;
   bytes root_node_key = 5;
+}
+
+message SnapJournal{
+  map<string, bytes> destruct = 1;
+  map<string, bytes> account = 2;
+  map<string, SnapStorage> storage = 3;
+}
+
+message SnapStorage{
+  map<string, bytes> snap_storage = 1;
 }

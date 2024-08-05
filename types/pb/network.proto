@@ -49,6 +49,8 @@ message SyncBlockResponse {
   Status status = 3;
   string error = 4;
   uint64 version = 5;
+  bytes state_journal = 6;
+  bytes receipts = 7;
 }
 
 message SyncChainDataRequest {

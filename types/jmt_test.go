@@ -73,8 +73,8 @@ func TestLeafNode_Marshal(t *testing.T) {
 }
 
 func TestStateDelta_Marshal(t *testing.T) {
-	stateDelta := &StateDelta{Journal: make([]*TrieJournal, 0)}
-	stateDelta.Journal = append(stateDelta.Journal,
+	stateDelta := &StateJournal{TrieJournal: make([]*TrieJournal, 0)}
+	stateDelta.TrieJournal = append(stateDelta.TrieJournal,
 		&TrieJournal{
 			Type:        1,
 			RootHash:    common.HexToHash("0x4d5e85518fb3fe5ed1eb123d4feb2a8f96b025fca63a19f02b8727d3d4f8ef26"),
@@ -117,18 +117,18 @@ func TestStateDelta_Marshal(t *testing.T) {
 
 	blob := stateDelta.Encode()
 	assert.NotNil(t, blob)
-	res, err := DecodeStateDelta(blob)
+	err := stateDelta.Decode(blob)
 	assert.Nil(t, err)
-	for i := range res.Journal {
-		assert.Equal(t, res.Journal[i].Type, stateDelta.Journal[i].Type)
-		assert.Equal(t, res.Journal[i].RootHash, stateDelta.Journal[i].RootHash)
-		assert.True(t, slices.Equal(res.Journal[i].RootNodeKey.Encode(), stateDelta.Journal[i].RootNodeKey.Encode()))
-		for k := range stateDelta.Journal[i].PruneSet {
-			_, ok := res.Journal[i].PruneSet[k]
+	for i := range stateDelta.TrieJournal {
+		assert.Equal(t, stateDelta.TrieJournal[i].Type, stateDelta.TrieJournal[i].Type)
+		assert.Equal(t, stateDelta.TrieJournal[i].RootHash, stateDelta.TrieJournal[i].RootHash)
+		assert.True(t, slices.Equal(stateDelta.TrieJournal[i].RootNodeKey.Encode(), stateDelta.TrieJournal[i].RootNodeKey.Encode()))
+		for k := range stateDelta.TrieJournal[i].PruneSet {
+			_, ok := stateDelta.TrieJournal[i].PruneSet[k]
 			assert.True(t, ok)
 		}
-		for k, v1 := range stateDelta.Journal[i].DirtySet {
-			v2, ok := res.Journal[i].DirtySet[k]
+		for k, v1 := range stateDelta.TrieJournal[i].DirtySet {
+			v2, ok := stateDelta.TrieJournal[i].DirtySet[k]
 			assert.True(t, ok)
 			assert.NotNil(t, v2)
 			if leaf2, ok := v2.(*LeafNode); ok {

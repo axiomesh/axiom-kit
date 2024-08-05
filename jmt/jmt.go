@@ -300,35 +300,18 @@ func (jmt *JMT) delete(currentNode types.Node, currentNodeKey *types.NodeKey, ve
 }
 
 // Commit flush dirty nodes in current tree, clear pruneCache, return root hash
-func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
+func (jmt *JMT) Commit() *types.TrieJournal {
 	// persist <rootHash -> rootNodeKey>
-	if jmt.root == nil {
-		rootHash = placeHolder
-	} else {
+	rootHash := placeHolder
+	if jmt.root != nil {
 		rootHash = jmt.root.GetHash()
-	}
-	if pruneArgs == nil || !pruneArgs.Enable {
-		// flush dirty nodes into kv
-		batch := jmt.backend.NewBatch()
-		for k, v := range jmt.dirtySet {
-			batch.Put([]byte(k), v.Encode())
-			if jmt.root != v {
-				types.RecycleTrieNode(v)
-			}
-		}
-		batch.Put(rootHash[:], jmt.rootNodeKey.Encode())
-		batch.Commit()
-		// gc
-		jmt.dirtySet = make(map[string]types.Node)
-		jmt.pruneSet = make(map[string]struct{})
-		return rootHash
 	}
 
 	dirtySet := make(map[string]types.Node)
 	for k, v := range jmt.dirtySet {
 		dirtySet[k] = v
 	}
-	pruneArgs.Journal = &types.TrieJournal{
+	journal := &types.TrieJournal{
 		RootHash:    rootHash,
 		RootNodeKey: jmt.rootNodeKey,
 		PruneSet:    jmt.pruneSet,
@@ -337,7 +320,7 @@ func (jmt *JMT) Commit(pruneArgs *PruneArgs) (rootHash common.Hash) {
 	// gc
 	jmt.dirtySet = make(map[string]types.Node)
 	jmt.pruneSet = make(map[string]struct{})
-	return rootHash
+	return journal
 }
 
 func (jmt *JMT) getNode(nk *types.NodeKey) (types.Node, error) {
