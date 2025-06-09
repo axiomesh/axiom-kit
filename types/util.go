@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-var MolUnitStr = "mol"
-var GmolUnitStr = "gmol"
-var AxcUnitStr = "axc"
+var MolUnitStr = "wei"
+var GmolUnitStr = "gwei"
+var AxcUnitStr = "sch"
 
 var MolUnit = big.NewInt(1)
 var GmolUnit = big.NewInt(1_000000000)
