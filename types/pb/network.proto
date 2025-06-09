@@ -42,7 +42,7 @@ message Message {
     FETCH_QUORUM_CHECKPOINT = 35;
     FETCH_QUORUM_CHECKPOINT_RESPONSE = 36;
 
-    // worker request
+    // worker msg
     NEW_BATCH = 41;
     NEW_BATCH_RESPONSE = 42;
     WORKER_SYNCHRONIZE = 43;
@@ -61,6 +61,11 @@ message Message {
     EPOCH_REQUEST_RESPONSE = 62;
     EPOCH_PROOF = 63;
     EPOCH_PROOF_RESPONSE = 64;
+
+    // =======data syncer========
+    TRANSACTION_PROPAGATION = 70;
+    FETCH_STATE = 71;
+    FETCH_STATE_RESPONSE = 72;
   }
   string from = 1;
   Type type = 2;

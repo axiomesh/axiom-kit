@@ -39,4 +39,11 @@ type QuorumCheckpoint interface {
 	Marshal() ([]byte, error)
 
 	Unmarshal(raw []byte) error
+
+	EndEpoch() bool
+}
+
+type Signature struct {
+	Singer    uint64
+	Signature []byte
 }

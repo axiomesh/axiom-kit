@@ -19,14 +19,20 @@ message TransactionMeta {
 message QuorumCheckpoint {
     uint64 epoch = 1;
     ExecuteState state = 2;
-    map<uint64, bytes> signatures = 3;
+  enum ConsensusType {
+    DAGBFT = 0;
+    RBFT = 1;
+    SOLO = 2;
+  }
+  ConsensusType type = 3;
+  bytes proof = 4;
     message Validator {
       uint64 id=1;
       string p2p_id=2;
       string primary=3;
       repeated string workers=4;
     }
-    repeated Validator validator_set = 4;
+    repeated Validator validator_set = 5;
 }
 
 message ExecuteState {
