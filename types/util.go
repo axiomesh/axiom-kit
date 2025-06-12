@@ -9,7 +9,7 @@ import (
 
 var MolUnitStr = "wei"
 var GmolUnitStr = "gwei"
-var AxcUnitStr = "sch"
+var AxcUnitStr = "das"
 
 var MolUnit = big.NewInt(1)
 var GmolUnit = big.NewInt(1_000000000)
