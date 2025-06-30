@@ -22,6 +22,17 @@ type unitInfo struct {
 }
 
 var unitMap = []*unitInfo{
+	// tmp, just for draconis compatibility
+	{
+		"wei",
+		MolUnit,
+		0,
+	},
+	{
+		"gwei",
+		GmolUnit,
+		9,
+	},
 	{
 		MolUnitStr,
 		MolUnit,
