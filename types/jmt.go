@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
 	"github.com/axiomesh/axiom-kit/hexutil"
 	"github.com/axiomesh/axiom-kit/types/pb"
@@ -33,8 +34,17 @@ type (
 		RootNodeKey *NodeKey
 	}
 
-	StateDelta struct {
-		Journal []*TrieJournal
+	SnapJournal struct {
+		Destruct map[string]struct{}
+		Account  map[string][]byte
+		Storage  map[string]map[string][]byte
+	}
+
+	StateJournal struct {
+		RootHash        *Hash
+		CodeJournal     map[string][]byte
+		TrieJournal     []*TrieJournal
+		SnapshotJournal *SnapJournal
 	}
 )
 
@@ -80,6 +90,22 @@ var internalNodePool = sync.Pool{
 		return &InternalNode{}
 	},
 }
+
+var diffPool = sync.Pool{
+	New: func() any {
+		return &StateJournal{}
+	},
+}
+
+var childPool = sync.Pool{
+	New: func() any {
+		return &Child{}
+	},
+}
+
+var (
+	ErrorEmptyStateJournal = errors.New("decode empty state journal")
+)
 
 // just for debug
 func (nk *NodeKey) String() string {
@@ -135,10 +161,34 @@ func RecycleTrieNode(n Node) {
 		nn.blob = nil
 		nn.hash = common.Hash{}
 		for i := range nn.Children {
+			if nn.Children[i] == nil {
+				continue
+			}
+			nn.Children[i].Hash = common.Hash{}
+			nn.Children[i].Leaf = false
+			nn.Children[i].Version = 0
+			childPool.Put(nn.Children[i])
 			nn.Children[i] = nil
 		}
 		internalNodePool.Put(nn)
 	}
+}
+
+func RecycleStateJournal(diff *StateJournal) {
+	if diff == nil {
+		return
+	}
+	for _, trieJournal := range diff.TrieJournal {
+		for _, node := range trieJournal.DirtySet {
+			RecycleTrieNode(node)
+		}
+	}
+	diff.RootHash = nil
+	diff.SnapshotJournal = nil
+	diff.CodeJournal = nil
+	diff.TrieJournal = nil
+
+	diffPool.Put(diff)
 }
 
 // just for debug
@@ -322,11 +372,10 @@ func (n *InternalNode) unmarshalInternalFromPb(data []byte) error {
 		if len(child.Hash) == 0 {
 			continue
 		}
-		n.Children[i] = &Child{
-			Hash:    common.BytesToHash(child.Hash),
-			Version: child.Version,
-			Leaf:    child.Leaf,
-		}
+		n.Children[i] = childPool.Get().(*Child)
+		n.Children[i].Hash = common.BytesToHash(child.Hash)
+		n.Children[i].Version = child.Version
+		n.Children[i].Leaf = child.Leaf
 	}
 	return nil
 }
@@ -398,7 +447,7 @@ func UnmarshalJMTNodeFromPb(data []byte) (Node, error) {
 	}
 
 	if !helper.Leaf {
-		res := &InternalNode{}
+		res := internalNodePool.Get().(*InternalNode)
 		err = res.unmarshalInternalFromPb(helper.Content)
 		if err != nil {
 			return nil, err
@@ -446,21 +495,21 @@ func HexToBytes(src []byte) []byte {
 	return res
 }
 
-func (delta *StateDelta) Encode() []byte {
-	if delta == nil {
+func (diff *StateJournal) Encode() []byte {
+	if diff == nil {
 		return nil
 	}
 
-	journals := make([]*pb.TrieJournal, len(delta.Journal))
-	for i, journal := range delta.Journal {
-		pruneSet := make(map[string][]byte)
+	journals := make([]*pb.TrieJournal, len(diff.TrieJournal))
+	for i, journal := range diff.TrieJournal {
+		var pruneSet []*pb.KV
 		for k := range journal.PruneSet {
-			pruneSet[k] = []byte{}
+			pruneSet = append(pruneSet, &pb.KV{Key: []byte(k), Val: []byte{}})
 		}
 
-		dirtySet := make(map[string][]byte)
+		var dirtySet []*pb.KV
 		for k, v := range journal.DirtySet {
-			dirtySet[k] = v.Encode()
+			dirtySet = append(dirtySet, &pb.KV{Key: []byte(k), Val: v.Encode()})
 		}
 
 		journals[i] = &pb.TrieJournal{
@@ -472,8 +521,38 @@ func (delta *StateDelta) Encode() []byte {
 		}
 	}
 
-	blob := &pb.StateDelta{
-		Journal: journals,
+	snapJournal := &pb.SnapJournal{
+		Account:  []*pb.KV{},
+		Storage:  []*pb.SnapStorageKV{},
+		Destruct: []*pb.KV{},
+	}
+	for k, v := range diff.SnapshotJournal.Account {
+		snapJournal.Account = append(snapJournal.Account, &pb.KV{Key: []byte(k), Val: v})
+	}
+	for k, v := range diff.SnapshotJournal.Storage {
+		snapStorage := &pb.SnapStorage{
+			SnapStorage: []*pb.KV{},
+		}
+		for innerK, innerV := range v {
+			snapStorage.SnapStorage = append(snapStorage.SnapStorage, &pb.KV{Key: []byte(innerK), Val: innerV})
+		}
+		snapJournal.Storage = append(snapJournal.Storage, &pb.SnapStorageKV{Key: []byte(k), SnapStorage: snapStorage})
+
+	}
+	for k := range diff.SnapshotJournal.Destruct {
+		snapJournal.Destruct = append(snapJournal.Destruct, &pb.KV{Key: []byte(k), Val: []byte{}})
+	}
+
+	var codeJournal []*pb.KV
+	for k, v := range diff.CodeJournal {
+		codeJournal = append(codeJournal, &pb.KV{Key: []byte(k), Val: v})
+	}
+
+	blob := &pb.StateJournal{
+		RootHash:    diff.RootHash.Bytes(),
+		TrieJournal: journals,
+		CodeJournal: codeJournal,
+		SnapJournal: snapJournal,
 	}
 
 	content, err := blob.MarshalVTStrict()
@@ -484,11 +563,11 @@ func (delta *StateDelta) Encode() []byte {
 	return content
 }
 
-func DecodeStateDelta(data []byte) (*StateDelta, error) {
+func DecodeStateJournal(data []byte) (*StateJournal, error) {
 	if len(data) == 0 {
-		return nil, nil
+		return nil, ErrorEmptyStateJournal
 	}
-	helper := pb.StateDeltaFromVTPool()
+	helper := pb.StateJournalFromVTPool()
 	defer func() {
 		helper.Reset()
 		helper.ReturnToVTPool()
@@ -498,33 +577,58 @@ func DecodeStateDelta(data []byte) (*StateDelta, error) {
 		return nil, err
 	}
 
-	res := &StateDelta{
-		Journal: make([]*TrieJournal, len(helper.Journal)),
+	diff := diffPool.Get().(*StateJournal)
+	diff.TrieJournal = make([]*TrieJournal, len(helper.TrieJournal))
+	diff.CodeJournal = make(map[string][]byte)
+	for _, kv := range helper.CodeJournal {
+		diff.CodeJournal[string(kv.Key)] = kv.Val
 	}
-	for i := 0; i < len(helper.Journal); i++ {
+	diff.SnapshotJournal = &SnapJournal{
+		Account:  make(map[string][]byte),
+		Storage:  make(map[string]map[string][]byte),
+		Destruct: make(map[string]struct{}),
+	}
+
+	for i := 0; i < len(helper.TrieJournal); i++ {
 		pruneSet := make(map[string]struct{})
-		for k := range helper.Journal[i].PruneSet {
-			pruneSet[k] = struct{}{}
+		for _, kv := range helper.TrieJournal[i].PruneSet {
+			pruneSet[string(kv.Key)] = struct{}{}
 		}
 
 		dirtySet := make(map[string]Node)
-		for k, v := range helper.Journal[i].DirtySet {
-			dirtySet[k], err = UnmarshalJMTNodeFromPb(v)
+		for _, kv := range helper.TrieJournal[i].DirtySet {
+			dirtySet[string(kv.Key)], err = UnmarshalJMTNodeFromPb(kv.Val)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		res.Journal[i] = &TrieJournal{
-			Type:        byte(helper.Journal[i].Type),
-			RootHash:    common.BytesToHash(helper.Journal[i].RootHash),
-			RootNodeKey: DecodeNodeKey(helper.Journal[i].RootNodeKey),
+		diff.TrieJournal[i] = &TrieJournal{
+			Type:        byte(helper.TrieJournal[i].Type),
+			RootHash:    common.BytesToHash(helper.TrieJournal[i].RootHash),
+			RootNodeKey: DecodeNodeKey(helper.TrieJournal[i].RootNodeKey),
 			PruneSet:    pruneSet,
 			DirtySet:    dirtySet,
 		}
 	}
 
-	return res, nil
+	for _, kv := range helper.SnapJournal.Account {
+		diff.SnapshotJournal.Account[string(kv.Key)] = kv.Val
+	}
+	for _, kv := range helper.SnapJournal.Destruct {
+		diff.SnapshotJournal.Destruct[string(kv.Key)] = struct{}{}
+	}
+	for _, kv := range helper.SnapJournal.Storage {
+		snapStorage := make(map[string][]byte)
+		for _, innerKV := range kv.SnapStorage.SnapStorage {
+			snapStorage[string(innerKV.Key)] = innerKV.Val
+		}
+		diff.SnapshotJournal.Storage[string(kv.Key)] = snapStorage
+	}
+
+	diff.RootHash = NewHash(helper.RootHash)
+
+	return diff, nil
 }
 
 func (h NodeKeyHeap) Len() int {

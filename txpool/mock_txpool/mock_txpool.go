@@ -803,7 +803,7 @@ func (c *MockTxPoolRemoveBatchesCall[T, Constraint]) DoAndReturn(f func([]string
 }
 
 // RemoveStateUpdatingTxs mocks base method.
-func (m *MockTxPool[T, Constraint]) RemoveStateUpdatingTxs(txPointerList []*txpool.WrapperTxPointer) {
+func (m *MockTxPool[T, Constraint]) RemoveStateUpdatingTxs(txPointerList []string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RemoveStateUpdatingTxs", txPointerList)
 }
@@ -827,13 +827,13 @@ func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Return() *MockTxPo
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Do(f func([]*txpool.WrapperTxPointer)) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
+func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) Do(f func([]string)) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) DoAndReturn(f func([]*txpool.WrapperTxPointer)) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
+func (c *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint]) DoAndReturn(f func([]string)) *MockTxPoolRemoveStateUpdatingTxsCall[T, Constraint] {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

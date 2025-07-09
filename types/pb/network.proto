@@ -14,6 +14,9 @@ message Message {
     SYNC_CHAIN_DATA_RESPONSE = 5;
     FETCH_EPOCH_STATE_REQUEST = 6;
     FETCH_EPOCH_STATE_RESPONSE = 7;
+
+    SYNC_DIFF_REQUEST = 8;
+    SYNC_DIFF_RESPONSE = 9;
   }
   string from = 1;
   Type type = 2;
@@ -63,6 +66,21 @@ message SyncChainDataResponse {
   Status status = 4;
   string error = 5;
   uint64 version = 6;
+}
+
+message SyncDiffRequest {
+  uint64 height = 1;
+  uint64 version = 2;
+}
+
+message SyncDiffResponse {
+  Status status = 1;
+  uint64 height = 2;
+  bytes block = 3;
+  bytes state_journal = 4;
+  bytes receipts = 5;
+  string error = 6;
+  uint64 version = 7;
 }
 
 message FetchEpochStateRequest {

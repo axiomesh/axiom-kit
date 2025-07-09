@@ -25,14 +25,40 @@ message  Child{
   bool leaf = 3;
 }
 
-message StateDelta{
-  repeated TrieJournal journal = 1;
+message KV{
+  bytes key = 1;
+  bytes val = 2;
+}
+
+message StateJournal{
+  repeated TrieJournal trie_journal = 1;
+  //  map<string, bytes> code_journal = 2;
+  repeated KV code_journal = 2;
+  SnapJournal snap_journal = 3;
+  bytes root_hash = 4;
 }
 
 message TrieJournal{
-  map<string, bytes> dirty_set = 1;
-  map<string, bytes>  prune_set = 2;
+  //  map<string, bytes> dirty_set = 1;
+  //  map<string, bytes>  prune_set = 2;
+  repeated KV dirty_set = 1;
+  repeated KV  prune_set = 2;
   uint64 type = 3;
   bytes root_hash = 4;
   bytes root_node_key = 5;
+}
+
+message SnapJournal{
+  repeated KV destruct = 1;
+  repeated KV account = 2;
+  repeated SnapStorageKV storage = 3;
+}
+
+message SnapStorageKV{
+  bytes key = 1;
+  SnapStorage snap_storage = 2;
+}
+
+message SnapStorage{
+  repeated KV snap_storage = 1;
 }
